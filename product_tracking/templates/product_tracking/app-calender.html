@@ -4,6 +4,9 @@
     <body>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        .fc-event-title-container{
+            width: 105px;
+        }
         .fc-day-today .fc-daygrid-day-number {
             background-color: #007bff;
             color: white !important;
@@ -25,6 +28,17 @@
             align-items: flex-end;
             padding-right: 10px;
         }
+
+        .fc-event-title, .fc-event-time {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+        }
+
+        .fc-event {
+            height: auto !important;
+        }
+
     </style>
     <script>
         $(document).ready(function () {
@@ -171,12 +185,11 @@
                                         {% csrf_token %}
                                         <input type="hidden" id="action" name="action" value="CREATE">
                                         <input type="hidden" id="event_id" name="event_id">
-                                        <input type="hidden" id="startDate" name="start_date">
-                                        <input type="hidden" id="endDate" name="end_date">
                                         <div class="form-group">
                                             <label for="eventVenue">Event Venue<span
                                                     class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="eventVenue" name="venue"
+                                            <input type="text" class="form-control wrap-text" id="eventVenue"
+                                                   name="venue"
                                                    required>
                                         </div>
                                         <div class="form-group">
@@ -190,6 +203,14 @@
                                                     class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="personName" name="person_name"
                                                    required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="startDate">Start Date</label>
+                                            <input type="date" class="form-control" id="startDate" name="start_date">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="endDate">End Date</label>
+                                            <input type="date" class="form-control" id="endDate" name="end_date">
                                         </div>
                                     </form>
                                 </div>
@@ -206,9 +227,6 @@
                 </div>
             </div>
         </div>
-
-    </div>
-    </div>
     </div>
 
 
@@ -232,13 +250,8 @@
             </div>
         </div>
     </div>
-    </div>
-    </div>
-    </div>
 
     {% include 'product_tracking/footer.html' %}
-    </div>
-
 
     </body>
 {% endblock %}

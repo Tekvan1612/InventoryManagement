@@ -1358,7 +1358,6 @@ def fetch_stock_details_by_name(request):
 
 
 @csrf_exempt
-@login_required
 def add_event_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -1366,7 +1365,7 @@ def add_event_view(request):
         venue = request.POST.get('venue')
         client_name = request.POST.get('client_name')
         person_name = request.POST.get('person_name')
-        created_by = request.user.id  # Assuming you want to use the current logged-in user
+        created_by = request.session.get('user_id')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
 
@@ -1415,7 +1414,6 @@ def add_event_view(request):
     return JsonResponse({'success': False, 'error_message': 'Invalid request method or action'}, status=400)
 
 
-@login_required
 def get_eventvalue(request):
     try:
         with connection.cursor() as cursor:
