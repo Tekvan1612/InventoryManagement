@@ -20920,7 +20920,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
   --title: #374557; }
 
 [data-theme-version="transparent"] {
-  background: url("../../templates/product_tracking/page-error-404.html");
+  background: url('../../templates/product_tracking/page-error-404.html');
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-size: cover;
@@ -24545,7 +24545,7 @@ textarea.form-control {
       border-radius: 3rem !important;
       border-color: var(--rgba-primary-3); }
   .check-switch .form-check-input:checked ~ .form-check-label::after {
-    background-image: url("../../templates/product_tracking/page-error-404.html"); }
+    background-image: url('../../templates/product_tracking/page-error-404.html'); }
   .check-switch .form-check-input:checked ~ .form-check-label::before {
     background: #fff; }
 
@@ -25585,7 +25585,7 @@ html:not([dir=rtl]) .noUi-horizontal .noUi-handle {
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    background: url(../../templates/product_tracking/page-error-404.html) no-repeat 0 0; }
+    background: url('../../templates/product_tracking/page-error-404.html') no-repeat 0 0; }
   .cd-h-timeline__navigation:hover {
     border-color: #3AC977; }
 
