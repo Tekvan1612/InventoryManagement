@@ -2,253 +2,296 @@
 
 {% block content %}
     <style>
-    .subcategory-name a{
-        color: #0D99FF; /* Change this to the color you want */
-        text-decoration: underline; /* Optional: underline the links */
-    }
+        .subcategory-name a {
+            color: #0D99FF; /* Change this to the color you want */
+            text-decoration: underline; /* Optional: underline the links */
+        }
 
-    .subcategory-name a:hover {
-        color: #0056b3; /* Change this to the color you want on hover */
-    }
-     .table th, .table td {
-        padding: 8px; /* Adjust padding as needed */
-        vertical-align: middle;
-    }
-      .table tbody tr:hover {
-        background-color: #f2f2f2; /* Change this to the color you want */
-    }
+        .subcategory-name a:hover {
+            color: #0056b3; /* Change this to the color you want on hover */
+        }
 
-    .table {
-        width: 100%;
-        border-collapse: collapse; /* Ensure borders are collapsed */
-    }
+        .table th, .table td {
+            padding: 8px; /* Adjust padding as needed */
+            vertical-align: middle;
+        }
 
-    .table thead th {
-        border-bottom: 2px solid #dee2e6; /* Adjust border style as needed */
-    }
+        .table tbody tr:hover {
+            background-color: #f2f2f2; /* Change this to the color you want */
+        }
 
-    .table tbody td {
-        border-top: 1px solid #dee2e6; /* Adjust border style as needed */
-    }
-</style>
+        .table {
+            width: 100%;
+            border-collapse: collapse; /* Ensure borders are collapsed */
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #dee2e6; /* Adjust border style as needed */
+        }
+
+        .table tbody td {
+            border-top: 1px solid #dee2e6; /* Adjust border style as needed */
+        }
+
+        #pagination-controls button {
+            margin-right: 10px;
+        }
+    </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-$(document).ready(function () {
-    // Initialize global variables
-    var fetchingData = false;
-    let currentPage = 1;
-    const pageSize = 10;
+        $(document).ready(function () {
+            var fetchingData = false;
+            let currentPage = 1;
+            const pageSize = 10;
 
-    // Fetch subcategory list on page load
-    fetchSubCategoryList();
+            $('#searchSubCategory').on('input', function () {
+                var searchText = $(this).val().trim().toLowerCase();
 
-    function fetchSubCategoryList() {
-        // Parse subcategories data from the script tag
-        var subcategories = JSON.parse(document.getElementById('subcategories-data').textContent);
-        var totalItems = subcategories.length;  // Get the total number of subcategories
-        var totalPages = Math.ceil(totalItems / pageSize);  // Calculate total pages
+                $('#subcategory-table-body tr').each(function () {
+                    var subCategoryName = $(this).find('td:eq(2)').text().trim().toLowerCase();
+                    var categoryName = $(this).find('td:eq(3)').text().trim().toLowerCase();
+                    var type = $(this).find('td:eq(4)').text().trim().toLowerCase();
 
-        // Get the subcategories for the current page
-        var paginatedSubcategories = subcategories.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-        console.log("Subcategory Listing:", paginatedSubcategories);
-        $('#subcategory-table-body').empty();
-        $.each(paginatedSubcategories, function (index, subcategory) {
-            var row = '<tr>' +
-                '<td>' + ((currentPage - 1) * pageSize + index + 1) + '</td>' +
-                '<td style="display: none;">' + subcategory.id + '</td>' +
-                '<td class="subcategory-name" data-subcategory-id="' + subcategory.id + '"><a href="#">' + subcategory.name + '</a></td>' +
-                '<td>' + subcategory.category_name + '</td>' +
-                '<td>' + subcategory.created_by + '</td>' +
-                '<td>' + subcategory.created_date + '</td>' +
-                '<td><button class="btn btn-sm btn-primary edit-btn me-2"><i class="fa fa-pencil"></i></button><button class="btn btn-sm btn-danger delete-btn"><i class="fa fa-trash"></i></button></td>' +
-                '</tr>';
-            $('#subcategory-table-body').append(row);
-        });
-
-        updatePaginationControls(totalItems, currentPage, totalPages);
-    }
-
-    function updatePaginationControls(totalItems, currentPage, totalPages) {
-        $('#pagination-controls').html('');
-
-        if (currentPage > 1) {
-            $('#pagination-controls').append('<button id="prev-page-btn" class="btn btn-primary">Previous</button>');
-        }
-
-        if (currentPage < totalPages) {
-            $('#pagination-controls').append('<button id="next-page-btn" class="btn btn-primary">Next</button>');
-        }
-
-        const startItem = (currentPage - 1) * pageSize + 1;
-        const endItem = Math.min(currentPage * pageSize, totalItems);
-
-        $('#pagination-count').text(`Showing ${startItem} to ${endItem} of ${totalItems} entries`);
-    }
-
-    $(document).on('click', '#prev-page-btn', function () {
-        if (currentPage > 1) {
-            currentPage--;
-            fetchSubCategoryList();
-        }
-    });
-
-    $(document).on('click', '#next-page-btn', function () {
-        currentPage++;
-        fetchSubCategoryList();
-    });
-
-    $(document).on('click', '.subcategory-name a', function (e) {
-        e.preventDefault();
-        var subcategoryId = $(this).closest('.subcategory-name').data('subcategory-id');
-        console.log('Redirecting to /equipment_list/?subcategory_id=' + subcategoryId); // Debugging line
-        window.location.href = '/equipment_list/?subcategory_id=' + subcategoryId;
-    });
-
-    // Populate edit modal with subcategory data
-    $(document).on('click', '.edit-btn', function () {
-        var row = $(this).closest('tr');
-        var subcategoryId = row.find('td:eq(1)').text().trim();
-        var subcategoryName = row.find('td:eq(2)').text().trim();
-        //var statusText = row.find('td:eq(3)').text().trim() === 'Active' ? '1' : '0';
-
-        console.log("Subcategory Id:", subcategoryId);
-        console.log("Subcategory Name:", subcategoryName);
-        //console.log("Retrieved Status:", statusText);
-
-        // Populate modal with subcategory data
-        $('#editCategoryId').val(subcategoryId);
-        $('#editCategoryName').val(subcategoryName);
-        //$('#editCategoryStatus').val(statusText).change();
-
-        // Show edit modal
-        $('#editCategoryModal').modal('show');
-    });
-
-    $(document).on('click', '#saveChangesBtn', function () {
-        updateSubCategoryInDatabase();
-    });
-
-    function fetchCategories() {
-        $.ajax({
-            url: '/category_dropdown/',
-            type: 'GET',
-            success: function (data) {
-                // Clear existing dropdown options
-                $('#exampleFormControlInputfour').empty();
-                // Add a default option
-                $('#exampleFormControlInputfour').append('<option value="">Select category</option>');
-                // Iterate over received data and append options to dropdown
-                $.each(data.categories, function (index, category) {
-                    $('#exampleFormControlInputfour').append('<option value="' + category.id + '">' + category.name + '</option>');
+                    if (subCategoryName.includes(searchText) || categoryName.includes(searchText) || type.includes(searchText)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
                 });
-            },
-            error: function (xhr, status, error) {
-                console.error('Error fetching data:', error);
-            }
-        });
-    }
 
-    fetchCategories(); // Fetch categories when the document is ready
-
-    $(document).on('click', '#closeFormBtn', function () {
-        $('#editCategoryModal').modal('hide');
-    });
-
-    function updateSubCategoryInDatabase() {
-        var subcategoryId = $('#editCategoryId').val();
-        var subcategoryName = $('#editCategoryName').val().trim();
-        //var statusText = $('#editCategoryStatus').val();
-
-        //console.log("Status Text:", statusText);
-
-        var formData = {
-            'csrfmiddlewaretoken': getCookie('csrftoken'),
-            'categoryName': subcategoryName,
-            //'statusText': statusText
-        };
-
-        $.ajax({
-            url: '/update_subcategory/' + subcategoryId + '/',
-            type: 'POST',
-            data: formData,
-            success: function (response) {
-                if (response.message) {
-                    fetchSubCategoryList();
-                    $('#editCategoryModal').modal('hide');
-                    location.reload();
-                } else {
-                    console.error('Error updating subcategory:', response.error);
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('Error updating subcategory:', error);
-            }
-        });
-    }
-
-    $(document).on('click', '.delete-btn', function () {
-        var row = $(this).closest('tr');
-        var subcategoryId = row.find('td:eq(1)').text().trim();
-
-        if (confirm('Are you sure you want to delete this subcategory?')) {
-            var csrftoken = getCookie('csrftoken');
-
-            $.ajax({
-                url: '/delete_subcategory/' + subcategoryId + '/',
-                type: 'POST',
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                },
-                success: function (response) {
-                    fetchSubCategoryList();
-                    location.reload();
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error deleting subcategory:', error);
+                if (searchText === '') {
+                    $('#subcategory-table-body tr').show(); //
                 }
             });
-        }
-    });
 
-    function getCookie(name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            var cookies = document.cookie.split(';');
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+            // Fetch subcategory list on page load
+            fetchSubCategoryList();
+
+            function fetchSubCategoryList() {
+                try {
+                    var subcategories = JSON.parse(document.getElementById('subcategories-data').textContent);
+                    console.log("Parsed Subcategories Data:", subcategories);
+                    var totalItems = subcategories.length;
+                    var totalPages = Math.ceil(totalItems / pageSize);
+                    var paginatedSubcategories = subcategories.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+                    console.log("Subcategory Listing:", paginatedSubcategories);
+                    $('#subcategory-table-body').empty();
+                    $.each(paginatedSubcategories, function (index, subcategory) {
+                        console.log("Processing subcategory:", subcategory);
+                        // Create a list of types
+                        var typesArray = subcategory.type.split(',');
+                        var typeList = '<ul>';
+                        $.each(typesArray, function (typeIndex, type) {
+                            console.log("Adding type:", type);
+                            typeList += '<li>' + type + '</li>';
+                        });
+                        typeList += '</ul>';
+
+                        var row = '<tr>' +
+                            '<td>' + ((currentPage - 1) * pageSize + index + 1) + '</td>' +
+                            '<td class="subcategory-id" style="display: none;">' + subcategory.id + '</td>' +
+                            '<td class="subcategory-name" data-subcategory-id="' + subcategory.id + '"><a href="#">' + subcategory.name + '</a></td>' +
+                            '<td>' + subcategory.category_name + '</td>' +
+                            '<td>' + typeList + '</td>' +
+                            '<td>' + subcategory.created_by.toUpperCase() + '</td>' +
+                            '<td>' + subcategory.created_date + '</td>' +
+                            '<td><button class="btn btn-sm btn-primary edit-btn me-2"><i class="fa fa-pencil"></i></button><button class="btn btn-sm btn-danger delete-btn"><i class="fa fa-trash"></i></button></td>' +
+                            '</tr>';
+                        $('#subcategory-table-body').append(row);
+                    });
+
+                    updatePaginationControls(totalItems, currentPage, totalPages);
+                } catch (error) {
+                    console.error("Error fetching subcategory list:", error);
                 }
             }
-        }
-        return cookieValue;
-    }
 
-    $('#addSubCategoryForm').on('submit', function (event) {
-        event.preventDefault();
 
-        $.ajax({
-            url: $(this).attr('action'),
-            type: 'POST',
-            data: $(this).serialize(),
-            success: function (response) {
-                if (response.success) {
-                    alert('Sub Category added successfully!');
-                    location.reload();
-                } else {
-                    alert(response.message);
+            function updatePaginationControls(totalItems, currentPage, totalPages) {
+                $('#pagination-controls').html('');
+
+                if (currentPage > 1) {
+                    $('#pagination-controls').append('<button id="prev-page-btn" class="btn btn-primary">Previous</button>');
                 }
+
+                if (currentPage < totalPages) {
+                    $('#pagination-controls').append('<button id="next-page-btn" class="btn btn-primary">Next</button>');
+                }
+
+                const startItem = (currentPage - 1) * pageSize + 1;
+                const endItem = Math.min(currentPage * pageSize, totalItems);
+
+                $('#pagination-count').text(`Showing ${startItem} to ${endItem} of ${totalItems} entries`);
             }
+
+            $(document).on('click', '#prev-page-btn', function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchSubCategoryList();
+                }
+            });
+
+            $(document).on('click', '#next-page-btn', function () {
+                currentPage++;
+                fetchSubCategoryList();
+            });
+
+            $(document).on('click', '.subcategory-name a', function (e) {
+                e.preventDefault();
+                var subcategoryId = $(this).closest('.subcategory-name').data('subcategory-id');
+                console.log('Redirecting to /equipment_list/?subcategory_id=' + subcategoryId);
+                window.location.href = '/equipment_list/?subcategory_id=' + subcategoryId;
+            });
+
+            // Populate edit modal with subcategory data
+            $(document).on('click', '.edit-btn', function () {
+                var row = $(this).closest('tr');
+                var subcategoryId = row.find('td:eq(1)').text().trim();
+                var subcategoryName = row.find('td:eq(2)').text().trim();
+                //var statusText = row.find('td:eq(3)').text().trim() === 'Active' ? '1' : '0';
+
+                console.log("Subcategory Id:", subcategoryId);
+                console.log("Subcategory Name:", subcategoryName);
+
+                // Populate modal with subcategory data
+                $('#editCategoryId').val(subcategoryId);
+                $('#editCategoryName').val(subcategoryName);
+                //$('#editCategoryStatus').val(statusText).change();
+
+                $('#editCategoryModal').modal('show');
+            });
+
+            $(document).on('click', '#saveChangesBtn', function () {
+                updateSubCategoryInDatabase();
+            });
+
+            function fetchCategoryDetails(selectedCategoryId) {
+                $.ajax({
+                    url: '/get_category_dropdown/' + selectedCategoryId + '/',
+                    type: 'GET',
+                    success: function (data) {
+                        console.log('Category Name:', data.category_name);
+                        console.log('Category ID:', data.category_id);
+
+                        // Update the input field with category name as the visible text
+                        $('#exampleFormControlInputfour').val(data.category_name);
+
+                        // Store category_id in the hidden input field
+                        $('#hiddenCategoryIdInput').val(data.category_id);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching category details:', error);
+                    }
+                });
+            }
+
+            // Assuming you want to fetch details for a category ID from the URL
+            var pathParts = window.location.pathname.split('/');
+            var categoryIdFromUrl = pathParts[pathParts.length - 2]; // Extract category_id from URL path
+            fetchCategoryDetails(categoryIdFromUrl);
+
+
+            $(document).on('click', '#closeFormBtn', function () {
+                $('#editCategoryModal').modal('hide');
+            });
+
+            function updateSubCategoryInDatabase() {
+                var subcategoryId = $('#editCategoryId').val();
+                var subcategoryName = $('#editCategoryName').val().trim();
+                //var statusText = $('#editCategoryStatus').val();
+
+                //console.log("Status Text:", statusText);
+
+                var formData = {
+                    'csrfmiddlewaretoken': getCookie('csrftoken'),
+                    'categoryName': subcategoryName,
+                    //'statusText': statusText
+                };
+
+                $.ajax({
+                    url: '/update_subcategory/' + subcategoryId + '/',
+                    type: 'POST',
+                    data: formData,
+                    success: function (response) {
+                        if (response.message) {
+                            fetchSubCategoryList();
+                            $('#editCategoryModal').modal('hide');
+                            location.reload();
+                        } else {
+                            console.error('Error updating subcategory:', response.error);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error updating subcategory:', error);
+                    }
+                });
+            }
+
+            $(document).on('click', '.delete-btn', function () {
+                var row = $(this).closest('tr');
+                var subcategoryId = row.find('td:eq(1)').text().trim();
+
+                if (confirm('Are you sure you want to delete this subcategory?')) {
+                    var csrftoken = getCookie('csrftoken');
+
+                    $.ajax({
+                        url: '/delete_subcategory/' + subcategoryId + '/',
+                        type: 'POST',
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                        },
+                        success: function (response) {
+                            fetchSubCategoryList();
+                            location.reload();
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error deleting subcategory:', error);
+                        }
+                    });
+                }
+            });
+
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            $('#addSubCategoryForm').on('submit', function (event) {
+                event.preventDefault();
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            alert('Sub Category added successfully!');
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                });
+            });
+
+            // Cancel button functionality
+            $('#cancelButton').click(function () {
+                $('#offcanvasExample1').offcanvas('hide');
+            });
         });
-    });
-});
 
-</script>
-
-
-
+    </script>
     <body>
 
     <!--*******************
@@ -304,60 +347,65 @@ $(document).ready(function () {
         <!--**********************************
             Content body start
         ***********************************-->
-       <div class="content-body">
-    <div class="page-titles">
-        <ol class="breadcrumb">
-            <li><h5 class="bc-title">Sub Category</h5></li>
-            <li class="breadcrumb-item"><a href="javascript:void(0)">
-                <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
-                          stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                </svg>
-                Home </a>
-            </li>
-        </ol>
-        <a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#offcanvasExample1" role="button"
-           aria-controls="offcanvasExample1">+ Add Sub Category</a>
-    </div>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-xl-12">
-                <div class="card">
-                     <div class="card-header">
-                         <h4 class="card-title mb-0">SubCategory List </h4>
-                     </div>
-                    <div class="card-body">
-                        <div class="table-responsive table-card">
-                            <table class="table primary-table-bordered">
-                                <thead class="thead-primary">
-                                    <tr>
-                                        <th>SR NO</th>
-                                        <th>Sub Category Name</th>
-                                        <th>Category Name</th>
-                                        <th>Created By</th>
-                                        <th>Created Date</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="subcategory-table-body">
-                                    <!-- Subcategory rows will be appended here by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                         <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="content-body">
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title">Sub Category</h5></li>
+                    <li class="breadcrumb-item"><a href="javascript:void(0)">
+                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
+                                  stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        Home </a>
+                    </li>
+                </ol>
+                <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" href="#offcanvasExample1" role="button"
+                   aria-controls="offcanvasExample1">+ Add Sub Category</a>
+            </div>
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title mb-0">SubCategory List </h4>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="searchSubCategory"
+                                           placeholder="Search....">
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive table-card">
+                                    <table class="table primary-table-bordered">
+                                        <thead class="thead-primary">
+                                        <tr>
+                                            <th>SR NO</th>
+                                            <th>Sub Category Name</th>
+                                            <th>Category Name</th>
+                                            <th>Type</th>
+                                            <th>Created By</th>
+                                            <th>Created Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="subcategory-table-body">
+                                        <!-- Subcategory rows will be appended here by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
                                     <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
                                     <div id="pagination-controls" style="padding-bottom: 10px;margin: 5px;">
                                         <!-- Pagination buttons will be appended here -->
                                     </div>
-                         </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
         <!--**********************************
             Content body end
@@ -392,6 +440,7 @@ $(document).ready(function () {
         </div>
 
 
+        <!-- Add Sub Category Modal -->
         <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample1">
             <div class="offcanvas-header">
                 <h5 class="modal-title" id="#gridSystemModal1">Sub Category</h5>
@@ -411,10 +460,18 @@ $(document).ready(function () {
                                        placeholder="Name" required>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="exampleFormControlInputfour" class="form-label">Category Name<span class="text-danger">*</span></label>
-                                <select class="form-control" name="category_name" id="exampleFormControlInputfour" required>
-                                    <option value="">Select category</option>
-                                </select>
+                                <label for="exampleFormControlInputfour" class="form-label">Category Name<span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="exampleFormControlInputfour"
+                                       name="category_name" required>
+                                <!-- Hidden input to store category_id -->
+                                <input type="hidden" id="hiddenCategoryIdInput" name="category_id">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="subCategoryType" class="form-label">Type<span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="subCategoryType" name="subcategory_type"
+                                       placeholder="Add Type" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="subcategoryStatus" class="form-label">Status <span
@@ -429,7 +486,8 @@ $(document).ready(function () {
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <button type="submit" class="btn btn-primary me-1">Submit</button>
-                                <button class="btn btn-danger light ms-1" type="button">Cancel</button>
+                                <button class="btn btn-danger light ms-1" type="button" id="cancelButton">Cancel
+                                </button>
                             </div>
                         </div>
                     </form>
