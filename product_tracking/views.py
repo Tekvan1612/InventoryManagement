@@ -61,7 +61,6 @@ def index(request):
         logging.error(f"Error in index view: {str(e)}")
         return HttpResponseServerError("Internal Server Error")
 
-
 def custom_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -94,10 +93,9 @@ def custom_login(request):
 
     return render(request, 'product_tracking/page-login.html')
 
-
 def logout_view(request):
     logout(request)
-    return redirect('login')
+    return redirect('login_view')
 
 
 def footer(request):
