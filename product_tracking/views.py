@@ -22,27 +22,43 @@ logger = logging.getLogger(__name__)
 
 
 # Create your views here.
+# def index(request):
+#     # Retrieve session data
+#     username = request.session.get('username', 'N/A')
+#     user_id = request.session.get('user_id', None)  # Retrieve the user_id to check if it's correctly stored
+#     modules = request.session.get('modules', None)
+#
+#     # Log the retrieved session data
+#     print(f"Accessing index view")
+#     print(f"Session Data - Username: {username}, User ID: {user_id}, Modules:{modules}")
+#
+#     if not username or username == 'N/A':
+#         print("No username in session; redirecting to login")
+#         return redirect('login_view')
+#
+#     # If session data is valid, render the index page with the session data
+#     return render(request, 'product_tracking/index.html', {
+#         'username': username,
+#         'user_id': user_id  # Optionally pass user_id to the template if needed
+#     })
+
+
 def index(request):
-    # Retrieve session data
-    username = request.session.get('username', 'N/A')
-    user_id = request.session.get('user_id', None)  # Retrieve the user_id to check if it's correctly stored
-    modules = request.session.get('modules', None)
+    try:
+        logging.info("Accessing index view")
+        username = request.session.get('username')
+        user_id = request.session.get('user_id')
+        modules = request.session.get('modules')
 
-    # Log the retrieved session data
-    print(f"Accessing index view")
-    print(f"Session Data - Username: {username}, User ID: {user_id}, Modules:{modules}")
+        if not username or not user_id or not modules:
+            logging.error("Missing session data")
+            return HttpResponseServerError("Session data missing")
 
-    if not username or username == 'N/A':
-        print("No username in session; redirecting to login")
-        return redirect('login_view')
-
-    # If session data is valid, render the index page with the session data
-    return render(request, 'product_tracking/index.html', {
-        'username': username,
-        'user_id': user_id  # Optionally pass user_id to the template if needed
-    })
-
-
+        logging.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
+        return render(request, 'index.html')
+    except Exception as e:
+        logging.error(f"Error in index view: {str(e)}")
+        return HttpResponseServerError("Internal Server Error")
 def custom_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
