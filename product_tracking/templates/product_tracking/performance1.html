@@ -33,13 +33,50 @@
             border-top: 1px solid #dee2e6; /* Adjust border style as needed */
         }
 
+        .custom-offcanvas {
+    width: 100px; /* Adjust the width as per your requirement */
+}
+
+.custom-offcanvas .offcanvas-body {
+    padding: 5px; /* Add padding inside the offcanvas body */
+}
+
+.custom-offcanvas .form-label {
+    font-size: 4px; /* Adjust label font size */
+}
+
+.custom-offcanvas .form-control {
+    font-size: 4px; /* Adjust input/select font size */
+}
+#pagination-controls button {
+            margin-right: 10px;
+        }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
+
         $(document).ready(function () {
             var fetchingData = false;
-            let currentPage = 1;
-            const pageSize = 10;
+        let currentPage = 1;
+        const pageSize = 10;
+            $('#searchCategory').on('input', function () {
+                var searchText = $(this).val().trim().toLowerCase();
+
+                $('#category-table-body tr').each(function () {
+                    var categoryName = $(this).find('td:eq(2)').text().trim().toLowerCase();
+
+                    if (categoryName.includes(searchText)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if (searchText === '') {
+                    $('#category-table-body tr').show(); // Show all rows if search input is empty
+                }
+            });
+
 
             $('#categoryForm').on('submit', function (e) {
                 e.preventDefault();
@@ -59,6 +96,7 @@
                             $('#categoryForm')[0].reset();
                             $('#offcanvasExample1').modal('hide');
                             fetchCategoryList();
+                            location.reload();
                         } else {
                             alert(response.message);
                         }
@@ -83,8 +121,8 @@
                                 '<td>' + ((currentPage - 1) * pageSize + index + 1) + '</td>' +
                                 '<td style="display: none;">' + category.category_id + '</td>' +
                                 '<td><a href="/sub_category/' + category.category_id + '/" class="category-name text-primary" data-category-id="' + category.category_id + '">' + category.category_name + '</a></td>' +
-                                '<td>' + (category.status ? 'Active' : 'Inactive') + '</td>' +
-                                '<td>' + category.created_by + '</td>' +
+                                '<td>' + (category.status ? 'Active' : 'Inactive').toUpperCase() + '</td>' +
+                                '<td>' + category.created_by.toUpperCase() + '</td>' +
                                 '<td>' + category.created_date + '</td>' +
                                 '<td><button class="btn btn-sm btn-primary edit-btn me-2"><i class="fa fa-pencil"></i></button><button class="btn btn-sm btn-danger delete-btn"><i class="fa fa-trash"></i></button></td>' +
                                 '</tr>';
@@ -139,7 +177,7 @@
                 var row = $(this).closest('tr');
                 var categoryId = row.find('td:eq(1)').text().trim();
                 var categoryName = row.find('td:eq(2)').text().trim();
-                var statusText = row.find('td:eq(3)').text().trim() === 'Active' ? '1' : '0';
+                var statusText = row.find('td:eq(3)').text().trim() === 'Active' ? '0' : '1';
 
                 $('#editCategoryId').val(categoryId);
                 $('#editCategoryName').val(categoryName);
@@ -217,6 +255,11 @@
                 }
             });
 
+            // Cancel button functionality
+            $('#cancelButton').click(function () {
+                $('#offcanvasExample1').offcanvas('hide');
+            });
+
             function getCookie(name) {
                 var cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -236,8 +279,7 @@
     </script>
 
 
-    <body data-typography="poppins" data-theme-version="light" data-layout="vertical" data-nav-headerbg="black"
-          data-headerbg="color_1">
+    <body>
 
     <!--*******************
         Preloader start
@@ -307,16 +349,22 @@
                         Home </a>
                     </li>
                 </ol>
-                <a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#offcanvasExample1" role="button"
+                <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" href="#offcanvasExample1" role="button"
                    aria-controls="offcanvasExample1">+ Add Master Category</a>
             </div>
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-xl-12">
                         <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title mb-0">Category List </h4>
-                            </div><!-- end card header -->
+                            <div class="card-header row">
+                                <div class="col-md-3 d-flex align-items-center">
+                                    <h4 class="card-title mb-0">Category List</h4>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="searchCategory"
+                                           placeholder="Search....">
+                                </div>
+                            </div>
 
                             <div class="card-body">
                                 <div class="table-responsive table-card">
@@ -339,10 +387,9 @@
                             </div><!-- end card-body -->
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
-                                <div style="padding-bottom: 10px;margin: 5px;">
-                                    <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>
-                                    <button id="next-page-btn" class="btn btn-primary">Next</button>
-                                </div>
+                                <div id="pagination-controls" style="padding-bottom: 10px;margin: 5px;">
+                                        <!-- Pagination buttons will be appended here -->
+                                    </div>
                             </div>
                         </div><!-- end card -->
 
@@ -355,7 +402,6 @@
         <!--**********************************
             Content body end
         ***********************************-->
-        <!-- Edit Category Modal -->
         <!-- Edit Category Modal -->
         <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog"
              aria-labelledby="editCategoryModalLabel" aria-hidden="true">
@@ -372,11 +418,11 @@
                                 <input type="text" class="form-control" id="editCategoryName" name="editCategoryName">
                             </div>
                             <div class="form-group">
-                                <label for="editCategoryStatus">Status</label>
-                                <select class="default-select form-control" id="editCategoryStatus"
+                                <label for="editCategoryStatus" class="form-label">Status</label>
+                                <select class="form-control" id="editCategoryStatus"
                                         name="editCategoryStatus">
-                                    <option data-display="Select">Status</option>
-                                    <option value="1">Active</option>
+{#                                    <option data-display="Select">Status</option>#}
+                                    <option value="1" data-display="Select">Active</option>
                                     <option value="0">Inactive</option>
                                 </select>
                             </div>
@@ -404,27 +450,29 @@
                     <form action="{% url 'add_category' %}" method="POST" id="categoryForm">
                         {% csrf_token %}
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="exampleFormControlInputfirst" class="form-label">Category Name <span
+                            <div class="col-md-3 mb-3">
+                                <label for="exampleFormControlInputfirst" class="form-label">Category Name<span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="exampleFormControlInputfirst"
                                        name="category_name" placeholder="Name" required>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="exampleFormControlInputfour" class="form-label" required>Status <span
+                            <div class="col-md-3 mb-3">
+                                <label for="exampleFormControlInputfour" class="form-label" required>Status<span
                                         class="text-danger">*</span></label>
-                                <select class="default-select form-control" name="status">
+                                <select class="form-control" name="status" required>
+{#                                <select class="default-select form-control" name="status">#}
+{#                                    <option value="">Select</option>#}
                                     <option value="1" data-display="Select">Active</option>
                                     <option value="0">Inactive</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3" style="display: None">
-                                <label for="exampleFormControlInputthree" class="form-label">Description</label>
-                                <textarea rows="3" class="form-control" name="description"></textarea>
-                            </div>
-                            <div class="col-md-12 mb-3">
+{#                            <div class="col-md-6 mb-3" style="display: None">#}
+{#                                <label for="exampleFormControlInputthree" class="form-label">Description</label>#}
+{#                                <textarea rows="3" class="form-control" name="description"></textarea>#}
+{#                            </div>#}
+                            <div class="col-md-3 mb-3">
                                 <button class="btn btn-primary me-1">Submit</button>
-                                <button class="btn btn-danger light ms-1">Cancel</button>
+                                <button class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
                             </div>
                         </div>
                     </form>
