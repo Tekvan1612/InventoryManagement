@@ -1,78 +1,84 @@
 import json
+import traceback
 from datetime import datetime, timedelta
-
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
-from django.db import connection, transaction, DatabaseError
+from django.db import connection, transaction
 from django.contrib.auth.models import User
 import logging
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseBadRequest
 import os
-
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from psycopg2 import IntegrityError
 from django.shortcuts import get_object_or_404
+from django.core.files.storage import default_storage
 
 logger = logging.getLogger(__name__)
 
 
 # Create your views here.
-@login_required
 def index(request):
-    username = None
-    if request.user.is_authenticated:
-        username = request.user.username
-    return render(request, 'product_tracking/index.html', {'username': username})
+    # Retrieve session data
+    username = request.session.get('username', 'N/A')
+    user_id = request.session.get('user_id', None)  # Retrieve the user_id to check if it's correctly stored
+    modules = request.session.get('modules', None)
+
+    # Log the retrieved session data
+    print(f"Accessing index view")
+    print(f"Session Data - Username: {username}, User ID: {user_id}, Modules:{modules}")
+
+    if not username or username == 'N/A':
+        print("No username in session; redirecting to login")
+        return redirect('login_view')
+
+    # If session data is valid, render the index page with the session data
+    return render(request, 'product_tracking/index.html', {
+        'username': username,
+        'user_id': user_id  # Optionally pass user_id to the template if needed
+    })
 
 
-def login_view(request):
+def custom_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        if not (username and password):
-            messages.error(request, 'Username and password are required.')
-            return render(request, 'product_tracking/page-login.html')
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT user_exists, user_id FROM public.validate_user(%s, %s, %s)",
+                           [username, password, True])
+            result = cursor.fetchone()
 
-        user = authenticate_user(username, password)
+            if result and result[0]:
+                user_id = result[1]
+                cursor.execute(
+                    "SELECT mm.module_name FROM user_junction_module ujm JOIN module_master mm ON ujm.module_id = mm.module_id WHERE ujm.user_id = %s",
+                    [user_id])
+                modules = cursor.fetchall()
 
-        if user is not None:
-            login(request, user)
-            return redirect('index')
-        else:
-            return render(request, 'product_tracking/page-login.html',
-                          {'error_message': 'Invalid username or password'})
-    else:
-        return render(request, 'product_tracking/page-login.html')
+                # Store user info and modules in session
+                request.session['username'] = username
+                request.session['user_id'] = user_id
+                request.session['modules'] = [module[0] for module in modules]
+
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'status': 'success', 'redirect_url': reverse('index')})
+                else:
+                    return redirect(reverse('index'))
+            else:
+                messages.error(request, "Invalid login details")
+                return render(request, 'product_tracking/page-login.html')
+
+    return render(request, 'product_tracking/page-login.html')
 
 
 def logout_view(request):
     logout(request)
     return redirect('login')
-
-
-def authenticate_user(username, password):
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT validate_user(%s, %s, TRUE)", [username, password])
-            if cursor.fetchone()[0]:
-                try:
-                    user = User.objects.get(username=username)
-                except User.DoesNotExist:
-                    logger.warning(
-                        f"User '{username}' authenticated via PostgreSQL function but does not exist in Django.")
-                    return None
-                return user
-            else:
-                logger.info(f"Failed authentication attempt for user '{username}'.")
-                return None
-    except Exception as e:
-        logger.exception("Error occurred during user authentication.")
-        return None
 
 
 def footer(request):
@@ -99,16 +105,12 @@ def sidebar(request):
 
 
 def app_calender(request):
-    username = None
-    if request.user.is_authenticated:
-        username = request.user.username
+    username = request.session.get('username')
     return render(request, 'product_tracking/app-calender.html', {'username': username})
 
 
 def contact(request):
-    username = None
-    if request.user.is_authenticated:
-        username = request.user.username
+    username = request.session.get('username')
     return render(request, 'product_tracking/contacts.html', {'username': username})
 
 
@@ -120,9 +122,7 @@ def employee(request):
 
 
 def performance(request):
-    username = None
-    if request.user.is_authenticated:
-        username = request.user.username
+    username = request.session.get('username')
     return render(request, 'product_tracking/performance.html', {'username': username})
 
 
@@ -133,13 +133,14 @@ def task(request):
     return render(request, 'product_tracking/jobs.html', {'username': username})
 
 
-@login_required
+# Category Module
 def add_category(request):
+    username = request.session.get('username')
     if request.method == 'POST':
-        category_name = request.POST.get('category_name')
+        category_name = request.POST.get('category_name').upper()
         description = request.POST.get('description')
         status = request.POST.get('status') == '1'
-        created_by = request.user.id
+        created_by = request.session.get('user_id')
         created_date = datetime.now()
 
         try:
@@ -161,13 +162,9 @@ def add_category(request):
             print("An unexpected error occurred:", e)
             return JsonResponse({'success': False, 'message': 'An unexpected error occurred'})
     else:
-        username = None
-        if request.user.is_authenticated:
-            username = request.user.username
         return render(request, 'product_tracking/performance1.html', {'username': username})
 
 
-@login_required
 def category_list(request):
     page = int(request.GET.get('page', 1))
     page_size = 10
@@ -199,14 +196,13 @@ def category_list(request):
     }, safe=False)
 
 
-@login_required
 @csrf_exempt
 def update_category(request, category_id):
     if request.method == 'POST':
         print('Received POST request to update category details')
 
         # Extract the form data
-        category_name = request.POST.get('categoryName')
+        category_name = request.POST.get('categoryName').upper()
         category_description = request.POST.get('categoryDescription', '')
         status = request.POST.get('statusText') == 'true' or request.POST.get(
             'statusText') == 'True' or request.POST.get('statusText') == '1'
@@ -232,7 +228,6 @@ def update_category(request, category_id):
         return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
-@login_required
 def delete_category(request, category_id):
     if request.method == 'POST':
         try:
@@ -247,11 +242,6 @@ def delete_category(request, category_id):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-def sub_category(request):
-    return render(request, 'product_tracking/sub-performance1.html')
-
-
-@login_required
 def category_dropdown(request):
     try:
         with connection.cursor() as cursor:
@@ -265,22 +255,34 @@ def category_dropdown(request):
         return JsonResponse({'categories': []})
 
 
-@login_required
+def get_category_dropdown(request, category_id):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT category_id, category_name FROM master_category WHERE category_id = %s", [category_id])
+        category_data = cursor.fetchone()
+        category_id = category_data[0]
+        category_name = category_data[1]
+
+    return JsonResponse({'category_id': category_id, 'category_name': category_name})
+
+
+# Sub Category Module
 def add_sub_category(request):
     if request.method == 'POST':
-        category_id = request.POST.get('category_name')
-        subcategory_name = request.POST.get('subcategory_name')
+        category_id = request.POST.get('category_id')
+        subcategory_name = request.POST.get('subcategory_name').upper()
+        subcategory_type = request.POST.get('subcategory_type').upper()
         status = request.POST.get('status')
-        created_by = request.user.id
+        created_by = request.session.get('user_id')
         created_date = datetime.now()
 
         try:
             with connection.cursor() as cursor:
+                # Insert data as a single row
                 cursor.execute(
-                    "SELECT add_sub_category(%s, %s, %s, %s, %s);",
-                    [category_id, subcategory_name, status, created_by, created_date]
+                    "SELECT add_sub_category(%s, %s, %s, %s, %s, %s);",
+                    [category_id, subcategory_name, subcategory_type, status, created_by, created_date]
                 )
-                return JsonResponse({'success': True})
+            return JsonResponse({'success': True})
         except Exception as e:
             if 'Subcategory already exists' in str(e):
                 return JsonResponse({'success': False, 'message': 'Sub Category Already Exists!'})
@@ -288,15 +290,11 @@ def add_sub_category(request):
                 print("An unexpected error occurred:", e)
                 return JsonResponse({'success': False, 'message': 'An unexpected error occurred'})
     else:
-        username = None
-        if request.user.is_authenticated:
-            username = request.user.username
-        categories = subcategory_list(request)  # Function to get all categories
+        categories = subcategory_list(request)
         return render(request, 'product_tracking/sub-performance1.html',
-                      {'username': username, 'categories': categories})
+                      {'categories': categories})
 
 
-@login_required
 def subcategory_list(request, category_id):
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM get_sub(%s)", [category_id])
@@ -304,31 +302,30 @@ def subcategory_list(request, category_id):
 
     subcategory_listing = []
     for row in rows:
-        created_date = row[5].strftime('%d-%m-%Y')
+        created_date = row[6].strftime('%d-%m-%Y')
         subcategory_listing.append({
             'id': row[0],
             'category_name': row[1],
             'name': row[2],
-            'status': row[3],
-            'created_by': row[4],
+            'type': row[3],
+            'status': row[4],
+            'created_by': row[5],
             'created_date': created_date
         })
 
     context = {
-        'subcategories': json.dumps(subcategory_listing),  # Ensure JSON is correctly formatted
+        'subcategories': json.dumps(subcategory_listing),
         'category_id': category_id
     }
     return render(request, 'product_tracking/sub-performance1.html', context)
 
 
-@login_required
 def update_subcategory(request, id):
     if request.method == 'POST':
         print('Received POST request to update sub category details')
 
         # Extract the form data
-        name = request.POST.get('categoryName')
-        # status = request.POST.get('statusText')
+        name = request.POST.get('categoryName').upper()
 
         print('Received data:', {
             'id': id,
@@ -349,7 +346,6 @@ def update_subcategory(request, id):
         return JsonResponse({'error': 'Invalid request method'})
 
 
-@login_required
 def delete_subcategory(request, id):
     if request.method == 'POST':
         try:
@@ -362,15 +358,17 @@ def delete_subcategory(request, id):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-@login_required
+# User Management Module
 def add_user(request):
+    username = request.session.get('username')
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         status = request.POST.get('status') == '1'
         modules = request.POST.getlist('modules')
-        created_by = int(request.user.id)
+        created_by = int(request.session.get('user_id'))
         created_date = datetime.now()
+        print('Add the USER:', username, password, status, modules, created_by, created_date)
 
         with connection.cursor() as cursor:
             cursor.execute(
@@ -387,14 +385,9 @@ def add_user(request):
             employees = cursor.fetchall()
 
         employee_names = [employee[0] for employee in employees]
-
-        username = None
-        if request.user.is_authenticated:
-            username = request.user.username
         return render(request, 'product_tracking/user.html', {'username': username, 'employee_names': employee_names})
 
 
-@login_required
 def user_list(request):
     print('Received data:')
     user_listing = []
@@ -402,7 +395,7 @@ def user_list(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM getuser()")
             rows = cursor.fetchall()
-            print("fetched user list")
+            print("fetched user list:", rows)
 
             for row in rows:
                 created_date_time = row[6].strftime('%d-%m-%Y')
@@ -434,7 +427,6 @@ def user_list(request):
     return JsonResponse(response)
 
 
-@login_required
 def update_user(request, user_id):  # noqa
     if request.method == 'POST':
         user_id = request.POST.get('userId')
@@ -456,7 +448,6 @@ def update_user(request, user_id):  # noqa
         return JsonResponse({'error': 'Invalid request method'})
 
 
-@login_required
 def delete_user(request, id):
     if request.method == 'POST':
         try:
@@ -469,8 +460,9 @@ def delete_user(request, id):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-@login_required
+# Employees Module
 def add_employee(request):
+    username = request.session.get('username')
     if request.method == 'POST':
         try:
             employee_id = int(request.POST.get('employee_id').strip())
@@ -494,7 +486,7 @@ def add_employee(request):
         country = request.POST.get('country')
         state = request.POST.get('state')
         status = request.POST.get('status').lower() == 'true'
-        created_by = request.user.id
+        created_by = request.session.get('user_id')
         created_date = datetime.now()
         profile_photo = request.FILES.get('profile_photo')
         attachment_images = request.FILES.getlist('attachments[]')
@@ -560,7 +552,7 @@ def add_employee(request):
 
         return JsonResponse({'success': 'Employee added successfully'}, status=200)
 
-    return render(request, 'product_tracking/employee.html', {'employees': get_all_employees()})
+    return render(request, 'product_tracking/employee.html', {'employees': get_all_employees(), 'username': username})
 
 
 def get_all_employees():
@@ -570,7 +562,6 @@ def get_all_employees():
     return employees
 
 
-@login_required
 def employee_dropdown(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT id, name FROM employee")
@@ -580,7 +571,6 @@ def employee_dropdown(request):
     return JsonResponse({'employees': employee_list})
 
 
-@login_required
 def employee_list(request):
     employee_listing = []
     try:
@@ -595,8 +585,12 @@ def employee_list(request):
                 image_path = row[17]
                 image_url = None
                 if image_path:
-                    image_relative_path = os.path.relpath(image_path, settings.MEDIA_ROOT)
-                    image_url = os.path.join(settings.MEDIA_URL, image_relative_path).replace('\\', '/')
+                    try:
+                        image_relative_path = os.path.relpath(image_path, settings.MEDIA_ROOT)
+                        image_url = os.path.join(settings.MEDIA_URL, image_relative_path).replace('\\', '/')
+                    except ValueError as ve:
+                        logger.error("ValueError occurred while computing relative path: %s", str(ve))
+                        image_url = os.path.join(settings.MEDIA_URL, 'profilepic/default.jpg')
                 else:
                     image_url = os.path.join(settings.MEDIA_URL, 'profilepic/default.jpg')
 
@@ -645,7 +639,6 @@ def employee_list(request):
 
 
 @csrf_exempt
-@login_required
 def delete_attachment(request):
     if request.method == 'POST':
         attachment_id = request.POST.get('attachment_id')
@@ -663,8 +656,8 @@ def delete_attachment(request):
 
 
 @csrf_exempt
-@login_required
 def modify_employee(request):
+    print('Fetch the ID:', id)
     if request.method == 'POST':
         operation = request.POST.get('operation')
         emp_id = request.POST.get('id')
@@ -800,12 +793,12 @@ def modify_employee(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-@login_required
+# Equipment Module
 def add_equipment(request):
     if request.method == 'POST':
-        equipment_name = request.POST.get('equipment_name')
-        subcategory_name = request.POST.get('subcategory_name')
-        category_name = request.POST.get('category_name')
+        equipment_name = request.POST.get('equipment_name').upper()
+        subcategory_name = request.POST.get('subcategory_id').upper()
+        category_name = request.POST.get('category_name').upper()
         type = request.POST.get('type')
         dimension_h = request.POST.get('dimension_h')
         dimension_w = request.POST.get('dimension_w')
@@ -816,14 +809,13 @@ def add_equipment(request):
         country_origin = request.POST.get('country_origin')
         attachment = request.FILES.get('attachment')
         status = request.POST.get('status')
-        created_by = request.user.id
+        created_by = request.session.get('user_id')
         created_date = datetime.now()
 
-        # Save image to the desired location
         attachment_path = None
         if attachment:
             attachment_path = os.path.join(settings.MEDIA_ROOT, 'attachments', attachment.name)
-            os.makedirs(os.path.dirname(attachment_path), exist_ok=True)  # Ensure the directory exists
+            os.makedirs(os.path.dirname(attachment_path), exist_ok=True)
             with open(attachment_path, 'wb') as f:
                 for chunk in attachment.chunks():
                     f.write(chunk)
@@ -854,21 +846,20 @@ def add_equipment(request):
                         created_date
                     ]
                 )
-                return redirect(f'/equipment_list/?subcategory_id={subcategory_name}')
+                return JsonResponse({'success': True})
         except IntegrityError as e:
             error_message = str(e)
             if 'duplicate key value violates unique constraint "unique_equipment_name"' in error_message:
                 error_message = 'Equipment name already exists. Please choose a different name.'
             print("An unexpected error occurred:", error_message)
-            return render(request, 'product_tracking/index.html', {'error': error_message})
+            return JsonResponse({'success': False, 'message': error_message})
         except Exception as e:
             print("An unexpected error occurred:", e)
-            return render(request, 'product_tracking/index.html', {'error': 'An unexpected error occurred'})
+            return JsonResponse({'success': False, 'message': 'Equipment Already Exists!'})
     else:
         username = None
         if request.user.is_authenticated:
             username = request.user.username
-        # Fetch subcategories
         subcategories = []
         try:
             with connection.cursor() as cursor:
@@ -880,7 +871,6 @@ def add_equipment(request):
                       {'username': username, 'subcategories': subcategories})
 
 
-@login_required
 def insert_vendor(request):
     if request.method == 'POST':
         # Retrieve form data
@@ -889,8 +879,9 @@ def insert_vendor(request):
         unit_price = request.POST.get('unit_price')
         rental_price = request.POST.get('rental_price')
         reference_no = request.POST.get('reference_no')
-        attachment = request.FILES.get('attachment')
         unit = request.POST.get('unitValue')
+        attachment = request.FILES.get('attachment')
+
         # Extract dynamically generated input box values
         serial_numbers = []
         barcode_numbers = []
@@ -912,6 +903,7 @@ def insert_vendor(request):
         except Exception as e:
             print(f"An unexpected error occurred while fetching equipment ID: {e}")
 
+        # Handle file upload
         attachment_path = None
         if attachment:
             attachment_path = os.path.join(settings.MEDIA_ROOT, 'attachments', attachment.name)
@@ -919,10 +911,11 @@ def insert_vendor(request):
             with open(attachment_path, 'wb') as f:
                 for chunk in attachment.chunks():
                     f.write(chunk)
+
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "SELECT add_stock(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);",
+                    "SELECT add_stock(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NULL);",
                     [equipment_id, vendor_name, purchase_date, unit_price, rental_price, reference_no, attachment_path,
                      unit, serial_numbers, barcode_numbers]
                 )
@@ -939,7 +932,6 @@ def insert_vendor(request):
         return render(request, 'product_tracking/performance.html', {'username': username})
 
 
-@login_required
 def subcategory_dropdown(request):
     try:
         with connection.cursor() as cursor:
@@ -953,7 +945,6 @@ def subcategory_dropdown(request):
         return JsonResponse({'subcategories': []})
 
 
-@login_required
 def get_category_name(request):
     try:
         subcategory_id = request.GET.get('subcategory_id')
@@ -969,44 +960,55 @@ def get_category_name(request):
         return JsonResponse({'category_name': None})
 
 
-@login_required
 def subcategory_list(request, category_id):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM get_sub(%s)", [category_id])
+        cursor.execute("SELECT * FROM get_subcategory(%s)", [category_id])
         rows = cursor.fetchall()
 
     subcategory_listing = []
     for row in rows:
-        created_date = row[5].strftime('%d-%m-%Y')
+        created_date = row[6].strftime('%d-%m-%Y')
         subcategory_listing.append({
             'id': row[0],
             'category_name': row[1],
             'name': row[2],
-            'status': row[3],
-            'created_by': row[4],
+            'type': row[3],
+            'status': row[4],
+            'created_by': row[5],
             'created_date': created_date
         })
 
     context = {
-        'subcategories': json.dumps(subcategory_listing),  # Ensure JSON is correctly formatted
+        'subcategories': json.dumps(subcategory_listing),
         'category_id': category_id
     }
     return render(request, 'product_tracking/sub-performance1.html', context)
 
 
-@login_required
 def equipment_list(request):
+    print('fetch the data')
+    username = request.session.get('username')
     subcategory_id = request.GET.get('subcategory_id')
     if not subcategory_id:
         return JsonResponse({'error': 'Missing subcategory_id parameter'}, status=400)
+    print('Sub category ID:', subcategory_id)
+
+    try:
+        subcategory_id = int(subcategory_id)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid subcategory_id parameter'}, status=400)
 
     equipment_listing = []
     try:
+        print('inside the list of try block')
         with connection.cursor() as cursor:
+            print('inside the cursor object')
             cursor.execute("SELECT * FROM get_equipment_list(%s)", [subcategory_id])
             rows = cursor.fetchall()
 
+            print('fetch the data')
             for row in rows:
+                print('inside the list of rows')
                 created_date = row[15].strftime('%d-%m-%Y')
                 equipment_listing.append({
                     'id': row[0],
@@ -1026,6 +1028,7 @@ def equipment_list(request):
                     'created_by': row[14],
                     'created_date': created_date
                 })
+                print('fetch the data:', equipment_listing)
     except Exception as e:
         print("Error fetching equipment list:", e)
         return JsonResponse({'error': str(e)}, status=500)
@@ -1035,12 +1038,12 @@ def equipment_list(request):
 
     context = {
         'equipment_listing': json.dumps(equipment_listing),
-        'subcategory_id': subcategory_id
+        'subcategory_id': subcategory_id,
+        'username': username
     }
     return render(request, 'product_tracking/Equipment.html', context)
 
 
-@login_required
 def delete_equipment_list(request, id):
     if request.method == 'POST':
         try:
@@ -1053,16 +1056,15 @@ def delete_equipment_list(request, id):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-@login_required
 def update_equipment(request, id):
     if request.method == 'POST':
         print('Received POST request to update employee details')
 
         # Extract the form data
-        name = request.POST.get('employeeName')
-        sub_category_name = request.POST.get('subCategory')
-        category_type = request.POST.get('categoryType')
-        equipment_type = request.POST.get('equipmentType')
+        name = request.POST.get('employeeName').upper()
+        sub_category_name = request.POST.get('subCategory').upper()
+        category_type = request.POST.get('categoryType').upper()
+        equipment_type = request.POST.get('equipmentType').upper()
         dimension_height = request.POST.get('dimensionHeight')
         dimension_width = request.POST.get('dimensionWidth')
         dimension_length = request.POST.get('dimensionLength')
@@ -1094,7 +1096,6 @@ def update_equipment(request, id):
         return JsonResponse({'error': 'Invalid request method'})
 
 
-@login_required
 def edit_subcategory_dropdown(request):
     try:
         with connection.cursor() as cursor:
@@ -1108,7 +1109,6 @@ def edit_subcategory_dropdown(request):
         return JsonResponse({'sub': []})
 
 
-@login_required
 def edit_get_category_name(request):
     try:
         subcategory_id = request.GET.get('subcategory_id')
@@ -1219,15 +1219,11 @@ def get_dimension_list(request, equipment_id):
     return JsonResponse(data)
 
 
-@login_required()
-def Stock_list(request):
-    username = None
-    if request.user.is_authenticated:
-        username = request.user.username
+def stock_list(request):
+    username = request.session.get('username')
     return render(request, 'product_tracking/stocks.html', {'username': username})
 
 
-@login_required
 def fetch_equipment_list(request):
     if request.method == 'POST':
         category_id = request.POST.get('category_type', '')
@@ -1276,17 +1272,22 @@ def fetch_equipment_list(request):
         return JsonResponse({'error': 'Invalid request'})
 
 
-@login_required
 def stock_in(request, equipment_id):
+    print('inside the stock in')
     try:
+        print('Execute this try block')
         with connection.cursor() as cursor:
+            print('Execute the cursor object')
             cursor.execute("SELECT * FROM public.fetch_stock_details(%s)", [equipment_id])
             rows = cursor.fetchall()
+            print('Fetch the stock_details:', rows)
 
         if rows:
+            print('inside the rows')
             data = [{'id': row[0], 'serial_number': row[1], 'barcode_number': row[2], 'vendor_name': row[3],
                      'unit_price': row[4],
                      'rental_price': row[5], 'purchase_date': row[6], 'reference_no': row[7]} for row in rows]
+            print('insert the correct data:', data)
         else:
             return JsonResponse({'error': 'No data found for equipment ID ' + str(equipment_id)}, status=404)
     except Exception as e:
@@ -1296,7 +1297,6 @@ def stock_in(request, equipment_id):
     return JsonResponse(data, safe=False)
 
 
-@login_required
 def update_stock_in(request, row_id):
     if request.method == 'POST':
         try:
@@ -1326,7 +1326,6 @@ def update_stock_in(request, row_id):
         return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
 
-@login_required
 def fetch_stock_details_by_name(request):
     equipment_name = request.GET.get('equipment_name', '')
 
@@ -1440,61 +1439,81 @@ def get_eventvalue(request):
         return JsonResponse({'success': False, 'error_message': 'There was an error retrieving events.'}, status=500)
 
 
-@login_required
 def add_job(request):
+    username = request.session.get('username')
     print('inside the add job function')
     if request.method == 'POST':
         print('inside the add job post method')
         title = request.POST.get('title')
         client_name = request.POST.get('client_name')
+        contact_person_name = request.POST.get('contact_person_name')
+        contact_person_number = request.POST.get('contact_person_number')
         venue_address = request.POST.get('venue_address')
         status = request.POST.get('status')
         crew_types = request.POST.getlist('crew_type')
         crew_type = ','.join(crew_types)
         no_of_container = request.POST.get('no_of_container')
-        employee = request.POST.getlist('prep_sheet')
-        employee = ','.join(employee)
+        employees = request.POST.getlist('prep_sheet')
+        employee = ','.join(employees)
         setup_date = request.POST.get('setup_date')
         rehearsal_date = request.POST.get('rehearsal_date')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
+        total_days = request.POST.get('total_days')
+        amount_row = request.POST.get('amount_row')
+        discount = request.POST.get('discount')
+        discounted_amount = request.POST.get('discounted_amount')
+        total_amount = request.POST.get('total_amount')
 
-        category_ids = request.POST.getlist('category_name')
+        print('fetch the amount after discount:', discounted_amount)
+
+        # Fetching multiple values as lists
+        category_name = request.POST.getlist('category_name')
         equipment_ids = request.POST.getlist('equipment_name')
         quantities = request.POST.getlist('quantity')
         number_of_days = request.POST.getlist('number_of_days')
         amounts = request.POST.getlist('amount')
+        print('Fetch the category NAME:', category_name)
 
-        category_ids = [int(id) for id in category_ids]
+        # Convert strings to integers for category_ids and equipment_ids
         equipment_ids = [int(id) for id in equipment_ids]
 
-        print('Fetched data:', title, client_name, venue_address, status, crew_type, no_of_container, employee,
-              setup_date, rehearsal_date, start_date, end_date, category_ids, equipment_ids, quantities, number_of_days,
-              amounts)
+        # Assuming you have the user ID stored in the session for the created_by field
+        created_by = request.session.get('user_id')
+        created_date = datetime.now()
+
+        print('Fetch the data:', title, client_name, contact_person_name, contact_person_number, venue_address, status,
+              crew_type, no_of_container, employee,
+              setup_date, rehearsal_date, start_date,
+              end_date, total_days, amount_row, discount, discounted_amount, total_amount, category_name, equipment_ids,
+              quantities, number_of_days, amounts, created_by, created_date)
 
         try:
             with connection.cursor() as cursor:
+                # Print the query for debugging purposes
+                query = f"SELECT * FROM jobs_master_list('CREATE', NULL, NULL, '{title}', '{client_name}', '{venue_address}', '{status}', '{crew_type}', '{no_of_container}', '{employee}', '{setup_date}'::date, '{rehearsal_date}'::date, '{start_date}'::date, '{end_date}'::date, '{discounted_amount}', ARRAY{category_name}::integer[], ARRAY{equipment_ids}::integer[], ARRAY{quantities}::varchar[], ARRAY{number_of_days}::varchar[], ARRAY{amounts}::varchar[], {created_by}, '{created_date}');"
+                print("Executing query:", query)
+
                 cursor.callproc(
                     'jobs_master_list',
-                    ('CREATE', None, None, title, client_name, venue_address, status, crew_type, no_of_container,
-                     employee, setup_date, rehearsal_date,
-                     start_date, end_date, category_ids, equipment_ids, quantities, number_of_days, amounts)
+                    (
+                        'CREATE', None, None, title, client_name, contact_person_name, contact_person_number,
+                        venue_address,
+                        status, crew_type, no_of_container,
+                        employee, setup_date, rehearsal_date, start_date, end_date, total_days, amount_row, discount,
+                        discounted_amount, total_amount, category_name, equipment_ids,
+                        quantities, number_of_days, amounts, created_by, created_date)
                 )
+                # Fetch the returned data from the cursor
                 data = cursor.fetchall()
                 print('Returned data:', data)
-                return redirect('add_job')
+                return JsonResponse({'success': True})
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return render(request, 'product_tracking/index.html', {'error': 'An unexpected error occurred'})
-
-    username = None
-    if request.user.is_authenticated:
-        username = request.user.username
-
+            return JsonResponse({'success': False}, status=400)
     return render(request, 'product_tracking/jobs.html', {'username': username})
 
 
-@login_required
 def fetch_venue_addresses(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT DISTINCT venue_address FROM public.connects WHERE type = 'Venue'")
@@ -1503,27 +1522,89 @@ def fetch_venue_addresses(request):
     return JsonResponse({'venue_addresses': venue_addresses})
 
 
-@login_required
 def fetch_client_name(request):
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT DISTINCT name, company_name FROM public.connects"
+            "SELECT DISTINCT type, name, company_name FROM public.connects"
         )
-        client_names = {
-            'Names': [],
-            'CompanyNames': []
-        }
+        client_names = []
         for row in cursor.fetchall():
-            name, company_name = row
+            client_type, name, company_name = row
             if name:
-                client_names['Names'].append(name)
+                client_names.append({'type': client_type, 'name': name})
             if company_name:
-                client_names['CompanyNames'].append(company_name)
+                client_names.append({'type': client_type, 'name': company_name})
 
     return JsonResponse({'client_names': client_names})
 
 
-@login_required
+def save_new_row(request):
+    if request.method == 'POST':
+        job_reference_no = request.POST.get('jobReferenceNo')
+        title = request.POST.get('title')
+        client_name = request.POST.get('client_name')
+        venue_address = request.POST.get('venue_address')
+        status = request.POST.get('status')
+        crew_type = request.POST.get('crew_type')
+        no_of_container = request.POST.get('no_of_container')
+        employee = request.POST.get('prep_sheet')
+        setup_date = request.POST.get('setup_date')
+        rehearsal_date = request.POST.get('rehearsal_date')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        category_name = request.POST.get('category_name')
+        equipment_id = request.POST.get('equipment_name')
+        quantity = request.POST.get('quantity')
+        number_of_days = request.POST.get('number_of_days')
+        amount = request.POST.get('amount')
+
+        print('Received details:', job_reference_no, title, client_name, venue_address, status, crew_type,
+              no_of_container, employee, setup_date, rehearsal_date, start_date, end_date, category_name,
+              equipment_id, quantity, number_of_days, amount)
+
+        if not (job_reference_no and title and client_name and venue_address and status and setup_date and
+                rehearsal_date and start_date and end_date and category_name and equipment_id and quantity and
+                number_of_days and amount):
+            return JsonResponse({'success': False, 'error': 'Missing required fields'})
+
+        try:
+            print('Inside the try block of save new row')
+            with connection.cursor() as cursor:
+                print('Inside the cursor')
+
+                # Fetch equipment_name from equipment_list table using equipment_id
+                cursor.execute("""
+                    SELECT equipment_name FROM equipment_list WHERE id = %s;
+                """, [equipment_id])
+                equipment_name_row = cursor.fetchone()
+                if not equipment_name_row:
+                    return JsonResponse({'success': False, 'error': 'Equipment ID not found'})
+                equipment_name = equipment_name_row[0]
+
+                print('Fetched equipment_name:', equipment_name)
+
+                cursor.execute("""
+                    INSERT INTO public.jobs (job_reference_no, title, client_name, venue_address, status, crew_type,
+                                             no_of_container, employee, setup_date, rehearsal_date, show_start_date,
+                                             show_end_date, category_name, equipment_name, quantity, number_of_days,
+                                             amount)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id;
+                """,
+                               [job_reference_no, title, client_name, venue_address, status, crew_type, no_of_container,
+                                employee, setup_date, rehearsal_date, start_date, end_date, category_name,
+                                equipment_name, quantity, number_of_days, amount])
+                print('Cursor executed successfully', category_name, equipment_name)
+                new_job_id = cursor.fetchone()[0]
+                print('New job ID:', new_job_id)
+            return JsonResponse({'success': True, 'new_job_id': new_job_id})
+        except Exception as e:
+            print('Exception occurred:', str(e))
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
 def get_new_row_data(request):
     with connection.cursor() as cursor:
         # Execute the PostgreSQL function to fetch the equipment name
@@ -1541,31 +1622,81 @@ def get_new_row_data(request):
     return JsonResponse(data)
 
 
-@login_required
 def fetch_master_categories(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
-            cursor.execute("SELECT category_id, category_name FROM master_category")
+            cursor.execute("SELECT category_id, category_name FROM master_category ORDER BY category_name")
             master_categories = cursor.fetchall()
             master_categories_list = [{'category_id': row[0], 'category_name': row[1]} for row in master_categories]
             print(master_categories_list)
         return JsonResponse({'master_categories': master_categories_list})
 
 
-@login_required
 def fetch_equipment_names(request):
     if request.method == 'GET':
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id, equipment_name FROM equipment_list")
-            equipment_names = cursor.fetchall()
-            print('fetch equipment Names with id:', id)
-            equipment_names_list = [{'id': row[0], 'equipment_name': row[1]} for row in equipment_names]
-            print('fetch equipment Names with id:', id, equipment_names_list)
+        category_name = request.GET.get('category_name')
+        if category_name:
+            with connection.cursor() as cursor:
 
-        return JsonResponse({'equipment_names': equipment_names_list})
+                # Select distinct equipment names from equipment_list with corresponding stock in stock_details
+                cursor.execute("""
+                    SELECT DISTINCT ON (e.equipment_name) e.id, e.equipment_name
+                    FROM equipment_list e
+                    JOIN stock_details s ON e.id = s.equipment_id
+                    WHERE e.category_type = %s AND s.unit > 0
+                    ORDER BY e.equipment_name, s.id DESC
+                    """, [category_name])
+                equipment_names = cursor.fetchall()
+                equipment_names_list = [{'id': row[0], 'equipment_name': row[1]} for row in equipment_names]
+                return JsonResponse({'equipment_names': equipment_names_list})
+        else:
+            return JsonResponse({'error': 'Category name is required.'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method.'}, status=405)
 
 
-@login_required
+@csrf_exempt
+def check_equipment_in_temp(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        equipment_id = request.POST.get('equipment_name')  # assuming equipment_name is the equipment ID
+
+        logger.info(f"Received title: {title}, equipment_id: {equipment_id}")
+
+        if equipment_id and title:
+            # Fetch the equipment name based on the equipment ID
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT equipment_name
+                    FROM equipment_list
+                    WHERE id = %s
+                """, [equipment_id])
+                equipment_name_result = cursor.fetchone()
+
+                if equipment_name_result:
+                    equipment_name = equipment_name_result[0]
+
+                    # Check if the equipment name and title exist in the temp table
+                    cursor.execute("""
+                        SELECT 1
+                        FROM temp
+                        WHERE equipment_name = %s
+                          AND title = %s
+                    """, [equipment_name, title])
+                    exists = cursor.fetchone()
+
+                    if exists:
+                        return JsonResponse({'exists': True, 'equipment_name': equipment_name})
+                    else:
+                        return JsonResponse({'exists': False, 'equipment_name': equipment_name})
+                else:
+                    return JsonResponse({'error': 'Invalid equipment ID.'}, status=400)
+        else:
+            return JsonResponse({'error': 'Both equipment ID and job reference number are required.'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method.'}, status=405)
+
+
 def fetch_rental_price(request):
     equipment_id = request.GET.get('equipment_id')
     if equipment_id:
@@ -1580,11 +1711,12 @@ def fetch_rental_price(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-@login_required
 def insert_data(request):
     if request.method == 'POST':
         title = request.POST.get('title')
         client_name = request.POST.get('client_name')
+        contact_person_name = request.POST.get('contact_person_name')
+        contact_person_number = request.POST.get('contact_person_number')
         venue_address = request.POST.get('venue_address')
         status = request.POST.get('status')
         crew_type = request.POST.get('crew_type')
@@ -1594,6 +1726,11 @@ def insert_data(request):
         rehearsal_date = request.POST.get('rehearsal_date')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
+        total_days = request.POST.get('total_days')
+        amount_row = request.POST.get('amount_row')
+        discount = request.POST.get('discount')
+        discount_amount = request.POST.get('discount_amount')
+        total_amount = request.POST.get('total_amount')
         category_name = request.POST.get('category_name')
         equipment_name = request.POST.get('equipment_name')
         quantity = request.POST.get('quantity')
@@ -1607,10 +1744,13 @@ def insert_data(request):
         print('Processed employee_list:', employee_list)
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT insert_row_data(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                           [None, title, client_name, venue_address, status, crew_type, no_of_container, employee,
-                            setup_date, rehearsal_date, start_date,
-                            end_date, category_name, equipment_name, quantity, number_of_days, amount])
+            cursor.execute(
+                "SELECT insert_row_data(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                [None, title, client_name, contact_person_name, contact_person_number, venue_address, status, crew_type,
+                 no_of_container, employee,
+                 setup_date, rehearsal_date, start_date,
+                 end_date, total_days, amount_row, discount, discount_amount, total_amount, category_name,
+                 equipment_name, quantity, number_of_days, amount])
 
             print('insert data success:', employee)
 
@@ -1619,7 +1759,6 @@ def insert_data(request):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
-@login_required
 def get_employee_name(request):
     if request.method == 'GET':
         with connection.cursor() as cursor:
@@ -1631,7 +1770,6 @@ def get_employee_name(request):
         return JsonResponse({'employee_names': employee_names_list})
 
 
-@login_required
 def delete_row_from_temp_table(request):
     print('inside the delete row table')
     if request.method == 'POST':
@@ -1660,7 +1798,6 @@ def delete_row_from_temp_table(request):
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
-@login_required
 def jobs_list(request):
     print('Received Jobs List')
     jobs_listing = []
@@ -1669,10 +1806,9 @@ def jobs_list(request):
         print('inside the get job list')
         with connection.cursor() as cursor:
             print('inside the cursor connection object')
-            # cursor.execute("select * from public.jobs")
             cursor.callproc('jobs_master_list',
                             ['READ', None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                             None, None, None, None])
+                             None, None, None, None, None, None, None, None, None, None, None, None, None])
             jobs = cursor.fetchall()
             print('Fetch the jobs:', jobs)
 
@@ -1691,7 +1827,6 @@ def jobs_list(request):
     return JsonResponse(jobs_listing, safe=False)
 
 
-@login_required
 def get_status_counts(request):
     with connection.cursor() as cursor:
         # cursor.execute("SELECT COUNT(*) FROM public.jobs WHERE status = 'Perfoma';")
@@ -1725,7 +1860,6 @@ def get_status_counts(request):
     return JsonResponse(data)
 
 
-@login_required
 def update_jobs(request, id):
     if request.method == 'POST':
         print('Received POST request to update Jobs details')
@@ -1751,24 +1885,178 @@ def update_jobs(request, id):
         return JsonResponse({'error': 'Invalid request method'})
 
 
-@login_required
-def delete_jobs(request, id):
+@csrf_exempt
+def update_job_details(request, id):
+    print('Inside the Job Details with ID:', id)
     if request.method == 'POST':
-        with connection.cursor() as cursor:
-            cursor.callproc('jobs_master_list',
-                            ['DELETE', id, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                             None, None, None, None])
+        print('Fetch the POST method')
+        try:
+            print('Inside the try block')
+            data = json.loads(request.body)
+            category_name = data.get('category_name')
+            equipment_name = data.get('equipment_name')
+            quantity = data.get('quantity')
+            number_of_days = data.get('number_of_days')
+            amount = data.get('amount')
+            print('Fetch the DATA:', data, category_name, equipment_name, quantity, number_of_days, amount)
 
+            with connection.cursor() as cursor:
+                print('inside the cursor block')
+                cursor.execute("""
+                    UPDATE job_details
+                    SET category_name = %s,
+                        equipment_name = %s,
+                        quantity = %s,
+                        number_of_days = %s,
+                        amount = %s
+                    WHERE id = %s
+                """, [category_name, equipment_name, quantity, number_of_days, amount, id])
+                print('Updated the DATA:', id, category_name, equipment_name, quantity, number_of_days, amount)
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+def job_details_page(request):
+    username = request.session.get('username')
+    return render(request, 'product_tracking/job_details.html', {'username': username})
+
+
+def get_job_details(request):
+    job_id = request.GET.get('jobId')
+
+    if job_id:
+        try:
+            with connection.cursor() as cursor:
+                # Fetch job details from jobs table
+                cursor.execute("""
+                    SELECT j.id, j.title, j.client_name, j.contact_person_name,
+                      j.contact_person_number, j.venue_address, j.status,
+                        j.crew_type, j.no_of_container, j.employee,
+                        j.setup_date, j.rehearsal_date, j.show_start_date, j.show_end_date,
+                        j.total_days, j.amount_row, j.discount, j.amount_after_discount, j.total_amount
+                    FROM public.jobs j
+                    WHERE j.id = %s
+                """, [job_id])
+                job_row = cursor.fetchone()
+                print('Fetch the job Row:', job_row)
+
+                if job_row:
+                    job_data = {
+                        'id': job_row[0],
+                        'title': job_row[1],
+                        'client_name': job_row[2],
+                        'contact_person_name': job_row[3],
+                        'contact_person_number': job_row[4],
+                        'venue_address': job_row[5],
+                        'status': job_row[6],
+                        'crew_type': job_row[7],
+                        'no_of_container': job_row[8],
+                        'employee': job_row[9],
+                        'setup_date': job_row[10].strftime('%Y-%m-%d') if job_row[10] else None,
+                        'rehearsal_date': job_row[11].strftime('%Y-%m-%d') if job_row[11] else None,
+                        'show_start_date': job_row[12].strftime('%Y-%m-%d') if job_row[12] else None,
+                        'show_end_date': job_row[13].strftime('%Y-%m-%d') if job_row[13] else None,
+                        'total_days': job_row[14],
+                        'amount_row': job_row[15],
+                        'discount': job_row[16],
+                        'amount_after_discount': job_row[17],
+                        'total_amount': job_row[18],
+                    }
+                    print('Fetch the Data:', job_data)
+                    # Fetch job_details related to the job_id
+                    cursor.execute("""
+                        SELECT d.id, d.category_name, d.equipment_name, d.quantity, d.number_of_days, d.amount
+                        FROM public.job_details d
+                        WHERE d.job_id = %s
+                    """, [job_id])
+                    job_details_rows = cursor.fetchall()
+
+                    job_details_data = []
+                    for row in job_details_rows:
+                        job_detail_data = {
+                            'id': row[0],  # Include id field
+                            'category_name': row[1],
+                            'equipment_name': row[2],
+                            'quantity': row[3],
+                            'number_of_days': row[4],
+                            'amount': row[5]
+                        }
+                        print('Fetch the DATA:', job_detail_data)
+                        job_details_data.append(job_detail_data)
+
+                    return JsonResponse({'success': True, 'job_data': job_data, 'job_details': job_details_data})
+                else:
+                    return JsonResponse({'success': False, 'error': 'Job details not found'}, status=404)
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+
+def delete_job_row(request, job_id):
+    if request.method == 'POST':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM public.jobs WHERE id = %s;", [job_id])
+                return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+def delete_jobs(request, id):
+    print('Inside the delete jobs', id)
+    if request.method == 'POST':
+        print('Check the POST method')
+        with connection.cursor() as cursor:
+            print('Inside the cursor connection object')
+            cursor.callproc('jobs_master_list',
+                            [
+                                'DELETE',  # operation
+                                id,  # in_id
+                                None,  # in_job_reference_no
+                                None,  # in_title
+                                None,  # in_client_name
+                                None,  # in_contact_person_name
+                                None,  # in_contact_person_number
+                                None,  # in_venue_address
+                                None,  # in_status
+                                None,  # in_crew_type
+                                None,  # in_no_of_container
+                                None,  # in_employee
+                                None,  # in_setup_date
+                                None,  # in_rehearsal_date
+                                None,  # in_show_start_date
+                                None,  # in_show_end_date
+                                None,  # in_total_days
+                                None,  # in_amount_row
+                                None,  # in_discount
+                                None,  # in_amount_after_discount
+                                None,  # in_total_amount
+                                [],  # in_category_id
+                                [],  # in_equipment_id
+                                [],  # in_quantity
+                                [],  # in_number_of_days
+                                [],  # in_amount
+                                None,  # in_created_by
+                                None  # in_created_date
+                            ])
+            print('Check the data')
         return JsonResponse({'message': 'Job deleted successfully'}, status=200)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
-@login_required
 def add_connects(request):
     if request.method == 'POST':
         c_type = request.POST.get('type')
-        created_by = int(request.user.id)
+        created_by = int(request.session.get('user_id'))
         created_date = datetime.now()
         c_status = request.POST.get('status')
 
@@ -1787,6 +2075,8 @@ def add_connects(request):
             c_post_code = request.POST.get('post_code')
             c_company, c_name, c_email, c_mobile, c_address, c_venue_name, c_venue_address, c_client_name, c_client_address, c_client_mobile_no = (
                 None, None, None, None, None, None, None, None, None, None)
+
+            print('Fetch the details of company:', c_contact_person_no)
         elif c_type == 'Individual':
             c_name = request.POST.get('name')
             c_email = request.POST.get('email')
@@ -1857,7 +2147,6 @@ def add_connects(request):
     return render(request, 'product_tracking/contacts.html', {'username': username})
 
 
-@login_required
 def company_dropdown_view(request):
     if request.method == 'GET':
         # Call the stored procedure to fetch the connect records
@@ -1900,7 +2189,6 @@ def company_dropdown_view(request):
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
-@login_required()
 def connect_list(request):
     with connection.cursor() as cursor:
         cursor.callproc("connect_master",
@@ -1960,7 +2248,6 @@ def connect_list(request):
     return JsonResponse(item_listing, safe=False)
 
 
-@login_required()
 def update_connect(request, id):
     print('inside the update function')
     if request.method == 'POST':
@@ -1997,7 +2284,6 @@ def update_connect(request, id):
         return JsonResponse({'error': 'Invalid request method'})
 
 
-@login_required()
 def delete_connect(request, id):
     if request.method == 'POST':
         # Call the stored procedure to delete the connect record
@@ -2010,3 +2296,634 @@ def delete_connect(request, id):
     else:
         # Return an error response for invalid request method
         return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+def warehouse_master(request):
+    username = request.session.get('username')
+    return render(request, 'product_tracking/warehouse-master.html', {'username': username})
+
+
+def add_warehouse_master(request):
+    if request.method == 'POST':
+        company_name = request.POST.get('warehouseCompanyName')
+        phone_no = request.POST.get('warehousePhoneNo')
+        address = request.POST.get('warehouseName')
+
+        with connection.cursor() as cursor:
+            cursor.callproc('warehouse_master', ['CREATE', None, company_name, phone_no, address])
+            warehouse = cursor.fetchall()
+            print('Fetch warehouse:', warehouse)
+            return redirect('warehouse_master')
+
+    return render(request, 'product_tracking/warehouse-master.html', )
+
+
+def warehouse_master_list(request):
+    warehouse_master_listing = []
+    try:
+        with connection.cursor() as cursor:
+            cursor.callproc('warehouse_master',
+                            ['READ', None, None, None, None])
+            rows = cursor.fetchall()
+
+            for row in rows:
+                warehouse_master_listing.append({
+                    'id': row[0],
+                    'company_name': row[1],
+                    'phone_no': row[2],
+                    'address': row[3],
+                })
+    except Exception as e:
+        print("Error fetching Warehouse Master List:", e)
+    return JsonResponse(warehouse_master_listing, safe=False)
+
+
+def update_warehouse(request, id):
+    if request.method == 'POST':
+        print('Received POST request to update Jobs details')
+        company_name = request.POST.get('jobReferenceNo')
+        phone_no = request.POST.get('title')
+        address_name = request.POST.get('valuesShow')
+        print(id, company_name, phone_no, address_name)
+        try:
+            print('inside the try block')
+            with connection.cursor() as cursor:
+                print('inside the cursor')
+                cursor.callproc('warehouse_master',
+                                ['UPDATE', id, company_name, phone_no, address_name])
+                print('inside the callproc', id, address_name)
+                updated_jobs_id = cursor.fetchone()
+                print(updated_jobs_id)
+            return JsonResponse(
+                {'message': 'Jobs details updated successfully', 'updated_jobs_id': updated_jobs_id})
+        except Exception as e:
+            return JsonResponse({'error': 'Failed to update jobs details', 'exception': str(e)})
+    else:
+        return JsonResponse({'error': 'Invalid request method'})
+
+
+def delete_warehouse_master(request, id):
+    if request.method == 'POST':
+        with connection.cursor() as cursor:
+            cursor.callproc('warehouse_master', ['DELETE', id, None, None, None])
+        return JsonResponse({'message': 'Job deleted successfully'}, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+def company_name_dropdown(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT id, name FROM public.company_master")
+        companies = cursor.fetchall()
+
+    company_list = [{'id': row[0], 'name': row[1]} for row in companies]
+    return JsonResponse(company_list, safe=False)
+
+
+def company_master(request):
+    if request.method == 'POST':
+        name = request.POST.get('companyName')
+        gst_no = request.POST.get('companyGstNo')
+        email = request.POST.get('companyEmail')
+        company_logo = request.FILES.get('companyLogo')
+        address = request.POST.get('companyAddress')
+
+        company_logo_attachment = None
+        if company_logo:
+            company_logo_attachment = 'C:/Users/admin/PycharmProjects/Project/wms2/media/uploads/{}'.format(
+                company_logo.name)
+            with open(company_logo_attachment, 'wb') as f:
+                for chunk in company_logo.chunks():
+                    f.write(chunk)
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.callproc('company_master',
+                                ['CREATE', None, name, gst_no, email, company_logo_attachment, address])
+                company = cursor.fetchall()
+                print('Inserted values are:', company)
+                return redirect('warehouse_master')
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return render(request, 'product_tracking/index.html', {'error': 'An unexpected error occurred'})
+
+    # If the request method is GET, render the form
+    return render(request, 'product_tracking/warehouse-master.html', )
+
+
+def company_master_list(request):
+    company_master_listing = []
+    try:
+        with connection.cursor() as cursor:
+            cursor.callproc('company_master',
+                            ['READ', None, None, None, None, None, None])
+            rows = cursor.fetchall()
+
+            for row in rows:
+                company_master_listing.append({
+                    'id': row[0],
+                    'name': row[1],
+                    'gst_no': row[2],
+                    'email': row[3],
+                    'company_logo': row[4],
+                    'address': row[5],
+                })
+    except Exception as e:
+        print("Error fetching Company Master List:", e)
+    return JsonResponse(company_master_listing, safe=False)
+
+
+def update_company(request, id):
+    if request.method == 'POST':
+        name = request.POST.get('companyName')
+        CompanyGstNo = request.POST.get('jobMail')
+        companyEmailId = request.POST.get('companyEmailId')  # Ensure this matches the form input name
+        company_address = request.POST.get('companyAddress')
+
+        # if not CompanyGstNo:
+        #     return JsonResponse({'error': 'GST No cannot be empty'})
+        try:
+            with connection.cursor() as cursor:
+                cursor.callproc('company_master',
+                                ['UPDATE', id, name, CompanyGstNo, companyEmailId, None, company_address])
+                updated_company_id = cursor.fetchone()
+            return JsonResponse(
+                {'message': 'Company details updated successfully', 'updated_company_id': updated_company_id})
+        except Exception as e:
+            return JsonResponse({'error': 'Failed to update company details', 'exception': str(e)})
+    else:
+        return JsonResponse({'error': 'Invalid request method'})
+
+
+def delete_company_master(request, id):
+    if request.method == 'POST':
+        with connection.cursor() as cursor:
+            cursor.callproc('company_master', ['DELETE', id, None, None, None, None, None])
+        return JsonResponse({'message': 'Company list deleted successfully'}, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+def fetch_subcategory_name(request, subcategory_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, name FROM public.sub_category
+                WHERE id = %s
+            """, [subcategory_id])
+            row = cursor.fetchone()
+            print('Fetch the sub category ID:', row)
+
+        if row:
+            subcategory_id, subcategory_name = row
+            return JsonResponse({'subcategory_id': subcategory_id, 'subcategory_name': subcategory_name})
+        else:
+            return JsonResponse({'error': 'Subcategory not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def fetch_subcategory_type(request, subcategory_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT type FROM public.sub_category
+                WHERE id = %s
+            """, [subcategory_id])
+            row = cursor.fetchone()
+            print('Fetch the subcategory type ID:', row)
+
+        if row:
+            subcategory_type = row[0]  # Extract the type from the tuple
+            if isinstance(subcategory_type, str):  # Ensure it's a string
+                return JsonResponse({'subcategory_type': subcategory_type})
+            else:
+                return JsonResponse({'error': 'Invalid type format'}, status=500)
+        else:
+            return JsonResponse({'error': 'Subcategory not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def get_category_type(request):
+    if request.method == 'GET' and 'subcategory_id' in request.GET:
+        subcategory_id = request.GET.get('subcategory_id')
+        print('fetch the subcategory id of equipment name:', subcategory_id)
+
+        # Fetch category_id from sub_category based on subcategory_id
+        subcategory_query = """
+            SELECT category_id FROM sub_category
+            WHERE id = %s
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(subcategory_query, [subcategory_id])
+            subcategory_row = cursor.fetchone()
+            print('Fetch the sub category id:', subcategory_row)
+
+            if subcategory_row:
+                category_id = subcategory_row[0]
+                print('Fetch the category ID:', category_id)
+
+                # Fetch category_name from master_category based on category_id
+                master_category_query = """
+                    SELECT category_name FROM master_category
+                    WHERE category_id = %s
+                """
+                cursor.execute(master_category_query, [category_id])
+                master_category_row = cursor.fetchone()
+                print('Fetch the master category row:', master_category_row)
+
+                if master_category_row:
+                    category_name = master_category_row[0]
+                    print('Fetch the category name Details:', category_name)
+                    return JsonResponse({'category_name': category_name})
+                else:
+                    return JsonResponse({'error': 'Category name not found for the category ID.'}, status=404)
+            else:
+                return JsonResponse({'error': 'Subcategory ID not found.'}, status=404)
+    else:
+        return JsonResponse({'error': 'Invalid request method or parameters.'}, status=400)
+
+
+def fetch_stock_details(request):
+    print('Fetch the category ID:')
+    try:
+        category_id = request.GET.get('category_id')
+        print('Fetch the category ID:', category_id)
+
+        # Step 1: Retrieve subcategory IDs based on category_id
+        subcategory_ids = []
+        if category_id:
+            subcategory_query = """
+                SELECT id 
+                FROM sub_category 
+                WHERE category_id = %s
+            """
+            with connection.cursor() as cursor:
+                cursor.execute(subcategory_query, [category_id])
+                subcategory_ids = [row[0] for row in cursor.fetchall()]
+
+        # Step 2: Retrieve equipment IDs based on the retrieved subcategory IDs
+        equipment_ids = []
+        if subcategory_ids:
+            equipment_query = """
+                SELECT id 
+                FROM equipment_list 
+                WHERE sub_category_id IN %s
+            """
+            with connection.cursor() as cursor:
+                cursor.execute(equipment_query, [tuple(subcategory_ids)])
+                equipment_ids = [row[0] for row in cursor.fetchall()]
+
+        # Step 3: Fetch stock details based on the retrieved equipment IDs
+        stock_details_query = """
+            SELECT sd.id, el.equipment_name, sd.vender_name, sd.purchase_date, sd.unit_price,
+                   sd.rental_price, sd.reference_no, sd.attchment, sd.unit, sd.serial_no, sd.barcode_no,
+                   el.sub_category_id, sc.name as sub_category_name, el.category_type, el.type, 
+                   el.dimension_height, el.dimension_width, el.dimension_length, el.weight, el.volume,
+                   el.hsn_no, el.country_origin, el.status
+            FROM stock_details sd
+            INNER JOIN equipment_list el ON sd.equipment_id = el.id
+            INNER JOIN sub_category sc ON el.sub_category_id = sc.id
+            WHERE sd.equipment_id IN %s
+        """
+
+        with connection.cursor() as cursor:
+            if equipment_ids:
+                cursor.execute(stock_details_query, [tuple(equipment_ids)])
+            else:
+                cursor.execute(stock_details_query, [[]])  # Ensure empty list to avoid SQL error
+
+            rows = cursor.fetchall()
+            stock_details = []
+            for row in rows:
+                stock_details.append({
+                    'id': row[0],
+                    'equipment_name': row[1],
+                    'vender_name': row[2],
+                    'purchase_date': row[3].strftime('%Y-%m-%d') if row[3] else None,
+                    'unit_price': float(row[4]) if row[4] else 0.0,
+                    'rental_price': float(row[5]) if row[5] else 0.0,
+                    'reference_no': row[6],
+                    'attchment': row[7],
+                    'unit': row[8],
+                    'serial_no': row[9],
+                    'barcode_no': row[10],
+                    'sub_category_id': row[11],
+                    'sub_category_name': row[12],
+                    'category_type': row[13],
+                    'type': row[14],
+                    'dimension_height': row[15],
+                    'dimension_width': row[16],
+                    'dimension_length': row[17],
+                    'weight': row[18],
+                    'volume': row[19],
+                    'hsn_no': row[20],
+                    'country_origin': row[21],
+                    'status': row[22],
+                })
+            return JsonResponse(stock_details, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def fetch_client_contact_number(request):
+    print('Inside the fetch client contact number')
+    client_name = request.GET.get('client_name')
+    client_type = request.GET.get('client_type')
+    print('Fetch the client Name:', client_name)
+    print('Fetch the client Type:', client_type)
+
+    with connection.cursor() as cursor:
+        print('Check the connection cursor')
+        if client_type == 'Company':
+            cursor.execute("""
+                SELECT contact_person_name, contact_person_no
+                FROM connects
+                WHERE company_name = %s AND type = %s
+            """, [client_name, client_type])
+        else:
+            # Handle other cases if needed
+            return JsonResponse({'contact_person_name': '', 'contact_person_no': ''})
+
+        print('Check the cursor object is executed')
+        result = cursor.fetchone()
+        print('Fetch the contact number successfully', result)
+
+    contact_person_name = result[0] if result else ''
+    contact_person_no = result[1] if result else ''  # Add this line
+    return JsonResponse(
+        {'contact_person_name': contact_person_name, 'contact_person_no': contact_person_no})  # Update this line
+
+
+def print_jobs(request):
+    job_id = request.GET.get('jobId')
+
+    # Fetch job details from jobs table
+    job_query = '''
+        SELECT id, job_reference_no, title, client_name, contact_person_name, contact_person_number,
+               venue_address, status, crew_type, no_of_container, employee, setup_date,
+               rehearsal_date, show_start_date, show_end_date, total_days, amount_row, discount,
+               amount_after_discount, total_amount, created_by, created_date
+        FROM jobs
+        WHERE id = %s
+    '''
+
+    # Fetch company details directly
+    company_query = '''
+        SELECT name as company_name, gst_no as company_gst_no, email as company_email,
+               company_logo as company_logo_path, address as company_address
+        FROM company_master
+        LIMIT 1
+    '''
+
+    # Fetch job details from job_details table
+    job_details_query = '''
+        SELECT jd.id, 
+               jd.job_id, 
+               jd.category_name, 
+               jd.equipment_name, 
+               jd.quantity, 
+               jd.number_of_days, 
+               jd.amount,
+               el.type
+        FROM job_details jd
+        JOIN equipment_list el
+        ON jd.equipment_name = el.equipment_name
+        WHERE jd.job_id = %s
+    '''
+
+    with connection.cursor() as cursor:
+        cursor.execute(job_query, [job_id])
+        job = cursor.fetchone()
+
+        cursor.execute(company_query)
+        company = cursor.fetchone()
+
+        cursor.execute(job_details_query, [job_id])
+        job_details = cursor.fetchall()
+
+    # Prepare the response data
+    job_data = {
+        'id': job[0],
+        'job_reference_no': job[1],
+        'title': job[2],
+        'client_name': job[3],
+        'contact_person_name': job[4],
+        'contact_person_number': job[5],
+        'venue_address': job[6],
+        'status': job[7],
+        'crew_type': job[8],
+        'no_of_container': job[9],
+        'employee': job[10],
+        'setup_date': job[11].strftime('%d-%m-%Y') if job[11] else None,
+        'rehearsal_date': job[12].strftime('%d-%m-%Y') if job[12] else None,
+        'show_start_date': job[13].strftime('%d-%m-%Y') if job[13] else None,
+        'show_end_date': job[14].strftime('%d-%m-%Y') if job[14] else None,
+        'total_days': job[15],
+        'amount_row': job[16],
+        'discount': job[17],
+        'amount_after_discount': job[18],
+        'total_amount': job[19],
+        'created_by': job[20],
+        'created_date': job[21].strftime('%Y-%m-%d %H:%M:%S') if job[21] else None,
+        'company_name': company[0],
+        'company_gst_no': company[1],
+        'company_email': company[2],
+        'company_logo_path': default_storage.url(company[3]) if company[3] else None,
+        'company_address': company[4]
+    }
+
+    job_details_data = [
+        {
+            'id': detail[0],
+            'job_id': detail[1],
+            'category_name': detail[2],
+            'equipment_name': detail[3],
+            'quantity': detail[4],
+            'number_of_days': detail[5],
+            'amount': detail[6],
+            'type': detail[7]  # Include category_type in the response data
+        }
+        for detail in job_details
+    ]
+
+    response_data = {
+        'job': job_data,
+        'job_details': job_details_data
+    }
+
+    return JsonResponse(response_data)
+
+
+@csrf_exempt
+def check_stock_availability(request):
+    if request.method == 'POST':
+        equipment_id = request.POST.get('equipment_id')
+        requested_quantity = int(request.POST.get('quantity'))
+
+        print('Fetching the details:', equipment_id, requested_quantity)
+
+        with connection.cursor() as cursor:
+            # Count the number of barcodes where scan_flag is FALSE or NULL
+            cursor.execute("""
+                SELECT COALESCE(COUNT(barcode_no), 0)
+                FROM public.stock_details
+                WHERE equipment_id = %s AND (scan_flag IS NULL OR scan_flag = TRUE)
+            """, [equipment_id])
+            available_barcode_units = cursor.fetchone()[0]
+            print('Available barcode units with scan_flag TRUE or NULL:', available_barcode_units)
+
+            # Check if the requested quantity is available
+            if requested_quantity > available_barcode_units:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'The requested quantity is not available. The total available stock is: {available_barcode_units}'
+                })
+            else:
+                return JsonResponse({
+                    'status': 'success',
+                    'available_units': available_barcode_units
+                })
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method.'
+    })
+
+
+@csrf_exempt
+def update_all_job_details(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            formData = data.get('formData', {})
+            rows = data.get('rows', [])
+            jobId = data.get('jobId')
+
+            print('Fetch the form DATA:', formData, rows)
+
+            with connection.cursor() as cursor:
+                # Update the jobs table
+                cursor.execute("""
+                    UPDATE jobs
+                    SET title = %s,
+                        client_name = %s,
+                        contact_person_name = %s,
+                        contact_person_number = %s,
+                        venue_address = %s,
+                        status = %s,
+                        crew_type = %s,
+                        no_of_container = %s,
+                        employee = %s,
+                        setup_date = %s,
+                        rehearsal_date = %s,
+                        show_start_date = %s,
+                        show_end_date = %s,
+                        total_days = %s,
+                        amount_row = %s,
+                        discount = %s,
+                        amount_after_discount = %s,
+                        total_amount = %s
+                    WHERE id = %s
+                """, [
+                    formData.get('title'),
+                    formData.get('client_name'),
+                    formData.get('contact_person_name'),
+                    formData.get('contact_person_number'),
+                    formData.get('venue_address'),
+                    formData.get('status'),
+                    formData.get('crew_type'),
+                    formData.get('no_of_container'),
+                    formData.get('employee'),
+                    formData.get('setup_date'),
+                    formData.get('rehearsal_date'),
+                    formData.get('show_start_date'),
+                    formData.get('show_end_date'),
+                    formData.get('total_days'),
+                    formData.get('amount_row'),
+                    formData.get('discount'),
+                    formData.get('amount_after_discount'),
+                    formData.get('total_amount'),
+                    jobId
+                ])
+
+                # Update the job_details table
+                for row in rows:
+                    jobDetailId = row.get('jobDetailId')
+                    category_name = row.get('category_name')
+                    equipment_name = row.get('equipment_name')
+                    quantity = row.get('quantity')
+                    number_of_days = row.get('number_of_days')
+                    amount = row.get('amount')
+
+                    cursor.execute("""
+                        UPDATE job_details
+                        SET category_name = %s,
+                            equipment_name = %s,
+                            quantity = %s,
+                            number_of_days = %s,
+                            amount = %s
+                        WHERE id = %s
+                    """, [category_name, equipment_name, quantity, number_of_days, amount, jobDetailId])
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@csrf_exempt
+def save_job_details(request):
+    if request.method == 'POST':
+        job_id = request.POST.get('job_id')
+        category_name = request.POST.get('category_name')
+        equipment_id = request.POST.get('equipment_id')
+        quantity = request.POST.get('quantity')
+        number_of_days = request.POST.get('number_of_days')
+        amount = request.POST.get('amount')
+
+        try:
+            with connection.cursor() as cursor:
+                # Fetch the equipment_name based on equipment_id from equipment_list table
+                cursor.execute("SELECT equipment_name FROM equipment_list WHERE id = %s", [equipment_id])
+                equipment_name = cursor.fetchone()
+
+                if not equipment_name:
+                    return JsonResponse({'status': 'error', 'message': 'Equipment not found'}, status=404)
+
+                # Insert the new row into the job_details table
+                cursor.execute("""
+                    INSERT INTO job_details (job_id, category_name, equipment_name, quantity, number_of_days, amount)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (job_id, category_name, equipment_name[0], quantity, number_of_days, amount))
+
+            return JsonResponse({'status': 'success'}, status=200)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+def delete_job_detail(request):
+    if request.method == 'POST':
+        job_detail_id = request.POST.get('jobDetailId')
+
+        if not job_detail_id:
+            return JsonResponse({'status': 'error', 'message': 'Job detail ID is required'})
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    DELETE FROM job_details
+                    WHERE id = %s
+                """, [job_detail_id])
+
+            return JsonResponse({'status': 'success', 'message': 'Row deleted successfully'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+

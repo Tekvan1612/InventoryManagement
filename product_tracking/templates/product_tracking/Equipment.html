@@ -1,7 +1,7 @@
 {% include 'product_tracking/head.html' %}
 {% load static %}
 {% block content %}
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    {#    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">#}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <!-- Bootstrap JS -->
@@ -52,12 +52,50 @@
         .tooltip.bs-tooltip-auto[x-placement^="right"] .arrow::before {
             border-right-color: #5a5a5a;
         }
+
+        .equipment_name a {
+            color: #007bff; /* Blue color */
+            text-decoration: none; /* Remove default underline */
+            cursor: pointer; /* Change cursor to pointer on hover */
+        }
+
+        /* Hover effect for equipment_name link */
+        .equipment_name a:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+
+        #pagination-controls button {
+            margin-right: 10px;
+        }
     </style>
     <script>
         $(document).ready(function () {
+
             var fetchingData = false;
             let currentPage = 1;
             const pageSize = 10;
+            let totalItems = 0;
+
+
+            $('#searchSubCategory').on('input', function () {
+                var searchText = $(this).val().trim().toLowerCase();
+
+                $('#equipment-table-body tr').each(function () {
+                    var subCategoryName = $(this).find('td:eq(2)').text().trim().toLowerCase();
+                    var categoryName = $(this).find('td:eq(3)').text().trim().toLowerCase();
+
+                    if (subCategoryName.includes(searchText) || categoryName.includes(searchText)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if (searchText === '') {
+                    $('#equipment-table-body tr').show();
+                }
+            });
+
             $('[data-toggle="tooltip"]').tooltip();
             fetchEquipmentList();
 
@@ -83,12 +121,14 @@
                     const row = `<tr>
                 <td>${((currentPage - 1) * pageSize + index + 1)}</td>
                 <td style="display: none;">${equipment.id}</td>
-                <td class="equipment_name" data-id="${equipment.id}"><a href="#">${equipment.equipment_name}</a></td>
+                <td class="equipment_name" data-id="${equipment.id}">
+                    <a href="#" class="equipment-link">${equipment.equipment_name}</a>
+                </td>
                 <td>${equipment.type}</td>
                 <td>${equipment.sub_category_name}</td>
                 <td>${equipment.category_type}</td>
                <td><img src="/media/${equipment.attachment}" alt="Equipment Image" width="70" height="60"></td>
-                <td>${equipment.created_by}</td>
+                <td>${equipment.created_by.toUpperCase()}</td>
                 <td>${equipment.created_date}</td>
                 <td>
                     <button class="btn btn-sm btn-primary edit-btn me-2" data-toggle="tooltip" title="Edit Equipment" ><i class="fa fa-pencil"></i></button>
@@ -162,6 +202,7 @@
                 // Bind change event listener to the dropdown
                 $('#editSubCategoryName').on('change', function () {
                     var selectedSubcategory = $(this).val(); // Get the selected subcategory id
+                    console.log('Fetch the category Name:', selectedSubcategory)
                     // Make an AJAX call to fetch category name based on the selected subcategory
                     $.ajax({
                         url: '/edit_get_category_name/',
@@ -196,6 +237,7 @@
                         $.each(data.sub, function (index, subcategories) {
                             if (subcategories.name !== subCategory) {
                                 dropdown.append($('<option></option>').attr('value', subcategories.id).text(subcategories.name));
+
                             }
                         });
                     },
@@ -255,6 +297,7 @@
                         console.error('Error updating category:', error);
                     }
                 });
+
             }
 
             $(document).on('click', '.delete-btn', function () {
@@ -478,23 +521,25 @@
             });
 
             $(document).on('click', '#saveChanges', function () {
-                var equipmentId = $('#equipmentIdInput').val();
+                var formData = new FormData($('#vendorForm')[0]);
 
                 $.ajax({
-                    url: '/insert_vendor/' + equipmentId,
+                    url: '/insert_vendor/', // Make sure the URL matches your view’s URL pattern
                     method: 'POST',
-                    data: {
-                        csrfmiddlewaretoken: '{{ csrf_token }}',
-                        equipmentId: equipmentId
-                    },
+                    data: formData,
+                    contentType: false,
+                    processData: false,
                     success: function (response) {
-                        console.log("Equipment ID inserted into database successfully");
+                        console.log("Data inserted into database successfully");
+                        // Optionally, handle successful response
                     },
                     error: function (xhr, status, error) {
-                        console.error("Error inserting equipment ID into database:", error);
+                        console.error("Error inserting data into database:", error);
+                        // Optionally, handle error response
                     }
                 });
             });
+
 
             $(document).on('click', '.equipment_name a', function (e) {
                 e.preventDefault(); // Prevent default link behavior
@@ -617,49 +662,155 @@
             });
 
 
-            function populateSubcategoryDropdown() {
+            function populateSubcategoryInput(selectedSubcategoryId) {
                 $.ajax({
-                    url: '/subcategory_dropdown/',
+                    url: '/fetch_subcategory_name/' + selectedSubcategoryId + '/',
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
-                        var dropdown = $('#exampleFormControlInput3');
-                        dropdown.empty();
-                        dropdown.append($('<option></option>').attr('value', '').text('Select Sub Category'));
-                        $.each(data.subcategories, function (index, subcategory) {
-                            dropdown.append($('<option></option>').attr('value', subcategory.id).text(subcategory.name));
-                        });
+                        console.log('FETCH THE SUB CATEGORY NAME:', selectedSubcategoryId)
+                        if (data.subcategory_name) {
+                            $('#exampleFormControlInput3').val(data.subcategory_name); // Display name in input field
+                            $('#exampleFormControlInput3').attr('data-subcategory-id', data.subcategory_id); // Store ID as data attribute
+                            $('#hiddenSubcategoryId').val(data.subcategory_id); // Store ID in hidden input field
+                            console.log('Fetched subcategory name:', data.subcategory_name);
+                            console.log('Fetched subcategory ID:', data.subcategory_id);
+                            populateCategoryType(selectedSubcategoryId); // Fetch and populate category type
+                            populateSubcategoryType(selectedSubcategoryId); // Fetch and populate subcategory type
+                            populateSubcategoryTypeEdit(selectedSubcategoryId);
+                        } else if (data.error) {
+                            alert(data.error);
+                        }
                     },
                     error: function (xhr, status, error) {
-                        console.error('Error fetching subcategories:', error);
+                        console.error('Error fetching subcategory name:', error);
                     }
                 });
             }
 
-            // Call the function when the offcanvas is shown
-            $('#offcanvasExample').on('shown.bs.offcanvas', function () {
-                populateSubcategoryDropdown();
+            // Call the function when the page loads
+            $(document).ready(function () {
+                var urlParams = new URLSearchParams(window.location.search);
+                var subcategoryId = urlParams.get('subcategory_id');
+
+                if (subcategoryId) {
+                    populateSubcategoryInput(subcategoryId);
+                }
             });
 
+            // Function to fetch and populate category_type based on subcategory_id
+            function populateCategoryType(subcategoryId) {
+                $.ajax({
+                    url: '/get_category_type/',
+                    type: 'GET',
+                    data: {subcategory_id: subcategoryId},
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.category_name) {
+                            $('#exampleFormControlInput4').val(data.category_name);
+                        } else if (data.error) {
+                            alert(data.error);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching category type:', error);
+                    }
+                });
+            }
+
+            // Function to fetch and populate type based on subcategory_id
+            function populateSubcategoryType(subcategoryId) {
+                $.ajax({
+                    url: '/fetch_subcategory_type/' + subcategoryId + '/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (typeof data.subcategory_type === 'string') {
+                            console.log('Fetch the sub category Type:', subcategoryId, data.subcategory_type);
+
+                            // Split the comma-separated values and create options
+                            var types = data.subcategory_type.split(',').map(function (type) {
+                                return type.trim(); // Trim whitespace from each type
+                            });
+
+                            console.log('Types:', types);
+
+                            var $select = $('#exampleFormControlInput5');
+                            $select.empty(); // Clear existing options
+
+                            types.forEach(function (type) {
+                                if (type) { // Ensure no empty options are added
+                                    $select.append('<option value="' + type + '">' + type + '</option>');
+                                }
+                            });
+
+                            console.log('Fetched subcategory Type:', types);
+                        } else {
+                            console.error('Expected a string for subcategory_type, but got:', typeof data.subcategory_type);
+                            console.error('Data received:', data);
+                            alert('Invalid data format received.');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching subcategory type:', error);
+                    }
+                });
+            }
+
+            // Function to fetch and populate type based on subcategory_id
+            function populateSubcategoryTypeEdit(subcategoryId) {
+                $.ajax({
+                    url: '/fetch_subcategory_type/' + subcategoryId + '/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (typeof data.subcategory_type === 'string') {
+                            console.log('Fetch the sub category Type:', subcategoryId, data.subcategory_type);
+
+                            // Split the comma-separated values and create options
+                            var types = data.subcategory_type.split(',').map(function (type) {
+                                return type.trim(); // Trim whitespace from each type
+                            });
+
+                            console.log('Types:', types);
+
+                            var $select = $('#editEquipmentType');
+                            $select.empty(); // Clear existing options
+
+                            types.forEach(function (type) {
+                                if (type) { // Ensure no empty options are added
+                                    $select.append('<option value="' + type + '">' + type + '</option>');
+                                }
+                            });
+
+                            console.log('Fetched subcategory Type:', types);
+                        } else {
+                            console.error('Expected a string for subcategory_type, but got:', typeof data.subcategory_type);
+                            console.error('Data received:', data);
+                            alert('Invalid data format received.');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching subcategory type:', error);
+                    }
+                });
+            }
+
+
+            // Retrieve subcategory_id from URL parameters or any other source
+            var urlParams = new URLSearchParams(window.location.search);
+            var subcategoryId = urlParams.get('subcategory_id'); // Replace with actual retrieval method
+
+            // If subcategoryId is available, populate category_type
+            if (subcategoryId) {
+                populateCategoryType(subcategoryId);
+            }
+
+            // Event listener for #exampleFormControlInput3 change event
             $('#exampleFormControlInput3').on('change', function () {
                 var selectedSubcategory = $(this).val();
                 if (selectedSubcategory) {
-                    $.ajax({
-                        url: '/get_category_name/',
-                        type: 'GET',
-                        data: {subcategory_id: selectedSubcategory},
-                        dataType: 'json',
-                        success: function (data) {
-                            if (data.category_name) {
-                                $('#exampleFormControlInput4').val(data.category_name);
-                            } else if (data.error) {
-                                alert(data.error);
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.error('Error fetching category name:', error);
-                        }
-                    });
+                    populateCategoryType(selectedSubcategory);
                 } else {
                     $('#exampleFormControlInput4').val('');
                 }
@@ -683,8 +834,31 @@
                 }
             }
 
-        });
+            $('#addEquipmentForm').on('submit', function (event) {
+                event.preventDefault();
 
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            alert('Equipment added successfully!');
+                            location.reload();  // Reload the page to reflect changes, or update the table dynamically.
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function (response) {
+                        alert('An unexpected error occurred. Please try again.');
+                    }
+                });
+            });
+        });
     </script>
 
 
@@ -771,6 +945,10 @@
                         <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title mb-0">Equipment List </h4>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="searchSubCategory"
+                                           placeholder="Search....">
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive table-card">
@@ -797,10 +975,13 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
-                                <div style="padding-bottom: 10px;margin: 5px;">
-                                    <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>
-                                    <button id="next-page-btn" class="btn btn-primary">Next</button>
+                                <div id="pagination-controls" style="padding-bottom: 10px;margin: 5px;">
+                                    <!-- Pagination buttons will be appended here -->
                                 </div>
+                                {#                                <div style="padding-bottom: 10px;margin: 5px;">#}
+                                {#                                    <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>#}
+                                {#                                    <button id="next-page-btn" class="btn btn-primary">Next</button>#}
+                                {#                                </div>#}
                             </div>
                         </div>
                     </div>
@@ -851,15 +1032,22 @@
                                     <label for="editCategoryType" class="form-label">Category Name</label>
                                     <input type="text" class="form-control" id="editCategoryType" name="categoryType">
                                 </div>
+                                {#                                <div class="col-xl-3 mb-3">#}
+                                {#                                    <label for="editEquipmentType" class="form-label">Equipment Type<span#}
+                                {#                                            class="text-danger">*</span></label>#}
+                                {#                                    <select class="default-select form-control" id="editEquipmentType"#}
+                                {#                                            name="equipmentType">#}
+                                {#                                        <option value="Moniter">Moniter</option>#}
+                                {#                                        <option value="Slit Speaker">Slit Speaker</option>#}
+                                {#                                        <option value="SubWoofer">SubWoofer</option>#}
+                                {#                                        <option value="Top">Top</option>#}
+                                {#                                    </select>#}
+                                {#                                </div>#}
                                 <div class="col-xl-3 mb-3">
                                     <label for="editEquipmentType" class="form-label">Equipment Type<span
                                             class="text-danger">*</span></label>
-                                    <select class="default-select form-control" id="editEquipmentType"
-                                            name="equipmentType">
-                                        <option value="Moniter">Moniter</option>
-                                        <option value="Slit Speaker">Slit Speaker</option>
-                                        <option value="SubWoofer">SubWoofer</option>
-                                        <option value="Top">Top</option>
+                                    <select class="form-control" id="editEquipmentType" name="equipmentType" required>
+                                        <!-- Options will be populated dynamically -->
                                     </select>
                                 </div>
 
@@ -886,7 +1074,8 @@
                 </button>
             </div>
             <div class="offcanvas-body">
-                <form action="{% url 'add_equipment' %}" method="POST" enctype="multipart/form-data">
+                <form action="{% url 'add_equipment' %}" method="POST" enctype="multipart/form-data"
+                      id="addEquipmentForm">
                     {% csrf_token %}
                     <div class="row">
                         <div>
@@ -902,13 +1091,11 @@
                         <div class="col-xl-3 mb-3">
                             <label for="exampleFormControlInput3" class="form-label">Sub Category Name<span
                                     class="text-danger">*</span></label>
-                            <select class="form-control" name="subcategory_name" id="exampleFormControlInput3" required>
-                                <option value="">Select Sub Category</option>
-                                {% for subcategory in subcategories %}
-                                    <option value="{{ subcategory.id }}">{{ subcategory.name }}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="text" class="form-control" name="subcategory_name"
+                                   id="exampleFormControlInput3" required>
+                            <input type="hidden" name="subcategory_id" id="hiddenSubcategoryId">
                         </div>
+
                         <div class="col-xl-3 mb-3">
                             <label for="exampleFormControlInput4" class="form-label">Category Type<span
                                     class="text-danger">*</span></label>
@@ -916,47 +1103,45 @@
                                    placeholder="" required>
                         </div>
                         <div class="col-xl-3 mb-3">
-                            <label for="exampleFormControlInput4" class="form-label">Type<span
+                            <label for="exampleFormControlInput5" class="form-label">Type<span
                                     class="text-danger">*</span></label>
-                            <select class="default-select form-control" name="type" required>
-                                <option value="Moniter">Moniter</option>
-                                <option value="Sleet Speaker">Sleet Speaker</option>
-                                <option value="SubWoofer">SubWoofer</option>
-                                <option value="Top">Top</option>
+                            <select class="form-control" id="exampleFormControlInput5" name="type" required>
+                                <!-- Options will be populated dynamically -->
                             </select>
                         </div>
+
                         <div>
                             <h3>Physical Measurements</h3>
                             <hr/>
                         </div>
                         <div class="col-xl-3 mb-3">
                             <label class="form-label">Dimension(H)</label>
-                            <input type="text" class="form-control dimension" id="dimension_h" name="dimension_h"
+                            <input type="number" class="form-control dimension" id="dimension_h" name="dimension_h"
                                    placeholder="">
                         </div>
                         <div class="col-xl-3 mb-3">
                             <label class="form-label">Dimension(W)</label>
-                            <input type="text" class="form-control dimension" id="dimension_w" name="dimension_w"
+                            <input type="number" class="form-control dimension" id="dimension_w" name="dimension_w"
                                    placeholder="">
                         </div>
                         <div class="col-xl-3 mb-3">
                             <label class="form-label">Dimension(L)</label>
-                            <input type="text" class="form-control dimension" id="dimension_l" name="dimension_l"
+                            <input type="number" class="form-control dimension" id="dimension_l" name="dimension_l"
                                    placeholder="">
                         </div>
                         <div class="col-xl-3 mb-3">
                             <label class="form-label">Volume</label>
-                            <input type="text" class="form-control" id="volume" name="volume" placeholder="" readonly>
+                            <input type="number" class="form-control" id="volume" name="volume" placeholder="" readonly>
                         </div>
                         <div class="col-xl-3 mb-3">
                             <label for="exampleFormControlInput88" class="form-label">Weight</label>
-                            <input type="text" class="form-control" id="exampleFormControlInput88" name="weight"
+                            <input type="number" class="form-control" id="exampleFormControlInput88" name="weight"
                                    placeholder="">
                         </div>
                         <div class="col-xl-3 mb-3">
                             <label for="exampleFormControlInput88" class="form-label">HSN NO<span
                                     class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="exampleFormControlInput88" name="hsn_no"
+                            <input type="number" class="form-control" id="exampleFormControlInput88" name="hsn_no"
                                    required>
                         </div>
                         <div class="col-xl-3 mb-3">
@@ -977,14 +1162,13 @@
                         </div>
                     </div>
                     <div>
-                        <button class="btn btn-primary me-1">Submit</button>
+                        <button class="btn btn-primary me-1" type="submit">Submit</button>
                         <button class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Equipment Details Modal -->
         <!-- Equipment Details Modal -->
         <div class="modal fade" id="equipmentDetailsModal" tabindex="-1" role="dialog"
              aria-labelledby="equipmentDetailsModalLabel" aria-hidden="true">
@@ -1031,7 +1215,7 @@
                     <h5 class="modal-title" id="editVendorModalLabel">Add Vendor Details</h5>
                 </div>
                 <div class="modal-body">
-                    <form action="{% url 'insert_vendor' %}" method="POST" enctype="multipart/form-data">
+                    <form id="vendorForm" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row">
                             <input type="hidden" id="equipmentIdInput" name="equipmentId">
@@ -1048,17 +1232,19 @@
                             </div>
                             <div class="col-xl-4 mb-3">
                                 <label for="unit_price" class="form-label">Unit Price<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="unit_price" name="unit_price" required>
+                                <input type="number" class="form-control" id="unit_price" name="unit_price" required>
                             </div>
                             <div class="col-xl-4 mb-3">
                                 <label for="rental_price" class="form-label">Rental Price<span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="rental_price" name="rental_price" required>
+                                <input type="number" class="form-control" id="rental_price" name="rental_price"
+                                       required>
                             </div>
                             <div class="col-xl-4 mb-3">
                                 <label for="reference_no" class="form-label">Reference No<span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="reference_no" name="reference_no" required>
+                                <input type="number" class="form-control" id="reference_no" name="reference_no"
+                                       required>
                             </div>
                             <div class="col-xl-4 mb-3">
                                 <label for="attachment" class="form-label">Attachment</label>
