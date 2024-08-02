@@ -125,6 +125,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Enable Gzip and Cache
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_IGNORE = ['*.js.map']
 # Media settings
 
 MEDIA_URL = '/media/'
