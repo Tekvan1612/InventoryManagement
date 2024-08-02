@@ -1,0 +1,665 @@
+{% include 'product_tracking/head.html' %}
+{% load static %}
+{% block content %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-container {
+            border: 1px solid #ddd;
+            padding: 30px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin: 10px;
+        }
+
+        .form-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .table-container {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin: 10px;
+        }
+
+
+    </style>
+    <script>
+
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalItems1 = 0;
+
+        // Company Section Script Code Start
+        function fetchAndPopulateCompanyData() {
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            $.ajax({
+                url: '/company_master_list/',
+                type: 'GET',
+                success: function (data) {
+                    totalItems = data.length;
+                    const currentPageData = data.slice(startIndex, endIndex);
+                    $('#company-table-body').empty();
+                    $.each(currentPageData, function (index, company) {
+                         var logoUrl = '/uploads/' + company.company_logo;
+                        var row = '<tr>' +
+                            '<td>' + (index + 1) + '</td>' +
+                            '<td style="display: none;">' + company.id + '</td>' +
+                            '<td><img src="/Project/wms2/media/uploads//uploads/${equipment.attachment}' + company.company_logo + '" alt="Equipment Image" width="30" height="30"></td>' +
+                            '<td>' + company.name + '</td>' +
+                            '<td>' + company.gst_no + '</td>' +
+                            '<td>' + company.email + '</td>' +
+                            '<td>' + company.address + '</td>' +
+                            '<td>' +
+                            '<button class="btn btn-sm btn-primary edit-company-btn"><i class="fa fa-pencil"></i>Edit</button>' +
+                            '<button class="btn btn-sm btn-danger delete-company-btn"><i class="fa fa-trash"></i>Remove</button>' +
+                            '</td>' +
+                            '</tr>';
+                        $('#company-table-body').append(row);
+                    });
+                    updatePaginationCountCompany(data.length);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching company data:', error);
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            fetchAndPopulateCompanyData();
+            fetchAndPopulateWarehouseData();
+        });
+
+        $(document).on('click', '.edit-company-btn', function () {
+            var row = $(this).closest('tr');
+            var editCompanyId = row.find('td:eq(1)').text().trim();
+            var companyName = row.find('td:eq(3)').text().trim();
+            var jobMail = row.find('td:eq(4)').text().trim();
+            var companyEmailId = row.find('td:eq(5)').text().trim();
+            var companyAddress = row.find('td:eq(6)').text().trim();
+
+            $('#editCompanyId').val(editCompanyId);
+            $('#editCompanyCompanyName').val(companyName);
+            $('#editCompanyGstNo').val(jobMail);
+            $('#editCompanyEmail').val(companyEmailId);
+            $('#editCompanyAddress').val(companyAddress);
+
+            $('#editCompanyModal').modal('show');
+        });
+
+        $(document).on('click', '#saveChangesCompanyBtn', function () {
+            updateCompanyInDatabase();
+        });
+
+        function updateCompanyInDatabase() {
+            var editCompanyId = $('#editCompanyId').val();
+            var companyName = $('#editCompanyCompanyName').val().trim();
+            var jobMail = $('#editCompanyGstNo').val().trim();
+            var companyEmailId = $('#editCompanyEmail').val().trim();
+            var companyAddress = $('#editCompanyAddress').val().trim();
+
+            var formData = new FormData();
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            formData.append('companyId', editCompanyId);
+            formData.append('companyName', companyName);
+            formData.append('jobMail', jobMail);
+            formData.append('companyEmailId', companyEmailId);
+            formData.append('companyAddress', companyAddress);
+
+            $.ajax({
+                url: '/update_company/' + editCompanyId + '/',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    fetchAndPopulateCompanyData();
+                    $('#editCompanyModal').modal('hide');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error updating company:', error);
+                }
+            });
+        }
+
+        function updatePaginationCountCompany(totalItems) {
+            const totalPages = Math.ceil(totalItems / pageSize);
+            $('#pagination-count-company').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
+
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+        }
+
+        $(document).on('click', '.delete-company-btn', function () {
+            var row = $(this).closest('tr');
+            var companyId = row.find('td:eq(1)').text().trim();
+
+            if (confirm('Are you sure you want to delete this Company?')) {
+                var csrftoken = getCookie('csrftoken');
+
+                $.ajax({
+                    url: '/delete_company_master/' + companyId + '/',
+                    type: 'POST',
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                    },
+                    success: function (response) {
+                        fetchAndPopulateCompanyData();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error deleting company:', error);
+                    }
+                });
+            }
+        });
+
+        $(document).ready(function () {
+            fetchAndPopulateCompanyData();
+
+            $('#prev-page-btn').click(function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchAndPopulateCompanyData();
+                }
+            });
+
+            $('#next-page-btn').click(function () {
+                const totalPages = Math.ceil(totalItems / pageSize);
+
+                if (currentPage < totalPages) {
+                    currentPage++;
+
+                    fetchAndPopulateCompanyData();
+                }
+            });
+        });
+        // Company Section Script Code End
+
+
+        // Warehouse Section Script Code Start
+        $(document).ready(function () {
+            $.ajax({
+                url: '/company_name_dropdown/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var dropdown = $('#warehouseCompanyName');
+                    dropdown.empty();
+                    dropdown.append('<option value="">Select Company Name</option>');
+                    $.each(data, function (key, value) {
+                        dropdown.append('<option value="' + value.name + '">' + value.name + '</option>');
+                    });
+                },
+                error: function (error) {
+                    console.error('Error fetching company data:', error);
+                }
+            });
+        });
+
+        function fetchAndPopulateWarehouseData() {
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            $.ajax({
+                url: '/warehouse_master_list/',
+                type: 'GET',
+                success: function (data) {
+                    totalItems = data.length;
+                    const currentPageData = data.slice(startIndex, endIndex);
+                    $('#warehouse-table-body').empty();
+                    $.each(currentPageData, function (index, warehouse) {
+                        var row = '<tr>' +
+                            '<td>' + (index + 1) + '</td>' +
+                            '<td style="display: none;">' + warehouse.id + '</td>' +
+                            '<td>' + warehouse.company_name + '</a></td>' +
+                            '<td>' + warehouse.phone_no + '</td>' +
+                            '<td>' + warehouse.address + '</td>' +
+                            '<td>' +
+                            '<button class="btn btn-sm btn-primary edit-warehouse-btn"><i class="fa fa-pencil"></i>Edit</button>' +
+                            '<button class="btn btn-sm btn-danger delete-warehouse-btn"><i class="fa fa-trash"></i>Remove</button>' +
+                            '</td>' +
+                            '</tr>';
+                        $('#warehouse-table-body').append(row);
+                    });
+                    updatePaginationCount(data.length);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching equipment data:', error);
+                }
+            });
+        }
+
+        $(document).on('click', '.edit-warehouse-btn', function () {
+            var row = $(this).closest('tr');
+            var jobId = row.find('td:eq(1)').text().trim();
+            var jobReferenceNo = row.find('td:eq(2)').text().trim();
+            var title = row.find('td:eq(3)').text().trim();
+            var valuesShow = row.find('td:eq(4)').text().trim();
+
+            $('#editJobsId').val(jobId);
+            $('#editJobsReferenceNo').val(jobReferenceNo);
+            $('#editJobsTitle').val(title);
+            $('#editJobsAddress').val(valuesShow);
+
+            $('#editJobsModal').modal('show');
+        });
+
+        $(document).on('click', '#saveChangesWarehouseBtn', function () {
+            updateWarehouseInDatabase();
+        });
+
+        function updateWarehouseInDatabase() {
+            var jobId = $('#editJobsId').val();
+            var jobReferenceNo = $('#editJobsReferenceNo').val().trim();
+            var title = $('#editJobsTitle').val().trim();
+            var valuesShow = $('#editJobsAddress').val().trim();
+
+            var formData = new FormData();
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            formData.append('jobId', jobId);
+            formData.append('jobReferenceNo', jobReferenceNo);
+            formData.append('title', title);
+            formData.append('valuesShow', valuesShow);
+
+            $.ajax({
+                url: '/update_warehouse/' + jobId + '/',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    console.log(response);
+                    fetchAndPopulateWarehouseData();
+
+                    $('#editJobsModal').modal('hide');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error updating category:', error);
+                }
+            });
+        }
+
+        function updatePaginationCount(totalItems) {
+            const totalPages = Math.ceil(totalItems / pageSize);
+            $('#pagination-count').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
+
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+        }
+
+        $(document).on('click', '.delete-warehouse-btn', function () {
+            var row = $(this).closest('tr');
+            var warehouseId = row.find('td:eq(1)').text().trim();
+
+            console.log('Warehouse ID:', warehouseId);
+            if (confirm('Are you sure you want to delete this Warehouse?')) {
+                var csrftoken = getCookie('csrftoken');
+
+                $.ajax({
+                    url: '/delete_warehouse_master/' + warehouseId + '/',
+                    type: 'POST',
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                    },
+                    success: function (response) {
+                        console.log(response);
+                        fetchAndPopulateWarehouseData();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error deleting Equipment:', error);
+                    }
+                });
+            }
+        });
+
+        $(document).ready(function () {
+            fetchAndPopulateWarehouseData();
+
+            $('#prev-page-btn1').click(function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchAndPopulateWarehouseData();
+                }
+            });
+
+            $('#next-page-btn1').click(function () {
+                const totalPages = Math.ceil(totalItems / pageSize);
+
+                if (currentPage < totalPages) {
+                    currentPage++;
+
+                    fetchAndPopulateWarehouseData();
+                }
+            });
+        });
+
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        $(document).on('click', '#closeCompanyFormBtn', function () {
+            $('#editCompanyModal').modal('hide');
+        });
+
+        $(document).on('click', '#closeFormBtn', function () {
+            $('#editJobsModal').modal('hide');
+        });
+    </script>
+    <body>
+
+    <!--*******************
+        Preloader start
+    ********************-->
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <!--*******************
+        Preloader end
+    ********************-->
+
+    <!--**********************************
+        Main wrapper start
+    ***********************************-->
+    <div id="main-wrapper">
+        <!--**********************************
+            Nav header start
+        ***********************************-->
+        {% include 'product_tracking/navheader.html' %}
+        <!--**********************************
+            Nav header end
+        ***********************************-->
+
+        <!--**********************************
+                    Header start
+        ***********************************-->
+        {% include 'product_tracking/header.html' %}
+        <!--**********************************
+                    Header end
+        ***********************************-->
+
+        <!--**********************************
+            Sidebar start
+        ***********************************-->
+        {% include 'product_tracking/sidebar.html' %}
+        <!--**********************************
+            Sidebar end
+        ***********************************-->
+
+        <!--**********************************
+            Content body start
+        ***********************************-->
+        <div class="content-body">
+            <!-- row -->
+            <!-- Top Row -->
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title" style="color: #0c0c0c">Warehouse Master</h5></li>
+                    <li class="breadcrumb-item"><a href="javascript:void(0)">
+                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
+                                  stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        Home </a>
+                    </li>
+                </ol>
+            </div>
+
+            <!--***************************
+                    Add Form Start
+            ****************************-->
+            <!-- Form Start -->
+            <div class="container mt-4">
+                <div class="row">
+                    <!-- First Form -->
+                    <div class="col-md-6">
+                        <div class="form-container">
+                            <label for="companyLabel" class="form-header">Company</label>
+                            <form action="{% url 'company_master' %}" method="POST" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-xl-6 mb-3">
+                                        <label for="companyName" class="form-label">Name:</label>
+                                        <input type="text" class="form-control" id="companyName" name="companyName"
+                                               required>
+                                    </div>
+                                    <div class="col-xl-6 mb-3">
+                                        <label for="companyGstNo" class="form-label">GST No:</label>
+                                        <input type="text" class="form-control" id="companyGstNo" name="companyGstNo"
+                                               required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-xl-6 mb-3">
+                                        <label for="companyEmail" class="form-label">Email:</label>
+                                        <input type="email" class="form-control" id="companyEmail" name="companyEmail"
+                                               required>
+                                    </div>
+                                    <div class="col-xl-6 mb-3">
+                                        <label for="companyLogo" class="form-label">Company Logo:</label>
+                                        <input type="file" class="form-control" id="companyLogo" name="companyLogo"
+                                               accept=".jpg, .jpeg, .png">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="companyAddress" class="form-label">Address:</label>
+                                    <textarea rows="2" class="form-control" id="companyAddress"
+                                              name="companyAddress"></textarea>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Second Form -->
+                    <div class="col-md-6">
+                        <div class="form-container">
+                            <label for="warehouseLabel" class="form-header">Warehouse</label>
+                            <form action="{% url 'add_warehouse_master' %}" method="POST">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-xl-6 mb-3">
+                                        <label for="warehouseCompanyName" class="form-label">Company Name:</label>
+                                        <select class="form-control" id="warehouseCompanyName"
+                                                name="warehouseCompanyName" required>
+                                        </select>
+                                    </div>
+                                    <div class="col-xl-6 mb-3">
+                                        <label for="warehousePhoneNo" class="form-label">Phone No:</label>
+                                        <input type="number" class="form-control" id="warehousePhoneNo"
+                                               name="warehousePhoneNo" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="warehouseName" class="form-label">Address:</label>
+                                    <textarea rows="2" class="form-control" id="warehouseName"
+                                              name="warehouseName"></textarea>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Form End -->
+
+            <!-- Listing Start -->
+            <div class="container mt-2">
+                <div class="row">
+                    <!-- First Table -->
+                    <div class="col-md-6">
+                        <div class="table-container-company" style="overflow: scroll">
+                            <table id="company-table" class="table">
+                                <thead>
+                                <tr style="text-align: center;">
+                                    <th>SR No</th>
+                                    <th>Logo</th>
+                                    <th>Company Name</th>
+                                    <th>Company GST NO</th>
+                                    <th>Email</th>
+                                    <th>Company Address</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody id="company-table-body" style="text-align: center;">
+                                <!-- Rows will be dynamically added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div id="pagination-count-company" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
+                            <div style="padding-bottom: 10px;margin: 5px;">
+                                <button id="prev-page-btn" class="btn btn-primary me-1">Previous</button>
+                                <button id="next-page-btn" class="btn btn-primary">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="table-container-warehouse" style="overflow: scroll">
+                            <table id="warehouse-table" class="table">
+                                <thead>
+                                <tr>
+                                    <th>SR NO</th>
+                                    <th>Company Name</th>
+                                    <th>Phone No</th>
+                                    <th>Warehouse Address</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody id="warehouse-table-body">
+                                <!-- Rows will be dynamically added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
+                            <div style="padding-bottom: 10px;margin: 5px;">
+                                <button id="prev-page-btn1" class="btn btn-primary me-1">Previous</button>
+                                <button id="next-page-btn1" class="btn btn-primary">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--**********************************
+            Content body end
+        ***********************************-->
+
+        <div class="modal fade" id="editCompanyModal" tabindex="-1" role="dialog"
+             aria-labelledby="editCompanyModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editCompanyModalLabel">Edit Company</h5>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editCompanyForm">
+                            <div class="row">
+                                <div class="col-xl-6 mb-3">
+                                    <label for="editCompanyCompanyName">Company Name</label>
+                                    <input type="text" class="form-control" id="editCompanyCompanyName"
+                                           name="companyName">
+                                </div>
+                                <div class="col-xl-6 mb-3">
+                                    <label for="editCompanyGstNo" class="form-label">GST No</label>
+                                    <input type="text" class="form-control" id="editCompanyGstNo" name="jobMail">
+                                </div>
+                                <div class="col-xl-6 mb-3">
+                                    <label for="editCompanyEmail" class="form-label">Email</label>
+                                    <input type="text" class="form-control" id="editCompanyEmail" name="companyEmailId">
+                                </div>
+                                <div class="col-xl-6 mb-3">
+                                    <label for="editCompanyAddress" class="form-label">Address</label>
+                                    <input type="text" class="form-control" id="editCompanyAddress"
+                                           name="companyAddress">
+                                </div>
+                                <input type="hidden" id="editCompanyId" class="pagination-count-company">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="closeCompanyFormBtn">Close</button>
+                        <button type="button" class="btn btn-primary" id="saveChangesCompanyBtn">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editJobsModal" tabindex="-1" role="dialog"
+             aria-labelledby="editJobsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editJobsModalLabel">Edit Warehouse</h5>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editJobsForm">
+                            <div class="row">
+                                <div class="col-xl-4 mb-3">
+                                    <label for="editJobsReferenceNo">Company Name</label>
+                                    <input type="text" class="form-control" id="editJobsReferenceNo"
+                                           name="jobReferenceNo">
+                                </div>
+                                <div class="col-xl-4 mb-3">
+                                    <label for="editJobsTitle" class="form-label">Phone No</label>
+                                    <input type="text" class="form-control" id="editJobsTitle" name="title">
+                                </div>
+                                <div class="col-xl-4 mb-3">
+                                    <label for="editJobsAddress" class="form-label">Address</label>
+                                    <input type="text" class="form-control" id="editJobsAddress" name="valuesShow">
+                                </div>
+                                <input type="hidden" id="editJobsId" class="pagination-count">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="closeFormBtn">Close</button>
+                        <button type="button" class="btn btn-primary" id="saveChangesWarehouseBtn">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        {% include 'product_tracking/footer.html' %}
+        <!--**********************************
+            Footer end
+        ***********************************-->
+    </div>
+    <!--**********************************
+    Main wrapper end
+    ***********************************-->
+
+    </body>
+{% endblock %}
