@@ -22,7 +22,10 @@
             cursor: pointer;
         }
     </style>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const mobileInput = document.getElementById('exampleFormControlInput88');
@@ -48,21 +51,37 @@
             let removedProfilePic = false;
 
             function fetchEmployeeDropdown(dropdownId, selectedId = null, callback) {
-                console.log('Fetching employee dropdown...');
-                $.ajax({
-                    url: '/employee_dropdown/',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        console.log('Employee dropdown data:', data);
-                        populateEmployeeDropdown($(dropdownId), data.employees, selectedId);
-                        if (callback) callback();
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching employees:', error);
-                    }
-                });
+    $.ajax({
+        url: '/employee_dropdown/',
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            var dropdown = $(dropdownId);
+            dropdown.empty();
+
+            // Populate dropdown with employees
+            $.each(data.employees, function (index, employee) {
+                var option = $('<option></option>').attr('value', employee.id).text(employee.name);
+                dropdown.append(option);
+            });
+
+            // Initialize Select2 (if using Select2)
+            dropdown.select2();
+
+            // Set selected value
+            if (selectedId !== null) {
+                dropdown.val(selectedId).trigger('change'); // Set selected value and trigger change event
             }
+
+            if (callback) callback();
+        },
+        error: function (xhr, status, error) {
+            console.error('Error fetching employees:', error);
+        }
+    });
+}
+
+
 
             function populateEmployeeDropdown(dropdown, employees, selectedId = null) {
                 console.log('Populating dropdown:', dropdown, 'Employees:', employees, 'Selected ID:', selectedId);
@@ -101,6 +120,7 @@
                                 console.log('Employee data:', employee); // Print employee data inside the table generation loop
                                 var row = `<tr>
                     <td>${(page - 1) * pageSize + (index + 1)}</td>
+                    <td style="display: none;">${employee.id}</td>
                     <td><img src="${employee.profile_pic}" alt="Employee Image" width="50"></td>
                     <td>${employee.employee_id}</td>
                     <td><a href="#" class="employee-name" data-employee='${JSON.stringify(employee)}'>${employee.name}</a></td>
@@ -183,6 +203,7 @@
                 var employee = $(this).data('employee');
                 console.log('Editing employee:', employee);
 
+                $('#editEmployeeIdHidden').val(employee.id);
                 $('#editEmployeeId').val(employee.employee_id);
                 $('#editEmployeeName').val(employee.name);
                 $('#editEmployeeEmail').val(employee.email);
@@ -196,7 +217,9 @@
                 $('#editEmployeeCountry').val(employee.country);
                 $('#editEmployeeState').val(employee.state);
                 $('#editEmployeeStatus').val(employee.status ? 'true' : 'false');
-                fetchEmployeeDropdown('#editEmployeeReporting', employee.reporting); // Set reporting correctly
+                // Fetch and populate the reporting dropdown with the existing value
+                fetchEmployeeDropdown('#editEmployeeReporting', employee.reporting);// Set reporting correctly
+                console.log('Employee reporting value:', employee.reporting);
                 removedAttachments = [];
                 removedProfilePic = false;
 
@@ -235,6 +258,7 @@
                 formData.append('removed_profile_pic', removedProfilePic);
 
                 console.log('Form data before edit:', formData);
+
 
                 $.ajax({
                     url: '/modify_employee/',
@@ -504,7 +528,7 @@
                     <div class="modal-body">
                         <!-- Employee Edit Form -->
                         <form id="editEmployeeForm">
-                            <input type="hidden" name="id">
+                            <input type="hidden" id="editEmployeeIdHidden" name="id">
 
                             <div class="row">
                                 <div class="col-md-4 mb-3">
@@ -574,6 +598,7 @@
                                     <label for="editEmployeeReporting">Reporting To</label>
                                     <select class="form-control" id="editEmployeeReporting" name="reporting"></select>
                                 </div>
+
                                 <div class="col-md-4 mb-3">
                                     <label for="editEmployeeProfilePhoto">Profile Photo</label>
                                     <input type="file" class="form-control" id="editEmployeeProfilePhoto"
@@ -742,7 +767,6 @@
     <!--**********************************
         Main wrapper end
     ***********************************-->
-
     <!--**********************************
         Scripts
     ***********************************-->
