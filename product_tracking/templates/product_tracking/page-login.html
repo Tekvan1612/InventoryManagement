@@ -13,7 +13,7 @@
 							<h3 class="title">Sign In</h3>
 							<p>Sign in to your account to start using Rental Management For your Business</p>
 						</div>
-						<form action="{% url 'login' %}" method="POST">
+						<form action="{% url 'login_view' %}" method="POST">
                             {% csrf_token %}
 							<div class="mb-4 position-relative">
                                 <label class="mb-1 text-dark">Username</label>
