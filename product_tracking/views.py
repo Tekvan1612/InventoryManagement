@@ -809,7 +809,6 @@ def modify_employee(request):
 def add_equipment(request):
     if request.method == 'POST':
         try:
-            # Get form data
             equipment_name = request.POST.get('equipment_name')
             subcategory_id = request.POST.get('subcategory_id')
             category_type = request.POST.get('category_type')
@@ -827,7 +826,6 @@ def add_equipment(request):
 
             logger.info("Received POST data: %s", request.POST)
 
-            # Check for required fields
             if not category_type:
                 return JsonResponse({'success': False, 'error': 'category_type is required'})
 
@@ -845,7 +843,6 @@ def add_equipment(request):
                 attachment_url = ''
                 logger.info("No attachment uploaded")
 
-            # Save the equipment data to the database, including the attachment_url
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("""
@@ -1002,6 +999,7 @@ def subcategory_list(request, category_id):
 def equipment_list(request):
     username = request.session.get('username')
     subcategory_id = request.GET.get('subcategory_id')
+
     if not subcategory_id:
         return JsonResponse({'error': 'Missing subcategory_id parameter'}, status=400)
 
@@ -1011,6 +1009,7 @@ def equipment_list(request):
         return JsonResponse({'error': 'Invalid subcategory_id parameter'}, status=400)
 
     equipment_listing = []
+
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM get_equipment_list(%s)", [subcategory_id])
