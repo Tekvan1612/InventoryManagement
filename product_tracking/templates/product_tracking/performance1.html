@@ -81,6 +81,14 @@
             display: flex;
             justify-content: flex-start;
         }
+
+        .modal-dialog {
+            max-width: 500px; /* Adjust this value to change the size of the modal */
+        }
+
+        .modal-content {
+            padding: 20px;
+        }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
@@ -422,7 +430,7 @@
             <!-- Edit Category Modal -->
             <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog"
                  aria-labelledby="editCategoryModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
+                <div class="modal-dialog modal-sm" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="editCategoryModalLabel">Edit Category</h5>
