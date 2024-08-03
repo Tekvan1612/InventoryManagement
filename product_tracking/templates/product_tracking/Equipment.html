@@ -129,9 +129,9 @@
                 <td>${equipment.created_by.toUpperCase()}</td>
                 <td>${equipment.created_date}</td>
                 <td>
-                    <button class="btn btn-sm btn-primary edit-btn me-2" data-toggle="tooltip" title="Edit Equipment" ><i class="fa fa-pencil"></i></button>
+                    <button class="btn btn-sm btn-primary edit-btn me-2" data-toggle="tooltip" title="Edit Equipment"><i class="fa fa-pencil"></i></button>
                     <button class="btn btn-sm btn-danger delete-btn me-2" data-toggle="tooltip" title="Delete Equipment"><i class="fa fa-trash"></i></button>
-                    <button class="btn btn-sm btn-primary vendor-btn btn-group" data-toggle="tooltip" title="Add Stock and Serial number "><i class="fa fa-add"></i></button>
+                    <button class="btn btn-sm btn-primary vendor-btn btn-group" data-toggle="tooltip" title="Add Stock and Serial number"><i class="fa fa-add"></i></button>
                 </td>
             </tr>`;
                     $('#equipment-table-body').append(row);
@@ -177,12 +177,6 @@
                 var categoryType = row.find('td:eq(5)').text().trim();
                 var equipmentType = row.find('td:eq(3)').text().trim();
 
-                console.log("Equipment Id:", employeeId);
-                console.log("Equipment Name:", employeeName);
-                console.log("Equipment sub category name:", subCategory);
-                console.log("Equipment category type:", categoryType);
-                console.log("Equipment type:", equipmentType);
-
                 $('#editCategoryId').val(employeeId);
                 $('#editCategoryName').val(employeeName);
                 $('#editSubCategoryName').val(subCategory);
@@ -191,7 +185,9 @@
 
                 $('#editCategoryModal').modal('show');
 
-                $('#editSubCategoryName').off('change').on('change', function () {
+                $('#editSubCategoryName').off('change');
+
+                $('#editSubCategoryName').on('change', function () {
                     var selectedSubcategory = $(this).val();
                     $.ajax({
                         url: '/edit_get_category_name/',
@@ -199,7 +195,6 @@
                         dataType: 'json',
                         data: {subcategory_id: selectedSubcategory},
                         success: function (response) {
-                            console.log('Received category name:', response.category_name);
                             $('#editCategoryType').val(response.category_name);
                         },
                         error: function (xhr, status, error) {
@@ -240,6 +235,7 @@
                 var equipmentType = $('#editEquipmentType').val().trim();
 
                 if (!employeeId || !employeeName || !subCategory || !categoryType || !equipmentType) {
+                    console.error("One or more fields are null or empty");
                     alert("Please fill in all the required fields.");
                     return;
                 }
@@ -259,7 +255,6 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        console.log('Update response:', response);
                         fetchEquipmentList();
                         $('#editCategoryModal').modal('hide');
                         location.reload();
@@ -269,6 +264,29 @@
                     }
                 });
             }
+
+            $(document).on('click', '.delete-btn', function () {
+                var row = $(this).closest('tr');
+                var equipmentId = row.find('td:eq(1)').text().trim();
+
+                if (confirm('Are you sure you want to delete this Equipment?')) {
+                    var csrftoken = getCookie('csrftoken');
+
+                    $.ajax({
+                        url: '/delete_equipment_list/' + equipmentId + '/',
+                        type: 'POST',
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                        },
+                        success: function (response) {
+                            location.reload();
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error deleting Equipment:', error);
+                        }
+                    });
+                }
+            });
 
             function getCookie(name) {
                 var cookieValue = null;
@@ -285,6 +303,18 @@
                 return cookieValue;
             }
 
+            $(document).on('click', '#closeFormBtn', function () {
+                $('#editCategoryModal').modal('hide');
+            });
+
+            $(document).on('click', '#closeFormBtn', function () {
+                $('#editVendorModal').modal('hide');
+            });
+
+            $(document).on('click', '.close', function () {
+                $('#stockModal').modal('hide');
+            });
+
             $(document).on('click', '.vendor-btn', function () {
                 var row = $(this).closest('tr');
                 var equipmentId = row.find('td:eq(1)').text().trim();
@@ -292,13 +322,13 @@
                 $('#editVendorId').val(equipmentId);
                 $('#equipmentIdInput').val(equipmentId);
                 $('#editVendorModal').modal('show');
-
                 $.ajax({
                     url: '/stock-in/' + equipmentId + '/',
                     type: 'GET',
                     success: function (data) {
                         var stockDetailsContainer = $('#stockDetailsContainer');
                         stockDetailsContainer.empty();
+
                         if (data.error) {
                             stockDetailsContainer.html('<p>' + data.error + '</p>');
                         } else {
@@ -315,7 +345,7 @@
                                 '<th>Action</th>' +
                                 '</tr></thead><tbody>';
 
-                            data.forEach(function (item) {
+                            data.forEach(function (item, index) {
                                 tableHtml += '<tr>' +
                                     '<td style="display: none;">' + item.id + '</td>' +
                                     '<td class="editable" data-field="vendor_name">' + item.vendor_name + '</td>' +
@@ -391,184 +421,60 @@
                         $('#stockDetailsModal').modal('show');
                     }
                 });
+            });
 
-                function generateInputColumns(num) {
-                    var container = document.getElementById('serialNumberInputsContainer');
-                    container.innerHTML = '';
+            $('#editUnit').on('input', function () {
+                var num = parseInt(this.value);
+                generateInputColumns(num);
+            });
 
-                    for (var i = 0; i < num; i++) {
-                        var inputDiv = document.createElement('div');
-                        inputDiv.className = 'row';
+            function generateInputColumns(num) {
+                var container = document.getElementById('serialNumberInputsContainer');
+                container.innerHTML = '';
 
-                        var serialNumberDiv = document.createElement('div');
-                        serialNumberDiv.className = 'col-xl-6 mb-3';
+                for (var i = 0; i < num; i++) {
+                    var inputDiv = document.createElement('div');
+                    inputDiv.className = 'row';
 
-                        var labelSerial = document.createElement('label');
-                        labelSerial.htmlFor = 'serialNumber' + (i + 1);
-                        labelSerial.className = 'form-label';
-                        labelSerial.textContent = 'Serial Number ' + (i + 1);
+                    var serialNumberDiv = document.createElement('div');
+                    serialNumberDiv.className = 'col-xl-6 mb-3';
 
-                        var inputSerial = document.createElement('input');
-                        inputSerial.type = 'text';
-                        inputSerial.className = 'form-control';
-                        inputSerial.id = 'serialNumber' + (i + 1);
-                        inputSerial.name = 'serialNumber' + (i + 1);
+                    var labelSerial = document.createElement('label');
+                    labelSerial.htmlFor = 'serialNumber' + (i + 1);
+                    labelSerial.className = 'form-label';
+                    labelSerial.textContent = 'Serial Number ' + (i + 1);
 
-                        serialNumberDiv.appendChild(labelSerial);
-                        serialNumberDiv.appendChild(inputSerial);
-                        inputDiv.appendChild(serialNumberDiv);
+                    var inputSerial = document.createElement('input');
+                    inputSerial.type = 'text';
+                    inputSerial.className = 'form-control';
+                    inputSerial.id = 'serialNumber' + (i + 1);
+                    inputSerial.name = 'serialNumber' + (i + 1);
 
-                        var barcodeDiv = document.createElement('div');
-                        barcodeDiv.className = 'col-xl-6 mb-3';
+                    serialNumberDiv.appendChild(labelSerial);
+                    serialNumberDiv.appendChild(inputSerial);
+                    inputDiv.appendChild(serialNumberDiv);
 
-                        var labelBarcode = document.createElement('label');
-                        labelBarcode.htmlFor = 'barcode' + (i + 1);
-                        labelBarcode.className = 'form-label';
-                        labelBarcode.textContent = 'Barcode Number ' + (i + 1);
+                    var barcodeDiv = document.createElement('div');
+                    barcodeDiv.className = 'col-xl-6 mb-3';
 
-                        var inputBarcode = document.createElement('input');
-                        inputBarcode.type = 'text';
-                        inputBarcode.className = 'form-control';
-                        inputBarcode.id = 'barcodeNumber' + (i + 1);
-                        inputBarcode.name = 'barcodeNumber' + (i + 1);
+                    var labelBarcode = document.createElement('label');
+                    labelBarcode.htmlFor = 'barcode' + (i + 1);
+                    labelBarcode.className = 'form-label';
+                    labelBarcode.textContent = 'Barcode Number ' + (i + 1);
 
-                        barcodeDiv.appendChild(labelBarcode);
-                        barcodeDiv.appendChild(inputBarcode);
-                        inputDiv.appendChild(barcodeDiv);
-                        container.appendChild(inputDiv);
-                    }
+                    var inputBarcode = document.createElement('input');
+                    inputBarcode.type = 'text';
+                    inputBarcode.className = 'form-control';
+                    inputBarcode.id = 'barcodeNumber' + (i + 1);
+                    inputBarcode.name = 'barcodeNumber' + (i + 1);
+
+                    barcodeDiv.appendChild(labelBarcode);
+                    barcodeDiv.appendChild(inputBarcode);
+                    inputDiv.appendChild(barcodeDiv);
+
+                    container.appendChild(inputDiv);
                 }
-
-                document.getElementById('editUnit').addEventListener('input', function () {
-                    var num = parseInt(this.value);
-                    generateInputColumns(num);
-                });
-            });
-
-            $(document).on('click', '#saveChanges', function () {
-                var formData = new FormData($('#vendorForm')[0]);
-
-                $.ajax({
-                    url: '/insert_vendor/',
-                    method: 'POST',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function (response) {
-                        console.log("Data inserted into database successfully");
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Error inserting data into database:", error);
-                    }
-                });
-            });
-
-            $(document).on('click', '.equipment_name a', function (e) {
-                e.preventDefault();
-
-                var equipmentId = $(this).closest('.equipment_name').data('id');
-                var modalSelector = '#equipmentDetailsModal';
-
-                $(modalSelector).find('.modal-body').html('');
-
-                $.ajax({
-                    url: '/get_dimension_list/' + equipmentId + '/',
-                    type: 'GET',
-                    success: function (response) {
-                        if (response.error) {
-                            console.error('Error:', response.error);
-                            return;
-                        }
-
-                        var popupContent = '<div class="container">';
-                        popupContent += '<div class="row">';
-                        popupContent += '<div class="col-md-12">';
-                        popupContent += '<h6>Dimensions & Other Details</h6>';
-                        popupContent += '<div class="table-responsive" style="max-height: 200px; overflow-y: auto;">';
-                        popupContent += '<table class="table table-bordered">';
-                        popupContent += '<thead>';
-                        popupContent += '<tr>';
-                        popupContent += '<th>Height</th>';
-                        popupContent += '<th>Width</th>';
-                        popupContent += '<th>Length</th>';
-                        popupContent += '<th>Volume</th>';
-                        popupContent += '<th>Weight</th>';
-                        popupContent += '<th>HSN No</th>';
-                        popupContent += '<th>Country Of Origin</th>';
-                        popupContent += '<th>Status</th>';
-                        popupContent += '<th>Created By</th>';
-                        popupContent += '<th>Created Date</th>';
-                        popupContent += '</tr>';
-                        popupContent += '</thead>';
-                        popupContent += '<tbody>';
-                        popupContent += '<tr>';
-                        popupContent += '<td>' + response.dimension_height + '</td>';
-                        popupContent += '<td>' + response.dimension_width + '</td>';
-                        popupContent += '<td>' + response.dimension_length + '</td>';
-                        popupContent += '<td>' + response.volume + '</td>';
-                        popupContent += '<td>' + response.weight + '</td>';
-                        popupContent += '<td>' + response.hsn_no + '</td>';
-                        popupContent += '<td>' + response.country_origin + '</td>';
-                        popupContent += '<td>' + (response.status ? 'Active' : 'Inactive') + '</td>';
-                        popupContent += '<td>' + response.created_by + '</td>';
-                        popupContent += '<td>' + response.created_date + '</td>';
-                        popupContent += '</tr>';
-                        popupContent += '</tbody>';
-                        popupContent += '</table>';
-                        popupContent += '</div>';
-                        popupContent += '</div>';
-                        popupContent += '</div>';
-                        popupContent += '<div class="row mt-4">';
-                        popupContent += '<div class="col-md-12">';
-                        popupContent += '<h6>Stock Details</h6>';
-                        popupContent += '<div class="table-responsive">';
-                        popupContent += '<table class="table table-bordered">';
-                        popupContent += '<thead>';
-                        popupContent += '<tr>';
-                        popupContent += '<th>Vendor Name</th>';
-                        popupContent += '<th>Serial Number</th>';
-                        popupContent += '<th>Barcode Number</th>';
-                        popupContent += '<th>Unit Price</th>';
-                        popupContent += '<th>Rental Price</th>';
-                        popupContent += '<th>Purchase Date</th>';
-                        popupContent += '<th>Reference Number</th>';
-                        popupContent += '</tr>';
-                        popupContent += '</thead>';
-                        popupContent += '<tbody>';
-
-                        if (response.serial_no && response.barcode_no && response.serial_no.length > 0) {
-                            for (var i = 0; i < response.serial_no.length; i++) {
-                                popupContent += '<tr>';
-                                popupContent += '<td>' + (response.vendor_name ? response.vendor_name : '-') + '</td>';
-                                popupContent += '<td>' + (response.serial_no[i] ? response.serial_no[i] : '-') + '</td>';
-                                popupContent += '<td>' + (response.barcode_no[i] ? response.barcode_no[i] : '-') + '</td>';
-                                popupContent += '<td>' + (response.unit_price ? response.unit_price : '-') + '</td>';
-                                popupContent += '<td>' + (response.rental_price ? response.rental_price : '-') + '</td>';
-                                popupContent += '<td>' + (response.purchase_date ? response.purchase_date : '-') + '</td>';
-                                popupContent += '<td>' + (response.reference_no ? response.reference_no : '-') + '</td>';
-                                popupContent += '</tr>';
-                            }
-                        } else {
-                            popupContent += '<tr>';
-                            popupContent += '<td colspan="7">No data available</td>';
-                            popupContent += '</tr>';
-                        }
-                        popupContent += '</tbody>';
-                        popupContent += '</table>';
-                        popupContent += '</div>';
-                        popupContent += '</div>';
-                        popupContent += '</div>';
-                        popupContent += '</div>';
-
-                        $(modalSelector).find('.modal-body').html(popupContent);
-
-                        $(modalSelector).modal('show');
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error:', error);
-                    }
-                });
-            });
+            }
 
             function populateSubcategoryInput(selectedSubcategoryId) {
                 $.ajax({
@@ -670,6 +576,7 @@
                                 }
                             });
                         } else {
+                            console.error('Expected a string for subcategory_type, but got:', typeof data.subcategory_type);
                             alert('Invalid data format received.');
                         }
                     },
@@ -702,16 +609,16 @@
             });
 
             function calculateVolume() {
-                var dimension_h = parseFloat(document.getElementById('dimension_h').value);
-                var dimension_w = parseFloat(document.getElementById('dimension_w').value);
-                var dimension_l = parseFloat(document.getElementById('dimension_l').value);
-                var volumeField = document.getElementById('volume');
+                var dimension_h = parseFloat($('#dimension_h').val());
+                var dimension_w = parseFloat($('#dimension_w').val());
+                var dimension_l = parseFloat($('#dimension_l').val());
+                var volumeField = $('#volume');
 
                 if (!isNaN(dimension_h) && !isNaN(dimension_w) && !isNaN(dimension_l)) {
                     var volume = dimension_h * dimension_w * dimension_l;
-                    volumeField.value = volume;
+                    volumeField.val(volume);
                 } else {
-                    volumeField.value = '';
+                    volumeField.val('');
                 }
             }
 
@@ -756,8 +663,117 @@
                     }
                 });
             });
-        });
 
+            $(document).on('click', '.equipment_name a', function (e) {
+                e.preventDefault();
+
+                var equipmentId = $(this).closest('.equipment_name').data('id');
+                var modalSelector = '#equipmentDetailsModal';
+
+                $(modalSelector).find('.modal-body').html('');
+
+                $.ajax({
+                    url: '/get_dimension_list/' + equipmentId + '/',
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.error) {
+                            console.error('Error:', response.error);
+                            return;
+                        }
+
+                        var popupContent = '<div class="container">';
+
+                        popupContent += '<div class="row">';
+                        popupContent += '<div class="col-md-12">';
+                        popupContent += '<h6>Dimensions & Other Details</h6>';
+                        popupContent += '<div class="table-responsive" style="max-height: 200px; overflow-y: auto;">';
+                        popupContent += '<table class="table table-bordered">';
+                        popupContent += '<thead>';
+                        popupContent += '<tr>';
+                        popupContent += '<th>Height</th>';
+                        popupContent += '<th>Width</th>';
+                        popupContent += '<th>Length</th>';
+                        popupContent += '<th>Volume</th>';
+                        popupContent += '<th>Weight</th>';
+                        popupContent += '<th>HSN No</th>';
+                        popupContent += '<th>Country Of Origin</th>';
+                        popupContent += '<th>Status</th>';
+                        popupContent += '<th>Created By</th>';
+                        popupContent += '<th>Created Date</th>';
+                        popupContent += '</tr>';
+                        popupContent += '</thead>';
+                        popupContent += '<tbody>';
+                        popupContent += '<tr>';
+                        popupContent += '<td>' + response.dimension_height + '</td>';
+                        popupContent += '<td>' + response.dimension_width + '</td>';
+                        popupContent += '<td>' + response.dimension_length + '</td>';
+                        popupContent += '<td>' + response.volume + '</td>';
+                        popupContent += '<td>' + response.weight + '</td>';
+                        popupContent += '<td>' + response.hsn_no + '</td>';
+                        popupContent += '<td>' + response.country_origin + '</td>';
+                        popupContent += '<td>' + (response.status ? 'Active' : 'Inactive') + '</td>';
+                        popupContent += '<td>' + response.created_by + '</td>';
+                        popupContent += '<td>' + response.created_date + '</td>';
+                        popupContent += '</tr>';
+                        popupContent += '</tbody>';
+                        popupContent += '</table>';
+                        popupContent += '</div>';
+                        popupContent += '</div>';
+                        popupContent += '</div>';
+
+                        popupContent += '<div class="row mt-4">';
+                        popupContent += '<div class="col-md-12">';
+                        popupContent += '<h6>Stock Details</h6>';
+                        popupContent += '<div class="table-responsive">';
+                        popupContent += '<table class="table table-bordered">';
+                        popupContent += '<thead>';
+                        popupContent += '<tr>';
+                        popupContent += '<th>Vendor Name</th>';
+                        popupContent += '<th>Serial Number</th>';
+                        popupContent += '<th>Barcode Number</th>';
+                        popupContent += '<th>Unit Price</th>';
+                        popupContent += '<th>Rental Price</th>';
+                        popupContent += '<th>Purchase Date</th>';
+                        popupContent += '<th>Reference Number</th>';
+                        popupContent += '</tr>';
+                        popupContent += '</thead>';
+                        popupContent += '<tbody>';
+
+                        if (response.serial_no && response.barcode_no && response.serial_no.length > 0) {
+                            for (var i = 0; i < response.serial_no.length; i++) {
+                                popupContent += '<tr>';
+                                popupContent += '<td>' + (response.vendor_name ? response.vendor_name : '-') + '</td>';
+                                popupContent += '<td>' + (response.serial_no[i] ? response.serial_no[i] : '-') + '</td>';
+                                popupContent += '<td>' + (response.barcode_no[i] ? response.barcode_no[i] : '-') + '</td>';
+                                popupContent += '<td>' + (response.unit_price ? response.unit_price : '-') + '</td>';
+                                popupContent += '<td>' + (response.rental_price ? response.rental_price : '-') + '</td>';
+                                popupContent += '<td>' + (response.purchase_date ? response.purchase_date : '-') + '</td>';
+                                popupContent += '<td>' + (response.reference_no ? response.reference_no : '-') + '</td>';
+                                popupContent += '</tr>';
+                            }
+                        } else {
+                            popupContent += '<tr>';
+                            popupContent += '<td colspan="7">No data available</td>';
+                            popupContent += '</tr>';
+                        }
+                        popupContent += '</tbody>';
+                        popupContent += '</table>';
+                        popupContent += '</div>';
+                        popupContent += '</div>';
+                        popupContent += '</div>';
+
+                        popupContent += '</div>';
+
+                        $(modalSelector).find('.modal-body').html(popupContent);
+
+                        $(modalSelector).modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
+            });
+        });
     </script>
 
     <body>
