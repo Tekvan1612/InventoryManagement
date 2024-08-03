@@ -821,7 +821,7 @@ def add_equipment(request):
             hsn_no = int(request.POST.get('hsn_no')) if request.POST.get('hsn_no') else None
             country_origin = request.POST.get('country_origin')
             status = request.POST.get('status').lower() == 'true'
-            created_by = int(request.session.get('user_id')) if request.session.get('user_id') else None
+            created_by = request.session.get('user_id')  # Assuming session stores user ID
             created_date = timezone.now()
 
             logger.info("Received POST data: %s", request.POST)
@@ -844,7 +844,22 @@ def add_equipment(request):
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        SELECT add_equipment_list(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        SELECT add_equipment_list(
+                            %s::character varying, 
+                            %s::integer, 
+                            %s::character varying, 
+                            %s::character varying, 
+                            %s::character varying, 
+                            %s::character varying, 
+                            %s::character varying, 
+                            %s::character varying, 
+                            %s::character varying, 
+                            %s::integer, 
+                            %s::character varying, 
+                            %s::character varying, 
+                            %s::boolean, 
+                            %s::integer, 
+                            %s::timestamp without time zone)
                     """, [equipment_name, subcategory_id, category_type, type, dimension_h, dimension_w, dimension_l,
                           weight, volume, hsn_no, country_origin, attachment_url, status, created_by, created_date])
                 logger.info("Equipment data inserted into database successfully")
@@ -854,12 +869,14 @@ def add_equipment(request):
 
             return JsonResponse({'success': True})
 
+        except ValueError as ve:
+            logger.error("ValueError in add_equipment view: %s", str(ve))
+            return JsonResponse({'success': False, 'error': 'Invalid input data: ' + str(ve)})
         except Exception as e:
             logger.error("Error in add_equipment view: %s", str(e))
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
-
 
 
 def insert_vendor(request):
