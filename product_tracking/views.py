@@ -811,7 +811,7 @@ def add_equipment(request):
         try:
             equipment_name = request.POST.get('equipment_name')
             subcategory_id = request.POST.get('subcategory_id')
-            category_name = request.POST.get('category_name')
+            category_type = request.POST.get('category_type')
             type = request.POST.get('type')
             dimension_h = request.POST.get('dimension_h')
             dimension_w = request.POST.get('dimension_w')
@@ -820,7 +820,7 @@ def add_equipment(request):
             weight = request.POST.get('weight')
             hsn_no = request.POST.get('hsn_no')
             country_origin = request.POST.get('country_origin')
-            status = request.POST.get('status')
+            status = request.POST.get('status') == 'true'
             created_by = request.session.get('username')
             created_date = timezone.now()
 
@@ -844,11 +844,9 @@ def add_equipment(request):
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("""
-                        INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
-                        dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l,
-                          volume, weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
+                        SELECT add_equipment_list(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, [equipment_name, subcategory_id, category_type, type, dimension_h, dimension_w, dimension_l,
+                          weight, volume, hsn_no, country_origin, attachment_url, status, created_by, created_date])
                 logger.info("Equipment data inserted into database successfully")
             except Exception as db_error:
                 logger.error("Database error: %s", str(db_error))
@@ -861,8 +859,6 @@ def add_equipment(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
-
-
 
 
 def insert_vendor(request):
