@@ -880,7 +880,6 @@ def add_equipment(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
-
 def insert_vendor(request):
     if request.method == 'POST':
         # Retrieve form data

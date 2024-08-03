@@ -856,7 +856,11 @@
                             }
                         },
                         error: function (response) {
-                            alert('An unexpected error occurred. Please try again.');
+                            var errorMessage = 'An unexpected error occurred. Please try again.';
+                            if (response.responseJSON && response.responseJSON.message) {
+                                errorMessage = response.responseJSON.message;
+                            }
+                            alert(errorMessage);
                         }
                     });
                 });
