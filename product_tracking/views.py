@@ -806,38 +806,49 @@ def modify_employee(request):
 
 def add_equipment(request):
     if request.method == 'POST':
-        equipment_name = request.POST.get('equipment_name')
-        subcategory_id = request.POST.get('subcategory_id')
-        category_name = request.POST.get('category_name')
-        type = request.POST.get('type')
-        dimension_h = request.POST.get('dimension_h')
-        dimension_w = request.POST.get('dimension_w')
-        dimension_l = request.POST.get('dimension_l')
-        volume = request.POST.get('volume')
-        weight = request.POST.get('weight')
-        hsn_no = request.POST.get('hsn_no')
-        country_origin = request.POST.get('country_origin')
-        status = request.POST.get('status')
-        created_by = request.session.get('username')
-        created_date = timezone.now()
+        try:
+            equipment_name = request.POST.get('equipment_name')
+            subcategory_id = request.POST.get('subcategory_id')
+            category_name = request.POST.get('category_name')
+            type = request.POST.get('type')
+            dimension_h = request.POST.get('dimension_h')
+            dimension_w = request.POST.get('dimension_w')
+            dimension_l = request.POST.get('dimension_l')
+            volume = request.POST.get('volume')
+            weight = request.POST.get('weight')
+            hsn_no = request.POST.get('hsn_no')
+            country_origin = request.POST.get('country_origin')
+            status = request.POST.get('status')
+            created_by = request.session.get('username')
+            created_date = timezone.now()
 
-        attachment = request.FILES.get('attachment')
-        if attachment:
-            result = upload(attachment)
-            attachment_url = result['secure_url']
-        else:
-            attachment_url = ''
+            logger.info("Received POST data: %s", request.POST)
 
-        # Save the equipment data to the database, including the attachment_url
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
-                dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l, volume,
-                  weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
+            attachment = request.FILES.get('attachment')
+            if attachment:
+                logger.info("Uploading image to Cloudinary")
+                result = upload(attachment)
+                attachment_url = result['secure_url']
+                logger.info("Image uploaded successfully: %s", attachment_url)
+            else:
+                attachment_url = ''
+                logger.info("No attachment uploaded")
 
-        return JsonResponse({'success': True})
+            # Save the equipment data to the database, including the attachment_url
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
+                    dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l,
+                      volume,
+                      weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
+
+            return JsonResponse({'success': True})
+
+        except Exception as e:
+            logger.error("Error in add_equipment view: %s", str(e))
+            return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
 
