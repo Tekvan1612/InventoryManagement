@@ -821,7 +821,7 @@ def add_equipment(request):
             hsn_no = int(request.POST.get('hsn_no')) if request.POST.get('hsn_no') else None
             country_origin = request.POST.get('country_origin')
             status = request.POST.get('status').lower() == 'true'
-            created_by = int(request.session.get('username')) if request.session.get('username') else None
+            created_by = int(request.session.get('user_id')) if request.session.get('user_id') else None
             created_date = timezone.now()
 
             logger.info("Received POST data: %s", request.POST)
