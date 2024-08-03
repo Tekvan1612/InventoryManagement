@@ -75,7 +75,7 @@
             const pageSize = 10;
             let totalItems = 0;
 
-            // Function to search and filter equipment list
+            // Search and filter equipment list
             $('#searchSubCategory').on('input', function () {
                 var searchText = $(this).val().trim().toLowerCase();
                 $('#equipment-table-body tr').each(function () {
@@ -98,7 +98,7 @@
             // Fetch initial equipment list
             fetchEquipmentList();
 
-            // Function to fetch and display equipment list
+            // Fetch and display equipment list
             function fetchEquipmentList() {
                 const equipmentListData = document.getElementById('equipment-list-data').textContent;
                 let equipmentlist = [];
@@ -111,7 +111,6 @@
                 const totalItems = equipmentlist.length;
                 const totalPages = Math.ceil(totalItems / pageSize);
                 const paginatedEquipment = equipmentlist.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-                console.log("Equipment Listing:", paginatedEquipment);
                 $('#equipment-table-body').empty();
                 $.each(paginatedEquipment, function (index, equipment) {
                     const row = `<tr>
@@ -137,7 +136,7 @@
                 updatePaginationControls(totalItems, currentPage, totalPages);
             }
 
-            // Function to update pagination controls
+            // Update pagination controls
             function updatePaginationControls(totalItems, currentPage, totalPages) {
                 $('#pagination-controls').html('');
                 if (currentPage > 1) {
@@ -163,7 +162,7 @@
                 fetchEquipmentList();
             });
 
-            // Function to populate subcategory input on page load
+            // Populate subcategory input on page load
             function populateSubcategoryInput(selectedSubcategoryId) {
                 $.ajax({
                     url: '/fetch_subcategory_name/' + selectedSubcategoryId + '/',
@@ -408,18 +407,23 @@
                 return cookieValue;
             }
 
-            // Other event handlers for closing modals and submitting forms
-            $(document).on('click', '#closeFormBtn', function () {
-                $('#editCategoryModal').modal('hide');
-            });
-            $(document).on('click', '#closeFormBtn', function () {
-                $('#editVendorModal').modal('hide');
-            });
-            $(document).on('click', '.close', function () {
-                $('#stockModal').modal('hide');
+            // Function to calculate volume
+            $('.dimension').on('input', function () {
+                calculateVolume();
             });
 
-            // Additional event handlers for vendor-related functionalities can be added here
+            function calculateVolume() {
+                var dimension_h = parseFloat(document.getElementById('dimension_h').value);
+                var dimension_w = parseFloat(document.getElementById('dimension_w').value);
+                var dimension_l = parseFloat(document.getElementById('dimension_l').value);
+                var volumeField = document.getElementById('volume');
+                if (!isNaN(dimension_h) && !isNaN(dimension_w) && !isNaN(dimension_l)) {
+                    var volume = dimension_h * dimension_w * dimension_l;
+                    volumeField.value = volume;
+                } else {
+                    volumeField.value = '';
+                }
+            }
         });
     </script>
 
