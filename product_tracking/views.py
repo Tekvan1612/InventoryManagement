@@ -45,25 +45,22 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    # Retrieve session data
     username = request.session.get('username', 'N/A')
-    user_id = request.session.get('user_id', None)  # Retrieve the user_id to check if it's correctly stored
+    user_id = request.session.get('user_id', None)
     modules = request.session.get('modules', None)
 
     # Log the retrieved session data
-    print(f"Accessing index view")
-    print(f"Session Data - Username: {username}, User ID: {user_id}, Modules:{modules}")
+    logger.info(f"Accessing index view")
+    logger.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
 
     if not username or username == 'N/A':
-        print("No username in session; redirecting to login")
+        logger.info("No username in session; redirecting to login")
         return redirect('login_view')
 
-    # If session data is valid, render the index page with the session data
     return render(request, 'product_tracking/index.html', {
         'username': username,
-        'user_id': user_id  # Optionally pass user_id to the template if needed
+        'user_id': user_id
     })
-
 
 def custom_login(request):
     if request.method == 'POST':
@@ -71,8 +68,7 @@ def custom_login(request):
         password = request.POST.get('password')
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT user_exists, user_id FROM public.validate_user(%s, %s, %s)",
-                           [username, password, True])
+            cursor.execute("SELECT user_exists, user_id FROM public.validate_user(%s, %s, %s)", [username, password, True])
             result = cursor.fetchone()
 
             if result and result[0]:
@@ -82,7 +78,6 @@ def custom_login(request):
                     [user_id])
                 modules = cursor.fetchall()
 
-                # Store user info and modules in session
                 request.session['username'] = username
                 request.session['user_id'] = user_id
                 request.session['modules'] = [module[0] for module in modules]
@@ -97,10 +92,10 @@ def custom_login(request):
 
     return render(request, 'product_tracking/page-login.html')
 
-
 def logout_view(request):
     logout(request)
     return redirect('login_view')
+
 
 def footer(request):
     return render(request, 'product_tracking/footer.html')
