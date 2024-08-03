@@ -53,10 +53,11 @@ MIDDLEWARE = [
 ]
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'MediaStorage',
+    'CLOUD_NAME': 'MediaStorage',  # Ensure this matches the value in your Cloudinary account exactly
     'API_KEY': '155765635687362',
-    'API_SECRET': 'Fig3zoGWF2Uba2yCgJkAf-mehK4'
+    'API_SECRET': 'Fig3zoGWF2Uba2yCgJkAf-mehK4',
 }
+
 ROOT_URLCONF = 'wms2.urls'
 
 TEMPLATES = [

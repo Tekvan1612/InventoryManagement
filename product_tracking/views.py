@@ -821,7 +821,7 @@ def add_equipment(request):
             country_origin = request.POST.get('country_origin')
             status = request.POST.get('status')
             created_by = request.session.get('username')
-            created_date = datetime.now()
+            created_date = timezone.now()
 
             logger.info("Received POST data: %s", request.POST)
 
@@ -847,12 +847,14 @@ def add_equipment(request):
 
             return JsonResponse({'success': True})
 
+        except Error as e:
+            logger.error("Cloudinary error: %s", str(e))
+            return JsonResponse({'success': False, 'error': 'Cloudinary error: ' + str(e)})
         except Exception as e:
             logger.error("Error in add_equipment view: %s", str(e))
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
-
 
 def insert_vendor(request):
     if request.method == 'POST':
