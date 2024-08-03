@@ -110,37 +110,36 @@
                     return;
                 }
 
-                const totalItems = equipmentlist.length;  // Get the total number of equipment
-                const totalPages = Math.ceil(totalItems / pageSize);  // Calculate total pages
+                const totalItems = equipmentlist.length;
+                const totalPages = Math.ceil(totalItems / pageSize);
 
                 const paginatedEquipment = equipmentlist.slice((currentPage - 1) * pageSize, currentPage * pageSize);
                 console.log("Equipment Listing:", paginatedEquipment);
 
-                $('#equipment-table-body').empty(); // Ensure the table body is empty before appending new rows
+                $('#equipment-table-body').empty();
                 $.each(paginatedEquipment, function (index, equipment) {
                     const row = `<tr>
-                <td>${((currentPage - 1) * pageSize + index + 1)}</td>
-                <td style="display: none;">${equipment.id}</td>
-                <td class="equipment_name" data-id="${equipment.id}">
-                    <a href="#" class="equipment-link">${equipment.equipment_name}</a>
-                </td>
-                <td>${equipment.type}</td>
-                <td>${equipment.sub_category_name}</td>
-                <td>${equipment.category_type}</td>
-               <td><img src="/media/${equipment.attachment}" alt="Equipment Image" width="70" height="60"></td>
-                <td>${equipment.created_by.toUpperCase()}</td>
-                <td>${equipment.created_date}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary edit-btn me-2" data-toggle="tooltip" title="Edit Equipment" ><i class="fa fa-pencil"></i></button>
-                    <button class="btn btn-sm btn-danger delete-btn me-2" data-toggle="tooltip" title="Delete Equipment"><i class="fa fa-trash"></i></button>
-                    <button class="btn btn-sm btn-primary vendor-btn btn-group" data-toggle="tooltip" title="Add Stock and Serial number "><i class="fa fa-add"></i></button>
-                </td>
-            </tr>`;
+            <td>${((currentPage - 1) * pageSize + index + 1)}</td>
+            <td style="display: none;">${equipment.id}</td>
+            <td class="equipment_name" data-id="${equipment.id}">
+                <a href="#" class="equipment-link">${equipment.equipment_name}</a>
+            </td>
+            <td>${equipment.type}</td>
+            <td>${equipment.sub_category_name}</td>
+            <td>${equipment.category_type}</td>
+            <td><img src="${equipment.attachment}" alt="Equipment Image" width="70" height="60"></td>
+            <td>${equipment.created_by.toUpperCase()}</td>
+            <td>${equipment.created_date}</td>
+            <td>
+                <button class="btn btn-sm btn-primary edit-btn me-2" data-toggle="tooltip" title="Edit Equipment" ><i class="fa fa-pencil"></i></button>
+                <button class="btn btn-sm btn-danger delete-btn me-2" data-toggle="tooltip" title="Delete Equipment"><i class="fa fa-trash"></i></button>
+                <button class="btn btn-sm btn-primary vendor-btn btn-group" data-toggle="tooltip" title="Add Stock and Serial number "><i class="fa fa-add"></i></button>
+            </td>
+        </tr>`;
                     $('#equipment-table-body').append(row);
                 });
 
                 updatePaginationControls(totalItems, currentPage, totalPages);
-                //$('[data-toggle="tooltip"]').tooltip(); // Re-initialize tooltips
             }
 
             function updatePaginationControls(totalItems, currentPage, totalPages) {

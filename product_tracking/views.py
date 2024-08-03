@@ -18,7 +18,7 @@ from psycopg2 import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
 import cloudinary
-import cloudinary.uploader
+from cloudinary.uploader import upload
 
 
 logger = logging.getLogger(__name__)
@@ -806,80 +806,40 @@ def modify_employee(request):
 
 def add_equipment(request):
     if request.method == 'POST':
-        try:
-            equipment_name = request.POST.get('equipment_name').upper()
-            subcategory_name = request.POST.get('subcategory_id').upper()
-            category_name = request.POST.get('category_name').upper()
-            type = request.POST.get('type')
-            dimension_h = request.POST.get('dimension_h')
-            dimension_w = request.POST.get('dimension_w')
-            dimension_l = request.POST.get('dimension_l')
-            weight = request.POST.get('weight')
-            volume = request.POST.get('volume')
-            hsn_no = request.POST.get('hsn_no')
-            country_origin = request.POST.get('country_origin')
-            attachment = request.FILES.get('attachment')
-            status = request.POST.get('status')
-            created_by = request.session.get('user_id')
-            created_date = datetime.now()
+        equipment_name = request.POST.get('equipment_name')
+        subcategory_id = request.POST.get('subcategory_id')
+        category_name = request.POST.get('category_name')
+        type = request.POST.get('type')
+        dimension_h = request.POST.get('dimension_h')
+        dimension_w = request.POST.get('dimension_w')
+        dimension_l = request.POST.get('dimension_l')
+        volume = request.POST.get('volume')
+        weight = request.POST.get('weight')
+        hsn_no = request.POST.get('hsn_no')
+        country_origin = request.POST.get('country_origin')
+        status = request.POST.get('status')
+        created_by = request.session.get('username')
+        created_date = timezone.now()
 
-            attachment_url = None
-            if attachment:
-                try:
-                    upload_result = cloudinary.uploader.upload(attachment)
-                    attachment_url = upload_result.get('url')
-                except Exception as e:
-                    logger.error("Error uploading to Cloudinary: %s", e)
-                    return JsonResponse({'success': False, 'message': 'Failed to upload attachment.'})
+        attachment = request.FILES.get('attachment')
+        if attachment:
+            result = upload(attachment)
+            attachment_url = result['secure_url']
+        else:
+            attachment_url = ''
 
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT public.add_equipment_list(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    );
-                    """,
-                    [
-                        equipment_name,
-                        subcategory_name,
-                        category_name,
-                        type,
-                        dimension_h,
-                        dimension_w,
-                        dimension_l,
-                        weight,
-                        volume,
-                        hsn_no,
-                        country_origin,
-                        attachment_url if attachment else None,
-                        status,
-                        created_by,
-                        created_date
-                    ]
-                )
-            return JsonResponse({'success': True})
-        except IntegrityError as e:
-            error_message = str(e)
-            if 'duplicate key value violates unique constraint "unique_equipment_name"' in error_message:
-                error_message = 'Equipment name already exists. Please choose a different name.'
-            logger.error("IntegrityError: %s", error_message)
-            return JsonResponse({'success': False, 'message': error_message})
-        except Exception as e:
-            logger.error("An unexpected error occurred: %s", e)
-            return JsonResponse({'success': False, 'message': 'An unexpected error occurred. Please try again.'})
-    else:
-        username = None
-        if request.user.is_authenticated:
-            username = request.user.username
-        subcategories = []
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute('SELECT id, category_name, name FROM get_sub()')
-                subcategories = [{'id': row[0], 'category_name': row[1], 'name': row[2]} for row in cursor.fetchall()]
-        except Exception as e:
-            logger.error("Error fetching subcategories: %s", e)
-        return render(request, 'product_tracking/Equipment.html',
-                      {'username': username, 'subcategories': subcategories})
+        # Save the equipment data to the database, including the attachment_url
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
+                dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l, volume,
+                  weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
+
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False})
 
 
 def insert_vendor(request):
@@ -1053,6 +1013,7 @@ def equipment_list(request):
         'username': username
     }
     return render(request, 'product_tracking/Equipment.html', context)
+
 
 
 def delete_equipment_list(request, id):
