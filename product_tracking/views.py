@@ -53,7 +53,7 @@ def index(request):
 
         if not username or not user_id or not modules:
             logging.error("Missing session data")
-            return HttpResponseServerError("Session data missing")
+            return redirect(reverse('login_view'))  # Redirect to login_view
 
         logging.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
         return render(request, 'product_tracking/index.html')
