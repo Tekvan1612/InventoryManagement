@@ -499,6 +499,7 @@
                 });
             }
 
+
             $(document).ready(function () {
                 var urlParams = new URLSearchParams(window.location.search);
                 var subcategoryId = urlParams.get('subcategory_id');
@@ -638,6 +639,13 @@
                 event.preventDefault();
 
                 var formData = new FormData(this);
+
+                // Check if Category type is filled
+                var categoryType = $('#exampleFormControlInput4').val().trim();
+                if (!categoryType) {
+                    alert('Category type is required');
+                    return;
+                }
 
                 $.ajax({
                     url: $(this).attr('action'),
