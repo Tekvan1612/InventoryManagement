@@ -841,35 +841,35 @@
             populateOnLoad();
 
             $(document).ready(function () {
-                $('#addEquipmentForm').on('submit', function (event) {
-                    event.preventDefault();
+                 $('#addEquipmentForm').on('submit', function (event) {
+        event.preventDefault();
 
-                    var formData = new FormData(this);
+        var formData = new FormData(this);
 
-                    $.ajax({
-                        url: $(this).attr('action'),
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function (response) {
-                            console.log(response); // Log the response to verify it
-                            if (response.success) {
-                                alert(response.message || 'Equipment added successfully!');
-                                location.reload();  // Reload the page to reflect changes, or update the table dynamically.
-                            } else {
-                                alert(response.message || 'An error occurred while adding equipment.');
-                            }
-                        },
-                        error: function (response) {
-                            var errorMessage = 'An unexpected error occurred. Please try again.';
-                            if (response.responseJSON && response.responseJSON.message) {
-                                errorMessage = response.responseJSON.message;
-                            }
-                            alert(errorMessage);
-                        }
-                    });
-                });
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                console.log(response); // Log the response to verify it
+                if (response.success) {
+                    alert(response.message || 'Equipment added successfully!');
+                    location.reload();  // Reload the page to reflect changes, or update the table dynamically.
+                } else {
+                    alert(response.message || 'An error occurred while adding equipment.');
+                }
+            },
+            error: function (response) {
+                var errorMessage = 'An unexpected error occurred. Please try again.';
+                if (response.responseJSON && response.responseJSON.message) {
+                    errorMessage = response.responseJSON.message;
+                }
+                alert(errorMessage);
+            }
+        });
+    });
             });
 
         });
