@@ -847,6 +847,7 @@
                         processData: false,
                         contentType: false,
                         success: function (response) {
+                            console.log(response); // Log the response to verify it
                             if (response.success) {
                                 alert(response.message || 'Equipment added successfully!');
                                 location.reload();  // Reload the page to reflect changes, or update the table dynamically.
