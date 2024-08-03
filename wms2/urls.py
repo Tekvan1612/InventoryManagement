@@ -19,5 +19,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', RedirectView.as_view(url='login/', permanent=True)),  # Redirect root URL to login
     path('', include('product_tracking.urls')),
 ]
