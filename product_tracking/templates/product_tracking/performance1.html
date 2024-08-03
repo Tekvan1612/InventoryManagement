@@ -53,6 +53,21 @@
             margin-right: 10px;
         }
 
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
         .btn-group {
             display: flex;
             gap: 10px;
@@ -441,14 +456,14 @@
                     <div class="offcanvas-body">
                         <form action="{% url 'add_category' %}" method="POST" id="categoryForm">
                             {% csrf_token %}
-                            <div class="row">
-                                <div class="col-md-3 mb-3">
+                            <div class="form-row">
+                                <div class="form-group">
                                     <label for="exampleFormControlInputfirst" class="form-label">Category Name<span
                                             class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="exampleFormControlInputfirst"
                                            name="category_name" placeholder="Name" required>
                                 </div>
-                                <div class="col-md-3 mb-3">
+                                <div class="form-group">
                                     <label for="exampleFormControlInputfour" class="form-label" required>Status<span
                                             class="text-danger">*</span></label>
                                     <select class="form-control" name="status" required>
@@ -456,7 +471,7 @@
                                         <option value="0">Inactive</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="form-group">
                                     <div class="btn-group">
                                         <button class="btn btn-primary me-1">Submit</button>
                                         <button class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
