@@ -67,39 +67,46 @@ def index(request):
         return render(request, 'product_tracking/error.html', {'error': str(e)})
 
 def custom_login(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+    try:
+        if request.method == 'POST':
+            username = request.POST.get('username')
+            password = request.POST.get('password')
 
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT user_exists, user_id FROM public.validate_user(%s, %s, %s)", [username, password, True])
-            result = cursor.fetchone()
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT user_exists, user_id FROM public.validate_user(%s, %s, %s)", [username, password, True])
+                result = cursor.fetchone()
 
-            if result and result[0]:
-                user_id = result[1]
-                cursor.execute(
-                    "SELECT mm.module_name FROM user_junction_module ujm JOIN module_master mm ON ujm.module_id = mm.module_id WHERE ujm.user_id = %s",
-                    [user_id])
-                modules = cursor.fetchall()
+                if result and result[0]:
+                    user_id = result[1]
+                    cursor.execute(
+                        "SELECT mm.module_name FROM user_junction_module ujm JOIN module_master mm ON ujm.module_id = mm.module_id WHERE ujm.user_id = %s",
+                        [user_id])
+                    modules = cursor.fetchall()
 
-                request.session['username'] = username
-                request.session['user_id'] = user_id
-                request.session['modules'] = [module[0] for module in modules]
+                    request.session['username'] = username
+                    request.session['user_id'] = user_id
+                    request.session['modules'] = [module[0] for module in modules]
 
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'status': 'success', 'redirect_url': reverse('index')})
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'status': 'success', 'redirect_url': reverse('index')})
+                    else:
+                        return redirect(reverse('index'))
                 else:
-                    return redirect(reverse('index'))
-            else:
-                messages.error(request, "Invalid login details")
-                return render(request, 'product_tracking/page-login.html')
+                    messages.error(request, "Invalid login details")
+                    return render(request, 'product_tracking/page-login.html')
 
-    return render(request, 'product_tracking/page-login.html')
+        return render(request, 'product_tracking/page-login.html')
+    except Exception as e:
+        logger.error(f"Error in custom_login view: {e}", exc_info=True)
+        return render(request, 'product_tracking/error.html', {'error': str(e)})
 
 def logout_view(request):
-    logout(request)
-    return redirect('login_view')
-
+    try:
+        logout(request)
+        return redirect('login_view')
+    except Exception as e:
+        logger.error(f"Error in logout_view: {e}", exc_info=True)
+        return render(request, 'product_tracking/error.html', {'error': str(e)})
 
 def footer(request):
     return render(request, 'product_tracking/footer.html')
