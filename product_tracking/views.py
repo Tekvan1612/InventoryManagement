@@ -968,12 +968,10 @@ def subcategory_list(request, category_id):
 
 
 def equipment_list(request):
-    print('fetch the data')
     username = request.session.get('username')
     subcategory_id = request.GET.get('subcategory_id')
     if not subcategory_id:
         return JsonResponse({'error': 'Missing subcategory_id parameter'}, status=400)
-    print('Sub category ID:', subcategory_id)
 
     try:
         subcategory_id = int(subcategory_id)
@@ -982,15 +980,11 @@ def equipment_list(request):
 
     equipment_listing = []
     try:
-        print('inside the list of try block')
         with connection.cursor() as cursor:
-            print('inside the cursor object')
             cursor.execute("SELECT * FROM get_equipment_list(%s)", [subcategory_id])
             rows = cursor.fetchall()
 
-            print('fetch the data')
             for row in rows:
-                print('inside the list of rows')
                 created_date = row[15].strftime('%d-%m-%Y')
                 equipment_listing.append({
                     'id': row[0],
@@ -1005,14 +999,12 @@ def equipment_list(request):
                     'volume': row[9],
                     'hsn_no': row[10],
                     'country_origin': row[11],
-                    'attachment': row[12],
+                    'attachment': row[12],  # Ensure this is the Cloudinary URL
                     'status': row[13],
                     'created_by': row[14],
                     'created_date': created_date
                 })
-                print('fetch the data:', equipment_listing)
     except Exception as e:
-        print("Error fetching equipment list:", e)
         return JsonResponse({'error': str(e)}, status=500)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -1024,7 +1016,6 @@ def equipment_list(request):
         'username': username
     }
     return render(request, 'product_tracking/Equipment.html', context)
-
 
 
 def delete_equipment_list(request, id):
