@@ -53,7 +53,7 @@ MIDDLEWARE = [
 ]
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'MediaStorage',  # Ensure this matches the value in your Cloudinary account exactly
+    'CLOUD_NAME': '155765635687362',  # Ensure this matches the value in your Cloudinary account exactly
     'API_KEY': '155765635687362',
     'API_SECRET': 'Fig3zoGWF2Uba2yCgJkAf-mehK4',
 }
