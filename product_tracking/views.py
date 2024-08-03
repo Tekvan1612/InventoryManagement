@@ -805,6 +805,7 @@ def modify_employee(request):
 
 # Equipment Module
 
+@csrf_exempt
 def add_equipment(request):
     if request.method == 'POST':
         try:
@@ -839,17 +840,15 @@ def add_equipment(request):
                 attachment_url = ''
                 logger.info("No attachment uploaded")
 
-            # Save the equipment data to the database, including the attachment_url
+            # Call the PostgreSQL function to save the equipment data
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute("""
-                        INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
-                        dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l,
-                          volume, weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
+                    cursor.callproc('add_equipment', [
+                        equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l,
+                        volume, weight, hsn_no, country_origin, status, attachment_url, created_by, created_date
+                    ])
                 logger.info("Equipment data inserted into database successfully")
-            except Error as db_error:
+            except Exception as db_error:
                 logger.error("Database error: %s", str(db_error))
                 return JsonResponse({'success': False, 'error': 'Database error: ' + str(db_error)})
 
@@ -860,6 +859,7 @@ def add_equipment(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
+
 
 
 def insert_vendor(request):
