@@ -45,21 +45,25 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    try:
-        logging.info("Accessing index view")
-        username = request.session.get('username')
-        user_id = request.session.get('user_id')
-        modules = request.session.get('modules')
+    # Retrieve session data
+    username = request.session.get('username', 'N/A')
+    user_id = request.session.get('user_id', None)  # Retrieve the user_id to check if it's correctly stored
+    modules = request.session.get('modules', None)
 
-        if not username or not user_id or not modules:
-            logging.error("Missing session data")
-            return redirect(reverse('login_view'))  # Redirect to login_view
+    # Log the retrieved session data
+    print(f"Accessing index view")
+    print(f"Session Data - Username: {username}, User ID: {user_id}, Modules:{modules}")
 
-        logging.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
-        return render(request, 'product_tracking/index.html')
-    except Exception as e:
-        logging.error(f"Error in index view: {str(e)}")
-        return HttpResponseServerError("Internal Server Error")
+    if not username or username == 'N/A':
+        print("No username in session; redirecting to login")
+        return redirect('login_view')
+
+    # If session data is valid, render the index page with the session data
+    return render(request, 'product_tracking/index.html', {
+        'username': username,
+        'user_id': user_id  # Optionally pass user_id to the template if needed
+    })
+
 
 def custom_login(request):
     if request.method == 'POST':
@@ -93,9 +97,10 @@ def custom_login(request):
 
     return render(request, 'product_tracking/page-login.html')
 
+
 def logout_view(request):
     logout(request)
-    return redirect('login_view')
+    return redirect('login')
 
 
 def footer(request):
