@@ -57,29 +57,14 @@
             margin-bottom: 15px;
         }
 
-        .form-row {
-            display: flex;
-            gap: 15px;
-        }
-
         .btn-group {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
         }
 
-        .form-container {
+        .align-end {
             display: flex;
-            flex-direction: column;
-        }
-
-        .form-container > .form-row {
-            margin-bottom: 15px;
-        }
-
-        .btn-container {
-            display: flex;
-            justify-content: flex-start;
+            align-items: flex-end;
         }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -465,27 +450,23 @@
                     <div class="offcanvas-body">
                         <form action="{% url 'add_category' %}" method="POST" id="categoryForm">
                             {% csrf_token %}
-                            <div class="form-container">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="exampleFormControlInputfirst" class="form-label">Category Name<span
-                                                class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="exampleFormControlInputfirst"
-                                               name="category_name" placeholder="Name" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="exampleFormControlInputfour" class="form-label" required>Status<span
-                                                class="text-danger">*</span></label>
-                                        <select class="form-control" name="status" required>
-                                            <option value="1" data-display="Select">Active</option>
-                                            <option value="0">Inactive</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="btn-container">
-                                    <button class="btn btn-primary me-1">Submit</button>
-                                    <button class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
-                                </div>
+                            <div class="form-group">
+                                <label for="exampleFormControlInputfirst" class="form-label">Category Name<span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="exampleFormControlInputfirst"
+                                       name="category_name" placeholder="Name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleFormControlInputfour" class="form-label" required>Status<span
+                                        class="text-danger">*</span></label>
+                                <select class="form-control" name="status" required>
+                                    <option value="1" data-display="Select">Active</option>
+                                    <option value="0">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group align-end">
+                                <button class="btn btn-primary me-1">Submit</button>
+                                <button class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
                             </div>
                         </form>
                     </div>
