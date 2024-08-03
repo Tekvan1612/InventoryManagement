@@ -809,8 +809,9 @@ def modify_employee(request):
 def add_equipment(request):
     if request.method == 'POST':
         try:
+            # Get form data
             equipment_name = request.POST.get('equipment_name')
-            subcategory_id = int(request.POST.get('subcategory_id')) if request.POST.get('subcategory_id') else None
+            subcategory_id = request.POST.get('subcategory_id')
             category_type = request.POST.get('category_type')
             type = request.POST.get('type')
             dimension_h = request.POST.get('dimension_h')
@@ -818,13 +819,17 @@ def add_equipment(request):
             dimension_l = request.POST.get('dimension_l')
             volume = request.POST.get('volume')
             weight = request.POST.get('weight')
-            hsn_no = int(request.POST.get('hsn_no')) if request.POST.get('hsn_no') else None
+            hsn_no = request.POST.get('hsn_no')
             country_origin = request.POST.get('country_origin')
-            status = request.POST.get('status').lower() == 'true'
+            status = request.POST.get('status') == 'true'
             created_by = request.session.get('user_id')  # Assuming session stores user ID
             created_date = timezone.now()
 
             logger.info("Received POST data: %s", request.POST)
+
+            # Check for required fields
+            if not category_type:
+                return JsonResponse({'success': False, 'error': 'category_type is required'})
 
             attachment = request.FILES.get('attachment')
             if attachment:
@@ -877,6 +882,7 @@ def add_equipment(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
+
 
 
 def insert_vendor(request):
