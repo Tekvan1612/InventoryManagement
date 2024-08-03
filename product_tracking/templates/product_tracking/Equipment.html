@@ -780,7 +780,7 @@
                 });
             });
 
-                $(document).on('click', '.vendor-btn', function () {
+            $(document).on('click', '.vendor-btn', function () {
                 var row = $(this).closest('tr');
                 var equipmentId = row.find('td:eq(1)').text().trim();
 
@@ -791,10 +791,10 @@
                     url: '/stock-in/' + equipmentId + '/',
                     type: 'GET',
                     success: function (data) {
-                        console.log('Fetched Data:', data); // Debugging statement to check the fetched data
+                        console.log('Fetched Data:', data);
 
                         var stockDetailsContainer = $('#stockDetailsContainer');
-                        stockDetailsContainer.empty(); // Clear previous content
+                        stockDetailsContainer.empty();
 
                         if (data.error) {
                             stockDetailsContainer.html('<p>' + data.error + '</p>');
@@ -813,7 +813,7 @@
                                 '</tr></thead><tbody>';
 
                             data.forEach(function (item, index) {
-                                console.log('Item:', item); // Debugging statement to check each item
+                                console.log('Item:', item);
                                 tableHtml += '<tr>' +
                                     '<td style="display: none;">' + item.id + '</td>' +
                                     '<td class="editable" data-field="vendor_name">' + item.vendor_name + '</td>' +
@@ -833,10 +833,8 @@
                             tableHtml += '</tbody></table>';
                             tableHtml += '</div>';
 
-                            // Append the table HTML to the stockDetailsContainer
                             stockDetailsContainer.html(tableHtml);
 
-                            // Add click event listener for Edit buttons
                             $('.edit-button').click(function () {
                                 var row = $(this).closest('tr');
                                 row.find('.editable').each(function () {
@@ -849,10 +847,9 @@
                                 row.find('.save-button').show();
                             });
 
-                            // Add click event listener for Save buttons
                             $('.save-button').click(function () {
                                 var row = $(this).closest('tr');
-                                var rowId = row.find('td:first').text(); // Assuming the ID is in the first hidden cell
+                                var rowId = row.find('td:first').text();
                                 var updatedData = {};
 
                                 row.find('input').each(function () {
@@ -860,12 +857,11 @@
                                     updatedData[input.attr('name')] = input.val();
                                 });
 
-                                // Include CSRF token in headers
                                 $.ajax({
                                     url: '/update-stock-in/' + rowId + '/',
                                     type: 'POST',
-                                    headers: {'X-CSRFToken': '{{ csrf_token }}'},  // Include CSRF token
-                                    data: updatedData,  // Send updatedData directly
+                                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                                    data: updatedData,
                                     success: function (response) {
                                         if (response.success) {
                                             row.find('.editable').each(function () {
@@ -886,7 +882,6 @@
                             });
                         }
 
-                        // Show the modal
                         $('#stockDetailsModal').modal('show');
                     },
                     error: function (xhr, status, error) {
@@ -948,6 +943,26 @@
                     generateInputColumns(num);
                 });
             });
+
+            $(document).on('click', '#saveChanges', function () {
+                var formData = new FormData($('#vendorForm')[0]);
+
+                $.ajax({
+                    url: '/insert_vendor/',
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        console.log("Data inserted into database successfully");
+                        alert("Vendor data saved successfully!");
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error inserting data into database:", error);
+                    }
+                });
+            });
+
 
             $(document).on('click', '#saveChanges', function () {
                 var formData = new FormData($('#vendorForm')[0]);
