@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
 import cloudinary
 from cloudinary.uploader import upload
+from django.utils import timezone
 
 
 logger = logging.getLogger(__name__)
@@ -820,7 +821,7 @@ def add_equipment(request):
             country_origin = request.POST.get('country_origin')
             status = request.POST.get('status')
             created_by = request.session.get('username')
-            created_date = timezone.now()
+            created_date = datetime.now()
 
             logger.info("Received POST data: %s", request.POST)
 
