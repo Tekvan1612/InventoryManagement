@@ -726,28 +726,20 @@
                     dataType: 'json',
                     success: function (data) {
                         if (typeof data.subcategory_type === 'string') {
-                            console.log('Fetch the sub category Type:', subcategoryId, data.subcategory_type);
-
-                            // Split the comma-separated values and create options
                             var types = data.subcategory_type.split(',').map(function (type) {
-                                return type.trim(); // Trim whitespace from each type
+                                return type.trim();
                             });
 
-                            console.log('Types:', types);
-
                             var $select = $('#exampleFormControlInput5');
-                            $select.empty(); // Clear existing options
+                            $select.empty();
 
                             types.forEach(function (type) {
-                                if (type) { // Ensure no empty options are added
+                                if (type) {
                                     $select.append('<option value="' + type + '">' + type + '</option>');
                                 }
                             });
 
-                            console.log('Fetched subcategory Type:', types);
                         } else {
-                            console.error('Expected a string for subcategory_type, but got:', typeof data.subcategory_type);
-                            console.error('Data received:', data);
                             alert('Invalid data format received.');
                         }
                     },
@@ -811,8 +803,10 @@
                 var selectedSubcategory = $(this).val();
                 if (selectedSubcategory) {
                     populateCategoryType(selectedSubcategory);
+                    populateSubcategoryType(selectedSubcategory);
                 } else {
                     $('#exampleFormControlInput4').val('');
+                    $('#exampleFormControlInput5').empty();
                 }
             });
 
@@ -833,6 +827,18 @@
                     volumeField.value = '';
                 }
             }
+
+            function populateOnLoad() {
+                var urlParams = new URLSearchParams(window.location.search);
+                var subcategoryId = urlParams.get('subcategory_id');
+
+                if (subcategoryId) {
+                    populateCategoryType(subcategoryId);
+                    populateSubcategoryType(subcategoryId);
+                }
+            }
+
+            populateOnLoad();
 
             $(document).ready(function () {
                 $('#addEquipmentForm').on('submit', function (event) {
