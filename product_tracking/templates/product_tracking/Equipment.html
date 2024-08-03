@@ -834,30 +834,33 @@
                 }
             }
 
-            $('#addEquipmentForm').on('submit', function (event) {
-                event.preventDefault();
+            $(document).ready(function () {
+                $('#addEquipmentForm').on('submit', function (event) {
+                    event.preventDefault();
 
-                var formData = new FormData(this);
+                    var formData = new FormData(this);
 
-                $.ajax({
-                    url: $(this).attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (response) {
-                        if (response.success) {
-                            alert('Equipment added successfully!');
-                            location.reload();  // Reload the page to reflect changes, or update the table dynamically.
-                        } else {
-                            alert(response.message);
+                    $.ajax({
+                        url: $(this).attr('action'),
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (response) {
+                            if (response.success) {
+                                alert(response.message || 'Equipment added successfully!');
+                                location.reload();  // Reload the page to reflect changes, or update the table dynamically.
+                            } else {
+                                alert(response.message || 'An error occurred while adding equipment.');
+                            }
+                        },
+                        error: function (response) {
+                            alert('An unexpected error occurred. Please try again.');
                         }
-                    },
-                    error: function (response) {
-                        alert('An unexpected error occurred. Please try again.');
-                    }
+                    });
                 });
             });
+
         });
     </script>
 

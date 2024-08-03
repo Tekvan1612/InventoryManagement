@@ -827,7 +827,7 @@ def add_equipment(request):
             logger.info("Received POST data: %s", request.POST)
 
             if not category_type:
-                return JsonResponse({'success': False, 'error': 'category_type is required'})
+                return JsonResponse({'success': False, 'message': 'Category type is required'})
 
             attachment = request.FILES.get('attachment')
             if attachment:
@@ -838,7 +838,7 @@ def add_equipment(request):
                     logger.info("Image uploaded successfully: %s", attachment_url)
                 except Exception as e:
                     logger.error("Cloudinary error: %s", str(e))
-                    return JsonResponse({'success': False, 'error': 'Cloudinary upload error: ' + str(e)})
+                    return JsonResponse({'success': False, 'message': 'Cloudinary upload error: ' + str(e)})
             else:
                 attachment_url = ''
                 logger.info("No attachment uploaded")
@@ -867,19 +867,18 @@ def add_equipment(request):
                 logger.info("Equipment data inserted into database successfully")
             except Exception as db_error:
                 logger.error("Database error: %s", str(db_error))
-                return JsonResponse({'success': False, 'error': 'Database error: ' + str(db_error)})
+                return JsonResponse({'success': False, 'message': 'Database error: ' + str(db_error)})
 
-            return JsonResponse({'success': True})
+            return JsonResponse({'success': True, 'message': 'Equipment added successfully'})
 
         except ValueError as ve:
             logger.error("ValueError in add_equipment view: %s", str(ve))
-            return JsonResponse({'success': False, 'error': 'Invalid input data: ' + str(ve)})
+            return JsonResponse({'success': False, 'message': 'Invalid input data: ' + str(ve)})
         except Exception as e:
             logger.error("Error in add_equipment view: %s", str(e))
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'message': str(e)})
 
-    return JsonResponse({'success': False})
-
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
 def insert_vendor(request):
