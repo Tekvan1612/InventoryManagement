@@ -806,32 +806,32 @@ def modify_employee(request):
 
 def add_equipment(request):
     if request.method == 'POST':
-        equipment_name = request.POST.get('equipment_name').upper()
-        subcategory_name = request.POST.get('subcategory_id').upper()
-        category_name = request.POST.get('category_name').upper()
-        type = request.POST.get('type')
-        dimension_h = request.POST.get('dimension_h')
-        dimension_w = request.POST.get('dimension_w')
-        dimension_l = request.POST.get('dimension_l')
-        weight = request.POST.get('weight')
-        volume = request.POST.get('volume')
-        hsn_no = request.POST.get('hsn_no')
-        country_origin = request.POST.get('country_origin')
-        attachment = request.FILES.get('attachment')
-        status = request.POST.get('status')
-        created_by = request.session.get('user_id')
-        created_date = datetime.now()
-
-        attachment_url = None
-        if attachment:
-            try:
-                upload_result = cloudinary.uploader.upload(attachment)
-                attachment_url = upload_result.get('url')
-            except Exception as e:
-                print("Error uploading to Cloudinary:", e)
-                return JsonResponse({'success': False, 'message': 'Failed to upload attachment.'})
-
         try:
+            equipment_name = request.POST.get('equipment_name').upper()
+            subcategory_name = request.POST.get('subcategory_id').upper()
+            category_name = request.POST.get('category_name').upper()
+            type = request.POST.get('type')
+            dimension_h = request.POST.get('dimension_h')
+            dimension_w = request.POST.get('dimension_w')
+            dimension_l = request.POST.get('dimension_l')
+            weight = request.POST.get('weight')
+            volume = request.POST.get('volume')
+            hsn_no = request.POST.get('hsn_no')
+            country_origin = request.POST.get('country_origin')
+            attachment = request.FILES.get('attachment')
+            status = request.POST.get('status')
+            created_by = request.session.get('user_id')
+            created_date = datetime.now()
+
+            attachment_url = None
+            if attachment:
+                try:
+                    upload_result = cloudinary.uploader.upload(attachment)
+                    attachment_url = upload_result.get('url')
+                except Exception as e:
+                    logger.error("Error uploading to Cloudinary: %s", e)
+                    return JsonResponse({'success': False, 'message': 'Failed to upload attachment.'})
+
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -857,16 +857,16 @@ def add_equipment(request):
                         created_date
                     ]
                 )
-                return JsonResponse({'success': True})
+            return JsonResponse({'success': True})
         except IntegrityError as e:
             error_message = str(e)
             if 'duplicate key value violates unique constraint "unique_equipment_name"' in error_message:
                 error_message = 'Equipment name already exists. Please choose a different name.'
-            print("An unexpected error occurred:", error_message)
+            logger.error("IntegrityError: %s", error_message)
             return JsonResponse({'success': False, 'message': error_message})
         except Exception as e:
-            print("An unexpected error occurred:", e)
-            return JsonResponse({'success': False, 'message': 'Equipment Already Exists!'})
+            logger.error("An unexpected error occurred: %s", e)
+            return JsonResponse({'success': False, 'message': 'An unexpected error occurred. Please try again.'})
     else:
         username = None
         if request.user.is_authenticated:
@@ -877,10 +877,9 @@ def add_equipment(request):
                 cursor.execute('SELECT id, category_name, name FROM get_sub()')
                 subcategories = [{'id': row[0], 'category_name': row[1], 'name': row[2]} for row in cursor.fetchall()]
         except Exception as e:
-            print("Error fetching subcategories:", e)
+            logger.error("Error fetching subcategories: %s", e)
         return render(request, 'product_tracking/Equipment.html',
                       {'username': username, 'subcategories': subcategories})
-
 
 
 def insert_vendor(request):
