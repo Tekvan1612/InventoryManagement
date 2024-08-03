@@ -488,7 +488,6 @@
                             $('#hiddenSubcategoryId').val(data.subcategory_id);
                             populateCategoryType(selectedSubcategoryId);
                             populateSubcategoryType(selectedSubcategoryId);
-                            populateSubcategoryTypeEdit(selectedSubcategoryId);
                         } else if (data.error) {
                             alert(data.error);
                         }
@@ -654,7 +653,6 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        console.log(response);
                         if (response.success) {
                             alert(response.message || 'Equipment added successfully!');
                             location.reload();
@@ -1016,11 +1014,10 @@
                                    id="exampleFormControlInput3" required>
                             <input type="hidden" name="subcategory_id" id="hiddenSubcategoryId">
                         </div>
-
                         <div class="col-xl-3 mb-3">
                             <label for="exampleFormControlInput4" class="form-label">Category Type<span
                                     class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="exampleFormControlInput4" name="category_name"
+                            <input type="text" class="form-control" id="exampleFormControlInput4" name="category_type"
                                    placeholder="" required>
                         </div>
                         <div class="col-xl-3 mb-3">
@@ -1030,7 +1027,6 @@
                                 <!-- Options will be populated dynamically -->
                             </select>
                         </div>
-
                         <div>
                             <h3>Physical Measurements</h3>
                             <hr/>
