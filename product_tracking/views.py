@@ -803,7 +803,7 @@ def modify_employee(request):
 
 
 # Equipment Module
-@login_required
+
 def add_equipment(request):
     if request.method == 'POST':
         equipment_name = request.POST.get('equipment_name').upper()
