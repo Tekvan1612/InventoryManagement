@@ -45,22 +45,26 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    username = request.session.get('username', 'N/A')
-    user_id = request.session.get('user_id', None)
-    modules = request.session.get('modules', None)
+    try:
+        username = request.session.get('username', 'N/A')
+        user_id = request.session.get('user_id', None)
+        modules = request.session.get('modules', None)
 
-    # Log the retrieved session data
-    logger.info(f"Accessing index view")
-    logger.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
+        # Log the retrieved session data
+        logger.info(f"Accessing index view")
+        logger.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
 
-    if not username or username == 'N/A':
-        logger.info("No username in session; redirecting to login")
-        return redirect('login_view')
+        if not username or username == 'N/A':
+            logger.info("No username in session; redirecting to login")
+            return redirect('login_view')
 
-    return render(request, 'product_tracking/index.html', {
-        'username': username,
-        'user_id': user_id
-    })
+        return render(request, 'product_tracking/index.html', {
+            'username': username,
+            'user_id': user_id
+        })
+    except Exception as e:
+        logger.error(f"Error in index view: {e}", exc_info=True)
+        return render(request, 'product_tracking/error.html', {'error': str(e)})
 
 def custom_login(request):
     if request.method == 'POST':
