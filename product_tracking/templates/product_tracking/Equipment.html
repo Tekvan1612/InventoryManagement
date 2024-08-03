@@ -75,7 +75,6 @@
             const pageSize = 10;
             let totalItems = 0;
 
-            // Search and filter equipment list
             $('#searchSubCategory').on('input', function () {
                 var searchText = $(this).val().trim().toLowerCase();
                 $('#equipment-table-body tr').each(function () {
@@ -92,13 +91,9 @@
                 }
             });
 
-            // Initialize tooltips
             $('[data-toggle="tooltip"]').tooltip();
-
-            // Fetch initial equipment list
             fetchEquipmentList();
 
-            // Fetch and display equipment list
             function fetchEquipmentList() {
                 const equipmentListData = document.getElementById('equipment-list-data').textContent;
                 let equipmentlist = [];
@@ -136,7 +131,6 @@
                 updatePaginationControls(totalItems, currentPage, totalPages);
             }
 
-            // Update pagination controls
             function updatePaginationControls(totalItems, currentPage, totalPages) {
                 $('#pagination-controls').html('');
                 if (currentPage > 1) {
@@ -150,22 +144,21 @@
                 $('#pagination-count').text(`Showing ${startItem} to ${endItem} of ${totalItems} entries`);
             }
 
-            // Handle pagination button clicks
             $(document).on('click', '#prev-page-btn', function () {
                 if (currentPage > 1) {
                     currentPage--;
                     fetchEquipmentList();
                 }
             });
+
             $(document).on('click', '#next-page-btn', function () {
                 currentPage++;
                 fetchEquipmentList();
             });
 
-            // Populate subcategory input on page load
-            function populateSubcategoryInput(selectedSubcategoryId) {
+            function populateSubcategoryDropdown(subcategoryId) {
                 $.ajax({
-                    url: '/fetch_subcategory_name/' + selectedSubcategoryId + '/',
+                    url: '/fetch_subcategory_name/' + subcategoryId + '/',
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
@@ -173,9 +166,8 @@
                             $('#exampleFormControlInput3').val(data.subcategory_name);
                             $('#exampleFormControlInput3').attr('data-subcategory-id', data.subcategory_id);
                             $('#hiddenSubcategoryId').val(data.subcategory_id);
-                            populateCategoryType(selectedSubcategoryId);
-                            populateSubcategoryType(selectedSubcategoryId);
-                            populateSubcategoryTypeEdit(selectedSubcategoryId);
+                            populateCategoryType(data.subcategory_id);
+                            populateSubcategoryType(data.subcategory_id);
                         } else if (data.error) {
                             alert(data.error);
                         }
@@ -186,7 +178,6 @@
                 });
             }
 
-            // Populate category type based on subcategory id
             function populateCategoryType(subcategoryId) {
                 $.ajax({
                     url: '/get_category_type/',
@@ -206,7 +197,6 @@
                 });
             }
 
-            // Populate subcategory type based on subcategory id
             function populateSubcategoryType(subcategoryId) {
                 $.ajax({
                     url: '/fetch_subcategory_type/' + subcategoryId + '/',
@@ -234,7 +224,6 @@
                 });
             }
 
-            // Populate subcategory type edit based on subcategory id
             function populateSubcategoryTypeEdit(subcategoryId) {
                 $.ajax({
                     url: '/fetch_subcategory_type/' + subcategoryId + '/',
@@ -262,19 +251,27 @@
                 });
             }
 
-            // Populate on page load if subcategory id is present
             function populateOnLoad() {
                 var urlParams = new URLSearchParams(window.location.search);
                 var subcategoryId = urlParams.get('subcategory_id');
                 if (subcategoryId) {
-                    populateCategoryType(subcategoryId);
-                    populateSubcategoryType(subcategoryId);
+                    populateSubcategoryDropdown(subcategoryId);
                 }
             }
 
             populateOnLoad();
 
-            // Handle form submission
+            $('#exampleFormControlInput3').on('change', function () {
+                var selectedSubcategory = $(this).val();
+                if (selectedSubcategory) {
+                    populateCategoryType(selectedSubcategory);
+                    populateSubcategoryType(selectedSubcategory);
+                } else {
+                    $('#exampleFormControlInput4').val('');
+                    $('#exampleFormControlInput5').empty();
+                }
+            });
+
             $('#addEquipmentForm').on('submit', function (event) {
                 event.preventDefault();
                 var formData = new FormData(this);
@@ -302,7 +299,6 @@
                 });
             });
 
-            // Event listener for edit button
             $(document).on('click', '.edit-btn', function () {
                 var row = $(this).closest('tr');
                 var employeeId = row.find('td:eq(1)').text().trim();
@@ -351,12 +347,10 @@
                 });
             });
 
-            // Handle save changes button click
             $(document).on('click', '#saveChangesBtn', function () {
                 updateCategoryInDatabase();
             });
 
-            // Update category in the database
             function updateCategoryInDatabase() {
                 var employeeId = $('#editCategoryId').val();
                 var employeeName = $('#editCategoryName').val().trim();
@@ -391,7 +385,6 @@
                 });
             }
 
-            // Function to get CSRF token
             function getCookie(name) {
                 var cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -407,7 +400,6 @@
                 return cookieValue;
             }
 
-            // Function to calculate volume
             $('.dimension').on('input', function () {
                 calculateVolume();
             });
