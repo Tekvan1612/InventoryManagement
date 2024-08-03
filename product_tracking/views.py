@@ -44,6 +44,28 @@ logger = logging.getLogger(__name__)
 #     })
 
 
+def index(request):
+    try:
+        username = request.session.get('username', 'N/A')
+        user_id = request.session.get('user_id', None)
+        modules = request.session.get('modules', None)
+
+        # Log the retrieved session data
+        logger.info(f"Accessing index view")
+        logger.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
+
+        if not username or username == 'N/A':
+            logger.info("No username in session; redirecting to login")
+            return redirect('login_view')
+
+        return render(request, 'product_tracking/index.html', {
+            'username': username,
+            'user_id': user_id
+        })
+    except Exception as e:
+        logger.error(f"Error in index view: {e}", exc_info=True)
+        return render(request, 'product_tracking/error.html', {'error': str(e)})
+
 def custom_login(request):
     try:
         if request.method == 'POST':
@@ -66,9 +88,9 @@ def custom_login(request):
                     request.session['modules'] = [module[0] for module in modules]
 
                     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({'status': 'success', 'redirect_url': reverse('index')})
+                        return JsonResponse({'status': 'success', 'redirect_url': redirect('index').url})
                     else:
-                        return redirect(reverse('index'))
+                        return redirect('index')
                 else:
                     messages.error(request, "Invalid login details")
                     return render(request, 'product_tracking/page-login.html')
@@ -78,27 +100,6 @@ def custom_login(request):
         logger.error(f"Error in custom_login view: {e}", exc_info=True)
         return render(request, 'product_tracking/error.html', {'error': str(e)})
 
-def index(request):
-    try:
-        username = request.session.get('username', 'N/A')
-        user_id = request.session.get('user_id', None)
-        modules = request.session.get('modules', None)
-
-        logger.info(f"Accessing index view")
-        logger.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
-
-        if not username or username == 'N/A':
-            logger.info("No username in session; redirecting to login")
-            return redirect('login_view')
-
-        return render(request, 'product_tracking/index.html', {
-            'username': username,
-            'user_id': user_id
-        })
-    except Exception as e:
-        logger.error(f"Error in index view: {e}", exc_info=True)
-        return render(request, 'product_tracking/error.html', {'error': str(e)})
-
 def logout_view(request):
     try:
         logout(request)
@@ -106,6 +107,7 @@ def logout_view(request):
     except Exception as e:
         logger.error(f"Error in logout_view: {e}", exc_info=True)
         return render(request, 'product_tracking/error.html', {'error': str(e)})
+
 
 def footer(request):
     return render(request, 'product_tracking/footer.html')
