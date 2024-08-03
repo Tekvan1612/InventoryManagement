@@ -77,15 +77,18 @@
 
             $('#searchSubCategory').on('input', function () {
                 var searchText = $(this).val().trim().toLowerCase();
+
                 $('#equipment-table-body tr').each(function () {
-                    var subCategoryName = $(this).find('td:eq(3)').text().trim().toLowerCase();
-                    var categoryName = $(this).find('td:eq(4)').text().trim().toLowerCase();
+                    var subCategoryName = $(this).find('td:eq(2)').text().trim().toLowerCase();
+                    var categoryName = $(this).find('td:eq(3)').text().trim().toLowerCase();
+
                     if (subCategoryName.includes(searchText) || categoryName.includes(searchText)) {
                         $(this).show();
                     } else {
                         $(this).hide();
                     }
                 });
+
                 if (searchText === '') {
                     $('#equipment-table-body tr').show();
                 }
@@ -97,50 +100,60 @@
             function fetchEquipmentList() {
                 const equipmentListData = document.getElementById('equipment-list-data').textContent;
                 let equipmentlist = [];
+
                 try {
                     equipmentlist = JSON.parse(equipmentListData);
                 } catch (e) {
                     console.error("Error parsing JSON data: ", e);
                     return;
                 }
+
                 const totalItems = equipmentlist.length;
                 const totalPages = Math.ceil(totalItems / pageSize);
+
                 const paginatedEquipment = equipmentlist.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+                console.log("Equipment Listing:", paginatedEquipment);
+
                 $('#equipment-table-body').empty();
                 $.each(paginatedEquipment, function (index, equipment) {
                     const row = `<tr>
-                    <td>${((currentPage - 1) * pageSize + index + 1)}</td>
-                    <td style="display: none;">${equipment.id}</td>
-                    <td class="equipment_name" data-id="${equipment.id}">
-                        <a href="#" class="equipment-link">${equipment.equipment_name}</a>
-                    </td>
-                    <td>${equipment.type}</td>
-                    <td>${equipment.sub_category_name}</td>
-                    <td>${equipment.category_type}</td>
-                    <td><img src="${equipment.attachment}" alt="Equipment Image" width="70" height="60"></td>
-                    <td>${equipment.created_by.toUpperCase()}</td>
-                    <td>${equipment.created_date}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary edit-btn me-2" data-toggle="tooltip" title="Edit Equipment"><i class="fa fa-pencil"></i></button>
-                        <button class="btn btn-sm btn-danger delete-btn me-2" data-toggle="tooltip" title="Delete Equipment"><i class="fa fa-trash"></i></button>
-                        <button class="btn btn-sm btn-primary vendor-btn btn-group" data-toggle="tooltip" title="Add Stock and Serial number"><i class="fa fa-add"></i></button>
-                    </td>
-                </tr>`;
+                <td>${((currentPage - 1) * pageSize + index + 1)}</td>
+                <td style="display: none;">${equipment.id}</td>
+                <td class="equipment_name" data-id="${equipment.id}">
+                    <a href="#" class="equipment-link">${equipment.equipment_name}</a>
+                </td>
+                <td>${equipment.type}</td>
+                <td>${equipment.sub_category_name}</td>
+                <td>${equipment.category_type}</td>
+                <td><img src="${equipment.attachment}" alt="Equipment Image" width="70" height="60"></td>
+                <td>${equipment.created_by.toUpperCase()}</td>
+                <td>${equipment.created_date}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary edit-btn me-2" data-toggle="tooltip" title="Edit Equipment" ><i class="fa fa-pencil"></i></button>
+                    <button class="btn btn-sm btn-danger delete-btn me-2" data-toggle="tooltip" title="Delete Equipment"><i class="fa fa-trash"></i></button>
+                    <button class="btn btn-sm btn-primary vendor-btn btn-group" data-toggle="tooltip" title="Add Stock and Serial number "><i class="fa fa-add"></i></button>
+                </td>
+            </tr>`;
                     $('#equipment-table-body').append(row);
                 });
+
                 updatePaginationControls(totalItems, currentPage, totalPages);
             }
 
             function updatePaginationControls(totalItems, currentPage, totalPages) {
                 $('#pagination-controls').html('');
+
                 if (currentPage > 1) {
                     $('#pagination-controls').append('<button id="prev-page-btn" class="btn btn-primary">Previous</button>');
                 }
+
                 if (currentPage < totalPages) {
                     $('#pagination-controls').append('<button id="next-page-btn" class="btn btn-primary">Next</button>');
                 }
+
                 const startItem = (currentPage - 1) * pageSize + 1;
                 const endItem = Math.min(currentPage * pageSize, totalItems);
+
                 $('#pagination-count').text(`Showing ${startItem} to ${endItem} of ${totalItems} entries`);
             }
 
@@ -156,149 +169,6 @@
                 fetchEquipmentList();
             });
 
-            function populateSubcategoryDropdown(subcategoryId) {
-                $.ajax({
-                    url: '/fetch_subcategory_name/' + subcategoryId + '/',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        if (data.subcategory_name) {
-                            $('#exampleFormControlInput3').val(data.subcategory_name);
-                            $('#exampleFormControlInput3').attr('data-subcategory-id', data.subcategory_id);
-                            $('#hiddenSubcategoryId').val(data.subcategory_id);
-                            populateCategoryType(data.subcategory_id);
-                            populateSubcategoryType(data.subcategory_id);
-                        } else if (data.error) {
-                            alert(data.error);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching subcategory name:', error);
-                    }
-                });
-            }
-
-            function populateCategoryType(subcategoryId) {
-                $.ajax({
-                    url: '/get_category_type/',
-                    type: 'GET',
-                    data: {subcategory_id: subcategoryId},
-                    dataType: 'json',
-                    success: function (data) {
-                        if (data.category_name) {
-                            $('#exampleFormControlInput4').val(data.category_name);
-                        } else if (data.error) {
-                            alert(data.error);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching category type:', error);
-                    }
-                });
-            }
-
-            function populateSubcategoryType(subcategoryId) {
-                $.ajax({
-                    url: '/fetch_subcategory_type/' + subcategoryId + '/',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        if (typeof data.subcategory_type === 'string') {
-                            var types = data.subcategory_type.split(',').map(function (type) {
-                                return type.trim();
-                            });
-                            var $select = $('#exampleFormControlInput5');
-                            $select.empty();
-                            types.forEach(function (type) {
-                                if (type) {
-                                    $select.append('<option value="' + type + '">' + type + '</option>');
-                                }
-                            });
-                        } else {
-                            alert('Invalid data format received.');
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching subcategory type:', error);
-                    }
-                });
-            }
-
-            function populateSubcategoryTypeEdit(subcategoryId) {
-                $.ajax({
-                    url: '/fetch_subcategory_type/' + subcategoryId + '/',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        if (typeof data.subcategory_type === 'string') {
-                            var types = data.subcategory_type.split(',').map(function (type) {
-                                return type.trim();
-                            });
-                            var $select = $('#editEquipmentType');
-                            $select.empty();
-                            types.forEach(function (type) {
-                                if (type) {
-                                    $select.append('<option value="' + type + '">' + type + '</option>');
-                                }
-                            });
-                        } else {
-                            alert('Invalid data format received.');
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching subcategory type:', error);
-                    }
-                });
-            }
-
-            function populateOnLoad() {
-                var urlParams = new URLSearchParams(window.location.search);
-                var subcategoryId = urlParams.get('subcategory_id');
-                if (subcategoryId) {
-                    populateSubcategoryDropdown(subcategoryId);
-                }
-            }
-
-            populateOnLoad();
-
-            $('#exampleFormControlInput3').on('change', function () {
-                var selectedSubcategory = $(this).val();
-                if (selectedSubcategory) {
-                    populateCategoryType(selectedSubcategory);
-                    populateSubcategoryType(selectedSubcategory);
-                } else {
-                    $('#exampleFormControlInput4').val('');
-                    $('#exampleFormControlInput5').empty();
-                }
-            });
-
-            $('#addEquipmentForm').on('submit', function (event) {
-                event.preventDefault();
-                var formData = new FormData(this);
-                $.ajax({
-                    url: $(this).attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (response) {
-                        if (response.success) {
-                            alert(response.message || 'Equipment added successfully!');
-                            location.reload();
-                        } else {
-                            alert(response.message || 'An error occurred while adding equipment.');
-                        }
-                    },
-                    error: function (response) {
-                        var errorMessage = 'An unexpected error occurred. Please try again.';
-                        if (response.responseJSON && response.responseJSON.message) {
-                            errorMessage = response.responseJSON.message;
-                        }
-                        alert(errorMessage);
-                    }
-                });
-            });
-
             $(document).on('click', '.edit-btn', function () {
                 var row = $(this).closest('tr');
                 var employeeId = row.find('td:eq(1)').text().trim();
@@ -306,12 +176,21 @@
                 var subCategory = row.find('td:eq(4)').text().trim();
                 var categoryType = row.find('td:eq(5)').text().trim();
                 var equipmentType = row.find('td:eq(3)').text().trim();
+
+                console.log("Equipment Id:", employeeId);
+                console.log("Equipment Name:", employeeName);
+                console.log("Equipment sub category name:", subCategory);
+                console.log("Equipment category type:", categoryType);
+                console.log("Equipment type:", equipmentType);
+
                 $('#editCategoryId').val(employeeId);
                 $('#editCategoryName').val(employeeName);
                 $('#editSubCategoryName').val(subCategory);
                 $('#editCategoryType').val(categoryType);
                 $('#editEquipmentType').val(equipmentType);
+
                 $('#editCategoryModal').modal('show');
+
                 $('#editSubCategoryName').off('change').on('change', function () {
                     var selectedSubcategory = $(this).val();
                     $.ajax({
@@ -320,6 +199,7 @@
                         dataType: 'json',
                         data: {subcategory_id: selectedSubcategory},
                         success: function (response) {
+                            console.log('Received category name:', response.category_name);
                             $('#editCategoryType').val(response.category_name);
                         },
                         error: function (xhr, status, error) {
@@ -327,6 +207,7 @@
                         }
                     });
                 });
+
                 $.ajax({
                     url: '/edit_subcategory_dropdown/',
                     type: 'GET',
@@ -357,10 +238,12 @@
                 var subCategory = $('#editSubCategoryName').val().trim();
                 var categoryType = $('#editCategoryType').val().trim();
                 var equipmentType = $('#editEquipmentType').val().trim();
+
                 if (!employeeId || !employeeName || !subCategory || !categoryType || !equipmentType) {
                     alert("Please fill in all the required fields.");
                     return;
                 }
+
                 var formData = new FormData();
                 formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
                 formData.append('employeeId', employeeId);
@@ -368,6 +251,7 @@
                 formData.append('subCategory', subCategory);
                 formData.append('categoryType', categoryType);
                 formData.append('equipmentType', equipmentType);
+
                 $.ajax({
                     url: '/update_equipment/' + employeeId + '/',
                     type: 'POST',
@@ -375,6 +259,7 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
+                        console.log('Update response:', response);
                         fetchEquipmentList();
                         $('#editCategoryModal').modal('hide');
                         location.reload();
@@ -400,29 +285,14 @@
                 return cookieValue;
             }
 
-            $('.dimension').on('input', function () {
-                calculateVolume();
-            });
-
-            function calculateVolume() {
-                var dimension_h = parseFloat(document.getElementById('dimension_h').value);
-                var dimension_w = parseFloat(document.getElementById('dimension_w').value);
-                var dimension_l = parseFloat(document.getElementById('dimension_l').value);
-                var volumeField = document.getElementById('volume');
-                if (!isNaN(dimension_h) && !isNaN(dimension_w) && !isNaN(dimension_l)) {
-                    var volume = dimension_h * dimension_w * dimension_l;
-                    volumeField.value = volume;
-                } else {
-                    volumeField.value = '';
-                }
-            }
-
             $(document).on('click', '.vendor-btn', function () {
                 var row = $(this).closest('tr');
                 var equipmentId = row.find('td:eq(1)').text().trim();
+
                 $('#editVendorId').val(equipmentId);
                 $('#equipmentIdInput').val(equipmentId);
                 $('#editVendorModal').modal('show');
+
                 $.ajax({
                     url: '/stock-in/' + equipmentId + '/',
                     type: 'GET',
@@ -444,7 +314,8 @@
                                 '<th>Reference Number</th>' +
                                 '<th>Action</th>' +
                                 '</tr></thead><tbody>';
-                            data.forEach(function (item, index) {
+
+                            data.forEach(function (item) {
                                 tableHtml += '<tr>' +
                                     '<td style="display: none;">' + item.id + '</td>' +
                                     '<td class="editable" data-field="vendor_name">' + item.vendor_name + '</td>' +
@@ -460,8 +331,12 @@
                                     '</td>' +
                                     '</tr>';
                             });
-                            tableHtml += '</tbody></table></div>';
+
+                            tableHtml += '</tbody></table>';
+                            tableHtml += '</div>';
+
                             stockDetailsContainer.html(tableHtml);
+
                             $('.edit-button').click(function () {
                                 var row = $(this).closest('tr');
                                 row.find('.editable').each(function () {
@@ -473,14 +348,17 @@
                                 $(this).hide();
                                 row.find('.save-button').show();
                             });
+
                             $('.save-button').click(function () {
                                 var row = $(this).closest('tr');
                                 var rowId = row.find('td:first').text();
                                 var updatedData = {};
+
                                 row.find('input').each(function () {
                                     var input = $(this);
                                     updatedData[input.attr('name')] = input.val();
                                 });
+
                                 $.ajax({
                                     url: '/update-stock-in/' + rowId + '/',
                                     type: 'POST',
@@ -505,6 +383,7 @@
                                 });
                             });
                         }
+
                         $('#stockDetailsModal').modal('show');
                     },
                     error: function (xhr, status, error) {
@@ -516,34 +395,43 @@
                 function generateInputColumns(num) {
                     var container = document.getElementById('serialNumberInputsContainer');
                     container.innerHTML = '';
+
                     for (var i = 0; i < num; i++) {
                         var inputDiv = document.createElement('div');
                         inputDiv.className = 'row';
+
                         var serialNumberDiv = document.createElement('div');
                         serialNumberDiv.className = 'col-xl-6 mb-3';
+
                         var labelSerial = document.createElement('label');
                         labelSerial.htmlFor = 'serialNumber' + (i + 1);
                         labelSerial.className = 'form-label';
                         labelSerial.textContent = 'Serial Number ' + (i + 1);
+
                         var inputSerial = document.createElement('input');
                         inputSerial.type = 'text';
                         inputSerial.className = 'form-control';
                         inputSerial.id = 'serialNumber' + (i + 1);
                         inputSerial.name = 'serialNumber' + (i + 1);
+
                         serialNumberDiv.appendChild(labelSerial);
                         serialNumberDiv.appendChild(inputSerial);
                         inputDiv.appendChild(serialNumberDiv);
+
                         var barcodeDiv = document.createElement('div');
                         barcodeDiv.className = 'col-xl-6 mb-3';
+
                         var labelBarcode = document.createElement('label');
                         labelBarcode.htmlFor = 'barcode' + (i + 1);
                         labelBarcode.className = 'form-label';
                         labelBarcode.textContent = 'Barcode Number ' + (i + 1);
+
                         var inputBarcode = document.createElement('input');
                         inputBarcode.type = 'text';
                         inputBarcode.className = 'form-control';
                         inputBarcode.id = 'barcodeNumber' + (i + 1);
                         inputBarcode.name = 'barcodeNumber' + (i + 1);
+
                         barcodeDiv.appendChild(labelBarcode);
                         barcodeDiv.appendChild(inputBarcode);
                         inputDiv.appendChild(barcodeDiv);
@@ -559,6 +447,7 @@
 
             $(document).on('click', '#saveChanges', function () {
                 var formData = new FormData($('#vendorForm')[0]);
+
                 $.ajax({
                     url: '/insert_vendor/',
                     method: 'POST',
@@ -576,9 +465,12 @@
 
             $(document).on('click', '.equipment_name a', function (e) {
                 e.preventDefault();
+
                 var equipmentId = $(this).closest('.equipment_name').data('id');
                 var modalSelector = '#equipmentDetailsModal';
+
                 $(modalSelector).find('.modal-body').html('');
+
                 $.ajax({
                     url: '/get_dimension_list/' + equipmentId + '/',
                     type: 'GET',
@@ -587,6 +479,7 @@
                             console.error('Error:', response.error);
                             return;
                         }
+
                         var popupContent = '<div class="container">';
                         popupContent += '<div class="row">';
                         popupContent += '<div class="col-md-12">';
@@ -642,6 +535,7 @@
                         popupContent += '</tr>';
                         popupContent += '</thead>';
                         popupContent += '<tbody>';
+
                         if (response.serial_no && response.barcode_no && response.serial_no.length > 0) {
                             for (var i = 0; i < response.serial_no.length; i++) {
                                 popupContent += '<tr>';
@@ -665,7 +559,9 @@
                         popupContent += '</div>';
                         popupContent += '</div>';
                         popupContent += '</div>';
+
                         $(modalSelector).find('.modal-body').html(popupContent);
+
                         $(modalSelector).modal('show');
                     },
                     error: function (xhr, status, error) {
@@ -673,7 +569,195 @@
                     }
                 });
             });
+
+            function populateSubcategoryInput(selectedSubcategoryId) {
+                $.ajax({
+                    url: '/fetch_subcategory_name/' + selectedSubcategoryId + '/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.subcategory_name) {
+                            $('#exampleFormControlInput3').val(data.subcategory_name);
+                            $('#exampleFormControlInput3').attr('data-subcategory-id', data.subcategory_id);
+                            $('#hiddenSubcategoryId').val(data.subcategory_id);
+                            populateCategoryType(selectedSubcategoryId);
+                            populateSubcategoryType(selectedSubcategoryId);
+                            populateSubcategoryTypeEdit(selectedSubcategoryId);
+                        } else if (data.error) {
+                            alert(data.error);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching subcategory name:', error);
+                    }
+                });
+            }
+
+            $(document).ready(function () {
+                var urlParams = new URLSearchParams(window.location.search);
+                var subcategoryId = urlParams.get('subcategory_id');
+
+                if (subcategoryId) {
+                    populateSubcategoryInput(subcategoryId);
+                }
+            });
+
+            function populateCategoryType(subcategoryId) {
+                $.ajax({
+                    url: '/get_category_type/',
+                    type: 'GET',
+                    data: {subcategory_id: subcategoryId},
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.category_name) {
+                            $('#exampleFormControlInput4').val(data.category_name);
+                        } else if (data.error) {
+                            alert(data.error);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching category type:', error);
+                    }
+                });
+            }
+
+            function populateSubcategoryType(subcategoryId) {
+                $.ajax({
+                    url: '/fetch_subcategory_type/' + subcategoryId + '/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (typeof data.subcategory_type === 'string') {
+                            var types = data.subcategory_type.split(',').map(function (type) {
+                                return type.trim();
+                            });
+
+                            var $select = $('#exampleFormControlInput5');
+                            $select.empty();
+
+                            types.forEach(function (type) {
+                                if (type) {
+                                    $select.append('<option value="' + type + '">' + type + '</option>');
+                                }
+                            });
+                        } else {
+                            alert('Invalid data format received.');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching subcategory type:', error);
+                    }
+                });
+            }
+
+            function populateSubcategoryTypeEdit(subcategoryId) {
+                $.ajax({
+                    url: '/fetch_subcategory_type/' + subcategoryId + '/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (typeof data.subcategory_type === 'string') {
+                            var types = data.subcategory_type.split(',').map(function (type) {
+                                return type.trim();
+                            });
+
+                            var $select = $('#editEquipmentType');
+                            $select.empty();
+
+                            types.forEach(function (type) {
+                                if (type) {
+                                    $select.append('<option value="' + type + '">' + type + '</option>');
+                                }
+                            });
+                        } else {
+                            alert('Invalid data format received.');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching subcategory type:', error);
+                    }
+                });
+            }
+
+            var urlParams = new URLSearchParams(window.location.search);
+            var subcategoryId = urlParams.get('subcategory_id');
+
+            if (subcategoryId) {
+                populateCategoryType(subcategoryId);
+            }
+
+            $('#exampleFormControlInput3').on('change', function () {
+                var selectedSubcategory = $(this).val();
+                if (selectedSubcategory) {
+                    populateCategoryType(selectedSubcategory);
+                    populateSubcategoryType(selectedSubcategory);
+                } else {
+                    $('#exampleFormControlInput4').val('');
+                    $('#exampleFormControlInput5').empty();
+                }
+            });
+
+            $('.dimension').on('input', function () {
+                calculateVolume();
+            });
+
+            function calculateVolume() {
+                var dimension_h = parseFloat(document.getElementById('dimension_h').value);
+                var dimension_w = parseFloat(document.getElementById('dimension_w').value);
+                var dimension_l = parseFloat(document.getElementById('dimension_l').value);
+                var volumeField = document.getElementById('volume');
+
+                if (!isNaN(dimension_h) && !isNaN(dimension_w) && !isNaN(dimension_l)) {
+                    var volume = dimension_h * dimension_w * dimension_l;
+                    volumeField.value = volume;
+                } else {
+                    volumeField.value = '';
+                }
+            }
+
+            function populateOnLoad() {
+                var urlParams = new URLSearchParams(window.location.search);
+                var subcategoryId = urlParams.get('subcategory_id');
+
+                if (subcategoryId) {
+                    populateCategoryType(subcategoryId);
+                    populateSubcategoryType(subcategoryId);
+                }
+            }
+
+            populateOnLoad();
+
+            $('#addEquipmentForm').on('submit', function (event) {
+                event.preventDefault();
+
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        console.log(response);
+                        if (response.success) {
+                            alert(response.message || 'Equipment added successfully!');
+                            location.reload();
+                        } else {
+                            alert(response.message || 'An error occurred while adding equipment.');
+                        }
+                    },
+                    error: function (response) {
+                        var errorMessage = 'An unexpected error occurred. Please try again.';
+                        if (response.responseJSON && response.responseJSON.message) {
+                            errorMessage = response.responseJSON.message;
+                        }
+                        alert(errorMessage);
+                    }
+                });
+            });
         });
+
     </script>
 
     <body>
