@@ -810,18 +810,18 @@ def add_equipment(request):
     if request.method == 'POST':
         try:
             equipment_name = request.POST.get('equipment_name')
-            subcategory_id = int(request.POST.get('subcategory_id'))  # Ensure it's an integer
-            category_type = request.POST.get('category_type')
+            subcategory_id = request.POST.get('subcategory_id')
+            category_name = request.POST.get('category_name')
             type = request.POST.get('type')
             dimension_h = request.POST.get('dimension_h')
             dimension_w = request.POST.get('dimension_w')
             dimension_l = request.POST.get('dimension_l')
-            weight = request.POST.get('weight')
             volume = request.POST.get('volume')
-            hsn_no = int(request.POST.get('hsn_no'))  # Ensure it's an integer
+            weight = request.POST.get('weight')
+            hsn_no = request.POST.get('hsn_no')
             country_origin = request.POST.get('country_origin')
-            status = request.POST.get('status').lower() == 'true'  # Ensure it's a boolean
-            created_by = request.session.get('user_id')  # Assuming user_id is stored in session
+            status = request.POST.get('status')
+            created_by = request.session.get('username')
             created_date = timezone.now()
 
             logger.info("Received POST data: %s", request.POST)
@@ -840,13 +840,15 @@ def add_equipment(request):
                 attachment_url = ''
                 logger.info("No attachment uploaded")
 
-            # Call the PostgreSQL function to save the equipment data
+            # Save the equipment data to the database, including the attachment_url
             try:
                 with connection.cursor() as cursor:
-                    cursor.callproc('add_equipment_list', [
-                        equipment_name, subcategory_id, category_type, type, dimension_h, dimension_w, dimension_l,
-                        weight, volume, hsn_no, country_origin, attachment_url, status, created_by, created_date
-                    ])
+                    cursor.execute("""
+                        INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
+                        dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l,
+                          volume, weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
                 logger.info("Equipment data inserted into database successfully")
             except Exception as db_error:
                 logger.error("Database error: %s", str(db_error))
@@ -859,6 +861,7 @@ def add_equipment(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
+
 
 
 
