@@ -827,34 +827,40 @@ def add_equipment(request):
 
             attachment = request.FILES.get('attachment')
             if attachment:
-                logger.info("Uploading image to Cloudinary")
-                result = upload(attachment)
-                attachment_url = result['secure_url']
-                logger.info("Image uploaded successfully: %s", attachment_url)
+                try:
+                    logger.info("Uploading image to Cloudinary")
+                    result = upload(attachment)
+                    attachment_url = result['secure_url']
+                    logger.info("Image uploaded successfully: %s", attachment_url)
+                except Exception as e:
+                    logger.error("Cloudinary error: %s", str(e))
+                    return JsonResponse({'success': False, 'error': 'Cloudinary upload error: ' + str(e)})
             else:
                 attachment_url = ''
                 logger.info("No attachment uploaded")
 
             # Save the equipment data to the database, including the attachment_url
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
-                    dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l,
-                      volume,
-                      weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO equipment (equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w,
+                        dimension_l, volume, weight, hsn_no, country_origin, status, attachment, created_by, created_date)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, [equipment_name, subcategory_id, category_name, type, dimension_h, dimension_w, dimension_l,
+                          volume, weight, hsn_no, country_origin, status, attachment_url, created_by, created_date])
+                logger.info("Equipment data inserted into database successfully")
+            except Error as db_error:
+                logger.error("Database error: %s", str(db_error))
+                return JsonResponse({'success': False, 'error': 'Database error: ' + str(db_error)})
 
             return JsonResponse({'success': True})
 
-        except Error as e:
-            logger.error("Cloudinary error: %s", str(e))
-            return JsonResponse({'success': False, 'error': 'Cloudinary error: ' + str(e)})
         except Exception as e:
             logger.error("Error in add_equipment view: %s", str(e))
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False})
+
 
 def insert_vendor(request):
     if request.method == 'POST':
