@@ -23,48 +23,27 @@ logger = logging.getLogger(__name__)
 
 
 #Create your views here.
-# def index(request):
-#     # Retrieve session data
-#     username = request.session.get('username', 'N/A')
-#     user_id = request.session.get('user_id', None)  # Retrieve the user_id to check if it's correctly stored
-#     modules = request.session.get('modules', None)
-#
-#     # Log the retrieved session data
-#     print(f"Accessing index view")
-#     print(f"Session Data - Username: {username}, User ID: {user_id}, Modules:{modules}")
-#
-#     if not username or username == 'N/A':
-#         print("No username in session; redirecting to login")
-#         return redirect('login_view')
-#
-#     # If session data is valid, render the index page with the session data
-#     return render(request, 'product_tracking/index.html', {
-#         'username': username,
-#         'user_id': user_id  # Optionally pass user_id to the template if needed
-#     })
-
-
 def index(request):
-    try:
-        username = request.session.get('username', 'N/A')
-        user_id = request.session.get('user_id', None)
-        modules = request.session.get('modules', None)
+    # Retrieve session data
+    username = request.session.get('username', 'N/A')
+    user_id = request.session.get('user_id', None)  # Retrieve the user_id to check if it's correctly stored
+    modules = request.session.get('modules', None)
 
-        # Log the retrieved session data
-        logger.info(f"Accessing index view")
-        logger.info(f"Session Data - Username: {username}, User ID: {user_id}, Modules: {modules}")
+    # Log the retrieved session data
+    print(f"Accessing index view")
+    print(f"Session Data - Username: {username}, User ID: {user_id}, Modules:{modules}")
 
-        if not username or username == 'N/A':
-            logger.info("No username in session; redirecting to login")
-            return redirect('login_view')
+    if not username or username == 'N/A':
+        print("No username in session; redirecting to login")
+        return redirect('login_view')
 
-        return render(request, 'product_tracking/index.html', {
-            'username': username,
-            'user_id': user_id
-        })
-    except Exception as e:
-        logger.error(f"Error in index view: {e}", exc_info=True)
-        return render(request, 'product_tracking/error.html', {'error': str(e)})
+    # If session data is valid, render the index page with the session data
+    return render(request, 'product_tracking/index.html', {
+        'username': username,
+        'user_id': user_id  # Optionally pass user_id to the template if needed
+    })
+
+
 
 def custom_login(request):
     try:
