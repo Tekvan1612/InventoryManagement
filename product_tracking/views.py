@@ -822,8 +822,8 @@ def add_equipment(request):
             hsn_no = request.POST.get('hsn_no')
             country_origin = request.POST.get('country_origin')
             status = request.POST.get('status') == 'true'
-            created_by = request.session.get('user_id')  # Assuming session stores user ID
-            created_date = timezone.now()
+            created_by = request.session.get('user_id')
+            created_date = datetime.now()
 
             logger.info("Received POST data: %s", request.POST)
 
