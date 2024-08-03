@@ -53,8 +53,8 @@ MIDDLEWARE = [
 ]
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': '155765635687362',
-    'API_KEY': 'Fig3zoGWF2Uba2yCgJkAf-mehK4',
+    'CLOUD_NAME': 'MediaStorage',
+    'API_KEY': '155765635687362',
     'API_SECRET': 'Fig3zoGWF2Uba2yCgJkAf-mehK4'
 }
 ROOT_URLCONF = 'wms2.urls'
