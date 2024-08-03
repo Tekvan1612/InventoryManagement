@@ -17,6 +17,8 @@ from django.views.decorators.csrf import csrf_exempt
 from psycopg2 import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
+import cloudinary
+import cloudinary.uploader
 
 
 logger = logging.getLogger(__name__)
@@ -801,6 +803,7 @@ def modify_employee(request):
 
 
 # Equipment Module
+@login_required
 def add_equipment(request):
     if request.method == 'POST':
         equipment_name = request.POST.get('equipment_name').upper()
@@ -819,13 +822,14 @@ def add_equipment(request):
         created_by = request.session.get('user_id')
         created_date = datetime.now()
 
-        attachment_path = None
+        attachment_url = None
         if attachment:
-            attachment_path = os.path.join(settings.MEDIA_ROOT, 'attachments', attachment.name)
-            os.makedirs(os.path.dirname(attachment_path), exist_ok=True)
-            with open(attachment_path, 'wb') as f:
-                for chunk in attachment.chunks():
-                    f.write(chunk)
+            try:
+                upload_result = cloudinary.uploader.upload(attachment)
+                attachment_url = upload_result.get('url')
+            except Exception as e:
+                print("Error uploading to Cloudinary:", e)
+                return JsonResponse({'success': False, 'message': 'Failed to upload attachment.'})
 
         try:
             with connection.cursor() as cursor:
@@ -847,7 +851,7 @@ def add_equipment(request):
                         volume,
                         hsn_no,
                         country_origin,
-                        attachment_path if attachment else None,
+                        attachment_url if attachment else None,
                         status,
                         created_by,
                         created_date
@@ -876,6 +880,7 @@ def add_equipment(request):
             print("Error fetching subcategories:", e)
         return render(request, 'product_tracking/Equipment.html',
                       {'username': username, 'subcategories': subcategories})
+
 
 
 def insert_vendor(request):

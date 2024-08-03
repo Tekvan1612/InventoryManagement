@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'product_tracking.apps.ProductTrackingConfig',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +52,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': '155765635687362',
+    'API_KEY': 'Fig3zoGWF2Uba2yCgJkAf-mehK4',
+    'API_SECRET': 'Fig3zoGWF2Uba2yCgJkAf-mehK4'
+}
 ROOT_URLCONF = 'wms2.urls'
 
 TEMPLATES = [
@@ -115,6 +122,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 WHITENOISE_IGNORE = ['*.js.map']
 
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 # Media settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
