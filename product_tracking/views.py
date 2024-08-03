@@ -100,8 +100,7 @@ def custom_login(request):
 
 def logout_view(request):
     logout(request)
-    return redirect('login')
-
+    return redirect('login_view')
 
 def footer(request):
     return render(request, 'product_tracking/footer.html')

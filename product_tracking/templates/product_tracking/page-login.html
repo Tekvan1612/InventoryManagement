@@ -1,74 +1,75 @@
-
 {% include 'product_tracking/head.html' %}
 
 {% load static %}
 {% block content %}
-<body class="vh-100">
+    <body class="vh-100">
     <div class="authincation h-100">
         <div class="container-fluid h-100">
             <div class="row h-100">
-				<div class="col-lg-6 col-md-12 col-sm-12 mx-auto align-self-center">
-					<div class="login-form">
-						<div class="text-center">
-							<h3 class="title">Sign In</h3>
-							<p>Sign in to your account to start using Rental Management For your Business</p>
-						</div>
-						<form action="{% url 'login_view' %}" method="POST">
+                <div class="col-lg-6 col-md-12 col-sm-12 mx-auto align-self-center">
+                    <div class="login-form">
+                        <div class="text-center">
+                            <h3 class="title">Sign In</h3>
+                            <p>Sign in to your account to start using Rental Management For your Business</p>
+                        </div>
+                        <form action="{% url 'login_view' %}" method="POST">
                             {% csrf_token %}
-							<div class="mb-4 position-relative">
+                            <div class="mb-4 position-relative">
                                 <label class="mb-1 text-dark">Username</label>
                                 <label for="dz-name"></label>
                                 <input type="text" id="dz-name" name="username" class="form-control" required>
                             </div>
-							<div class="mb-4 position-relative">
-								<label class="mb-1 text-dark">Password</label>
+                            <div class="mb-4 position-relative">
+                                <label class="mb-1 text-dark">Password</label>
                                 <label for="dz-password"></label>
                                 <input type="password" id="dz-password" name="password" class="form-control" required>
-								<span class="show-pass eye">
+                                <span class="show-pass eye">
 								
 									<i class="fa fa-eye-slash"></i>
 									<i class="fa fa-eye"></i>
 								
 								</span>
-							</div>
-							<div class="form-row d-flex justify-content-between mt-4 mb-2">
-								<div class="mb-4">
-									<div class="form-check custom-checkbox mb-3">
-										<input type="checkbox" class="form-check-input" id="customCheckBox1">
-										<label class="form-check-label" for="customCheckBox1">Remember my preference</label>
-									</div>
-								</div>
-								<div class="mb-4">
-									<a href="#" class="btn-link text-primary">Forgot Password?</a>
-								</div>
-							</div>
-							<div class="text-center mb-4">
-								<button type="submit" class="btn btn-primary btn-block">Sign In</button>
-							</div>
+                            </div>
+                            <div class="form-row d-flex justify-content-between mt-4 mb-2">
+                                <div class="mb-4">
+                                    <div class="form-check custom-checkbox mb-3">
+                                        <input type="checkbox" class="form-check-input" id="customCheckBox1">
+                                        <label class="form-check-label" for="customCheckBox1">Remember my
+                                            preference</label>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <a href="#" class="btn-link text-primary">Forgot Password?</a>
+                                </div>
+                            </div>
+                            <div class="text-center mb-4">
+                                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                            </div>
 
-						</form>
-					</div>
-				</div>
+                        </form>
+                    </div>
+                </div>
                 <div class="col-xl-6 col-lg-6">
-					<div class="pages-left h-100">
-						<div class="login-content">
-						
-							<p>Steward rental management helps you to track and automated inventory and efficiency for precious business..</p>
-						</div>
-						<div class="login-media text-center">
-							<img src="{% static 'product_tracking/images/login.png' %}" alt="">
-						</div>
-					</div>
+                    <div class="pages-left h-100">
+                        <div class="login-content">
+
+                            <p>Steward rental management helps you to track and automated inventory and efficiency for
+                                precious business..</p>
+                        </div>
+                        <div class="login-media text-center">
+                            <img src="{% static 'product_tracking/images/login.png' %}" alt="">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-<!--**********************************
-	Scripts
-***********************************-->
-        {% include 'product_tracking/footer.html' %}
+    <!--**********************************
+        Scripts
+    ***********************************-->
+    {% include 'product_tracking/footer.html' %}
 
-</body>
+    </body>
 
 {% endblock %}
