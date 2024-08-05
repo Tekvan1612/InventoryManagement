@@ -1,134 +1,160 @@
-	<div class="deznav">
-            <div class="deznav-scroll">
-				<ul class="metismenu" id="menu">
-					<!-- <li class="menu-title">YOUR COMPANY</li> -->
+<div class="deznav">
+    <div class="deznav-scroll">
+        <ul class="metismenu" id="menu">
+            <!-- <li class="menu-title">YOUR COMPANY</li> -->
 
-					<li><a href="{% url 'index' %}" class="" aria-expanded="false">
-						<div class="menu-icon">
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M2.5 7.49999L10 1.66666L17.5 7.49999V16.6667C17.5 17.1087 17.3244 17.5326 17.0118 17.8452C16.6993 18.1577 16.2754 18.3333 15.8333 18.3333H4.16667C3.72464 18.3333 3.30072 18.1577 2.98816 17.8452C2.67559 17.5326 2.5 17.1087 2.5 16.6667V7.49999Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M7.5 18.3333V10H12.5V18.3333" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-						</div>
-							<span class="nav-text">Dashboard</span>
-						</a>
-					</li>
-                    <li><a href="{% url 'add_category' %}" class="" aria-expanded="false">
-						<div class="menu-icon">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7.24463 14.7815L10.2378 10.8913L13.652 13.5732L16.581 9.79291" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            <circle cx="19.9954" cy="4.20021" r="1.9222" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M14.9243 3.12012H7.65655C4.64511 3.12012 2.77783 5.25284 2.77783 8.26428V16.3467C2.77783 19.3581 4.6085 21.4817 7.65655 21.4817H16.2607C19.2721 21.4817 21.1394 19.3581 21.1394 16.3467V9.30776" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-						</div>
-							<span class="nav-text">Inventory</span>
-						</a>
-                    </li>
-                     <li><a href="{% url 'Stock_list' %}" class="" aria-expanded="false">
-						<div class="menu-icon">
-							<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path fill-rule="evenodd" clip-rule="evenodd" d="M15.8381 12.7317C16.4566 12.7317 16.9757 13.2422 16.8811 13.853C16.3263 17.4463 13.2502 20.1143 9.54009 20.1143C5.43536 20.1143 2.10834 16.7873 2.10834 12.6835C2.10834 9.30245 4.67693 6.15297 7.56878 5.44087C8.19018 5.28745 8.82702 5.72455 8.82702 6.36429C8.82702 10.6987 8.97272 11.8199 9.79579 12.4297C10.6189 13.0396 11.5867 12.7317 15.8381 12.7317Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"></path>
-								<path fill-rule="evenodd" clip-rule="evenodd" d="M19.8848 9.1223C19.934 6.33756 16.5134 1.84879 12.345 1.92599C12.0208 1.93178 11.7612 2.20195 11.7468 2.5252C11.6416 4.81493 11.7834 7.78204 11.8626 9.12713C11.8867 9.5459 12.2157 9.87493 12.6335 9.89906C14.0162 9.97818 17.0914 10.0862 19.3483 9.74467C19.6552 9.69835 19.88 9.43204 19.8848 9.1223Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"></path>
-							</svg>
-						</div>
-							<span class="nav-text">Stock</span>
-						</a>
-                    </li>
-{#                      <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">#}
-{#						<div class="menu-icon">#}
-{#                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">#}
-{#                            <path d="M7.24463 14.7815L10.2378 10.8913L13.652 13.5732L16.581 9.79291" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>#}
-{#                            <circle cx="19.9954" cy="4.20021" r="1.9222" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>#}
-{#                            <path d="M14.9243 3.12012H7.65655C4.64511 3.12012 2.77783 5.25284 2.77783 8.26428V16.3467C2.77783 19.3581 4.6085 21.4817 7.65655 21.4817H16.2607C19.2721 21.4817 21.1394 19.3581 21.1394 16.3467V9.30776" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>#}
-{#                            </svg>#}
-{#						</div>#}
-{#						<span class="nav-text">Inventory</span>#}
-{#						</a>#}
-{#						<ul aria-expanded="true">#}
-{#                            <li><a href="{% url 'add_category' %}">Master Category</a></li>#}
-{#                            <li><a href="{% url 'add_sub_category' %}">Sub Category</a></li>#}
-{#							<li><a href="{% url 'add_category' %}">Equipment List</a></li>#}
-{#						</ul>#}
-{#					 </li>#}
-
-                    <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
-						<div class="menu-icon">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15.7729 9.30504V6.27304C15.7729 4.18904 14.0839 2.50004 12.0009 2.50004C9.91694 2.49104 8.21994 4.17204 8.21094 6.25604V6.27304V9.30504" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M16.7422 21.0004H7.25778C4.90569 21.0004 3 19.0954 3 16.7454V11.2294C3 8.87937 4.90569 6.97437 7.25778 6.97437H16.7422C19.0943 6.97437 21 8.87937 21 11.2294V16.7454C21 19.0954 19.0943 21.0004 16.7422 21.0004Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-						</div>
-							<span class="nav-text">Order Book</span>
-						</a>
-                        <ul aria-expanded="false">
-                            <li><a href="{% url 'task' %}">Orders Summary</a></li>
-                            <li><a href="{% url 'task' %}">Incoming Orders</a></li>
-
-						</ul>
-					</li>
-
-					<li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
-						<div class="menu-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M14.7366 2.76193H8.08455C6.00455 2.75393 4.29955 4.41093 4.25055 6.49093V17.3399C4.21555 19.3899 5.84855 21.0809 7.89955 21.1169C7.96055 21.1169 8.02255 21.1169 8.08455 21.1149H16.0726C18.1416 21.0939 19.8056 19.4089 19.8026 17.3399V8.03993L14.7366 2.76193Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M14.4741 2.75012V5.65912C14.4741 7.07912 15.6231 8.23012 17.0431 8.23412H19.7971" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M14.2936 12.9142H9.39355" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M11.8442 15.3639V10.4639" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-						</div>
-						<span class="nav-text">Accounts & HR</span>
-						</a>
-                        <ul aria-expanded="false">
-                            <li><a href="{% url 'add_employee' %}">Employees</a></li>
-							<li><a href="{% url 'add_user' %}">User Management</a></li>
-						</ul>
-					</li>
-
-					<li><a href="{% url 'contact' %}" class="" aria-expanded="false">
-						<div class="menu-icon">
-							<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path fill-rule="evenodd" clip-rule="evenodd" d="M8.79222 13.9396C12.1738 13.9396 15.0641 14.452 15.0641 16.4989C15.0641 18.5458 12.1931 19.0729 8.79222 19.0729C5.40972 19.0729 2.52039 18.5651 2.52039 16.5172C2.52039 14.4694 5.39047 13.9396 8.79222 13.9396Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-								<path fill-rule="evenodd" clip-rule="evenodd" d="M8.79223 11.0182C6.57206 11.0182 4.77173 9.21874 4.77173 6.99857C4.77173 4.7784 6.57206 2.97898 8.79223 2.97898C11.0115 2.97898 12.8118 4.7784 12.8118 6.99857C12.8201 9.21049 11.0326 11.0099 8.82064 11.0182H8.79223Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M15.1095 9.9748C16.5771 9.76855 17.7073 8.50905 17.7101 6.98464C17.7101 5.48222 16.6147 4.23555 15.1782 3.99997" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M17.0458 13.5045C18.4675 13.7163 19.4603 14.2149 19.4603 15.2416C19.4603 15.9483 18.9928 16.4067 18.2374 16.6936" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-						</div>
-							<span class="nav-text">Connects</span>
-						</a>
-					</li>
-                      <li><a href="{% url 'app_calender' %}" class="" aria-expanded="false">
-						<div class="menu-icon">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3.09277 9.40427H20.9167" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16.442 13.3097H16.4512" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M12.0045 13.3097H12.0137" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M7.55769 13.3097H7.56695" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16.442 17.1962H16.4512" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M12.0045 17.1962H12.0137" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M7.55769 17.1962H7.56695" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M16.0438 2V5.29078" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M7.96564 2V5.29078" stroke="#888888"  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M16.2383 3.57922H7.77096C4.83427 3.57922 3 5.21516 3 8.22225V17.2719C3 20.3263 4.83427 22 7.77096 22H16.229C19.175 22 21 20.3546 21 17.3475V8.22225C21.0092 5.21516 19.1842 3.57922 16.2383 3.57922Z" stroke="#888888"stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-						</div>
-							<span class="nav-text">Calendar</span>
-						</a>
-					</li>
-                    <li><a href="{% url 'performance' %}" class="" aria-expanded="false">
-						<div class="menu-icon">
-							<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path fill-rule="evenodd" clip-rule="evenodd" d="M13.5096 2.53165H7.41104C5.50437 2.52432 3.94146 4.04415 3.89654 5.9499V15.7701C3.85437 17.7071 5.38979 19.3121 7.32671 19.3552C7.35512 19.3552 7.38262 19.3561 7.41104 19.3552H14.7343C16.6538 19.2773 18.1663 17.6915 18.1525 15.7701V7.36798L13.5096 2.53165Z" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M13.2688 2.52084V5.18742C13.2688 6.48909 14.3211 7.54417 15.6228 7.54784H18.1482" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M13.0974 14.0786H8.1474" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M11.2229 10.6388H8.14655" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-						</div>
-							<span class="nav-text">Reports</span>
-						</a>
-					</li>
+            <li><a href="{% url 'index' %}" class="" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.5 7.49999L10 1.66666L17.5 7.49999V16.6667C17.5 17.1087 17.3244 17.5326 17.0118 17.8452C16.6993 18.1577 16.2754 18.3333 15.8333 18.3333H4.16667C3.72464 18.3333 3.30072 18.1577 2.98816 17.8452C2.67559 17.5326 2.5 17.1087 2.5 16.6667V7.49999Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7.5 18.3333V10H12.5V18.3333" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            </li>
 
 
-				</ul>
+            <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M14.7366 2.76193H8.08455C6.00455 2.75393 4.29955 4.41093 4.25055 6.49093V17.3399C4.21555 19.3899 5.84855 21.0809 7.89955 21.1169C7.96055 21.1169 8.02255 21.1169 8.08455 21.1149H16.0726C18.1416 21.0939 19.8056 19.4089 19.8026 17.3399V8.03993L14.7366 2.76193Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14.4741 2.75012V5.65912C14.4741 7.07912 15.6231 8.23012 17.0431 8.23412H19.7971"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14.2936 12.9142H9.39355" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M11.8442 15.3639V10.4639" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Accounts & HR</span>
+            </a>
+                <ul aria-expanded="false">
+                    <li><a href="{% url 'add_employee' %}">Employees</a></li>
+                    <li><a href="{% url 'add_user' %}">User Management</a></li>
+                </ul>
+            </li>
 
-			</div>
-        </div>
+            <li><a href="{% url 'contact' %}" class="" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M8.79222 13.9396C12.1738 13.9396 15.0641 14.452 15.0641 16.4989C15.0641 18.5458 12.1931 19.0729 8.79222 19.0729C5.40972 19.0729 2.52039 18.5651 2.52039 16.5172C2.52039 14.4694 5.39047 13.9396 8.79222 13.9396Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M8.79223 11.0182C6.57206 11.0182 4.77173 9.21874 4.77173 6.99857C4.77173 4.7784 6.57206 2.97898 8.79223 2.97898C11.0115 2.97898 12.8118 4.7784 12.8118 6.99857C12.8201 9.21049 11.0326 11.0099 8.82064 11.0182H8.79223Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15.1095 9.9748C16.5771 9.76855 17.7073 8.50905 17.7101 6.98464C17.7101 5.48222 16.6147 4.23555 15.1782 3.99997"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M17.0458 13.5045C18.4675 13.7163 19.4603 14.2149 19.4603 15.2416C19.4603 15.9483 18.9928 16.4067 18.2374 16.6936"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Connects</span>
+            </a>
+            </li>
+
+            <li><a href="{% url 'add_category' %}" class="" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7.24463 14.7815L10.2378 10.8913L13.652 13.5732L16.581 9.79291" stroke="#888888"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="19.9954" cy="4.20021" r="1.9222" stroke="#888888" stroke-linecap="round"
+                                stroke-linejoin="round"/>
+                        <path d="M14.9243 3.12012H7.65655C4.64511 3.12012 2.77783 5.25284 2.77783 8.26428V16.3467C2.77783 19.3581 4.6085 21.4817 7.65655 21.4817H16.2607C19.2721 21.4817 21.1394 19.3581 21.1394 16.3467V9.30776"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Asset Masters</span>
+            </a>
+            </li>
+
+            <li><a href="{% url 'Stock_list' %}" class="" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M15.8381 12.7317C16.4566 12.7317 16.9757 13.2422 16.8811 13.853C16.3263 17.4463 13.2502 20.1143 9.54009 20.1143C5.43536 20.1143 2.10834 16.7873 2.10834 12.6835C2.10834 9.30245 4.67693 6.15297 7.56878 5.44087C8.19018 5.28745 8.82702 5.72455 8.82702 6.36429C8.82702 10.6987 8.97272 11.8199 9.79579 12.4297C10.6189 13.0396 11.5867 12.7317 15.8381 12.7317Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M19.8848 9.1223C19.934 6.33756 16.5134 1.84879 12.345 1.92599C12.0208 1.93178 11.7612 2.20195 11.7468 2.5252C11.6416 4.81493 11.7834 7.78204 11.8626 9.12713C11.8867 9.5459 12.2157 9.87493 12.6335 9.89906C14.0162 9.97818 17.0914 10.0862 19.3483 9.74467C19.6552 9.69835 19.88 9.43204 19.8848 9.1223Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </div>
+                <span class="nav-text">Inventory</span>
+            </a>
+            </li>
+
+            <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.7729 9.30504V6.27304C15.7729 4.18904 14.0839 2.50004 12.0009 2.50004C9.91694 2.49104 8.21994 4.17204 8.21094 6.25604V6.27304V9.30504"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M16.7422 21.0004H7.25778C4.90569 21.0004 3 19.0954 3 16.7454V11.2294C3 8.87937 4.90569 6.97437 7.25778 6.97437H16.7422C19.0943 6.97437 21 8.87937 21 11.2294V16.7454C21 19.0954 19.0943 21.0004 16.7422 21.0004Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Order Book</span>
+            </a>
+                <ul aria-expanded="false">
+                    <li><a href="{% url 'task' %}">Orders Summary</a></li>
+                    <li><a href="#">Incoming Orders</a></li>
+
+                </ul>
+            </li>
+
+
+            <li><a href="{% url 'app_calender' %}" class="" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3.09277 9.40427H20.9167" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M16.442 13.3097H16.4512" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M12.0045 13.3097H12.0137" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M7.55769 13.3097H7.56695" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M16.442 17.1962H16.4512" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M12.0045 17.1962H12.0137" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M7.55769 17.1962H7.56695" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M16.0438 2V5.29078" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7.96564 2V5.29078" stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M16.2383 3.57922H7.77096C4.83427 3.57922 3 5.21516 3 8.22225V17.2719C3 20.3263 4.83427 22 7.77096 22H16.229C19.175 22 21 20.3546 21 17.3475V8.22225C21.0092 5.21516 19.1842 3.57922 16.2383 3.57922Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Calendar</span>
+            </a>
+            </li>
+            <li><a href="{% url 'performance' %}" class="" aria-expanded="false">
+                <div class="menu-icon">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M13.5096 2.53165H7.41104C5.50437 2.52432 3.94146 4.04415 3.89654 5.9499V15.7701C3.85437 17.7071 5.38979 19.3121 7.32671 19.3552C7.35512 19.3552 7.38262 19.3561 7.41104 19.3552H14.7343C16.6538 19.2773 18.1663 17.6915 18.1525 15.7701V7.36798L13.5096 2.53165Z"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.2688 2.52084V5.18742C13.2688 6.48909 14.3211 7.54417 15.6228 7.54784H18.1482"
+                              stroke="#888888" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.0974 14.0786H8.1474" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                        <path d="M11.2229 10.6388H8.14655" stroke="#888888" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Reports</span>
+            </a>
+            </li>
+
+
+        </ul>
+
+    </div>
+</div>
