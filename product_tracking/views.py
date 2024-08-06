@@ -307,6 +307,7 @@ def add_sub_category(request):
                       {'categories': categories})
 
 
+
 def subcategory_list(request, category_id):
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM get_sub(%s)", [category_id])
