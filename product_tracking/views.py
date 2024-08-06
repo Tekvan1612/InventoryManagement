@@ -280,18 +280,20 @@ def add_sub_category(request):
     if request.method == 'POST':
         category_id = request.POST.get('category_id')
         subcategory_name = request.POST.get('subcategory_name').upper()
-        subcategory_type = request.POST.get('subcategory_type').upper()
+        subcategory_types = request.POST.getlist('subcategory_type[]')  # Get the list of subcategory types
         status = request.POST.get('status')
         created_by = request.session.get('user_id')
         created_date = datetime.now()
 
         try:
             with connection.cursor() as cursor:
-                # Insert data as a single row
-                cursor.execute(
-                    "SELECT add_sub_category(%s, %s, %s, %s, %s, %s);",
-                    [category_id, subcategory_name, subcategory_type, status, created_by, created_date]
-                )
+                # Insert each subcategory type as a separate row
+                for subcategory_type in subcategory_types:
+                    subcategory_type = subcategory_type.upper()  # Convert to upper case
+                    cursor.execute(
+                        "SELECT add_sub_category(%s, %s, %s, %s, %s, %s);",
+                        [category_id, subcategory_name, subcategory_type, status, created_by, created_date]
+                    )
             return JsonResponse({'success': True})
         except Exception as e:
             if 'Subcategory already exists' in str(e):

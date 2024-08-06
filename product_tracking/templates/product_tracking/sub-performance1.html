@@ -289,6 +289,20 @@
             $('#cancelButton').click(function () {
                 $('#offcanvasExample1').offcanvas('hide');
             });
+
+            // Function to add a new type input field
+            $('#addTypeButton').click(function () {
+                var newTypeInput = '<div class="input-group mb-2">' +
+                    '<input type="text" class="form-control" name="subcategory_type[]" placeholder="Add Type" required>' +
+                    '<button type="button" class="btn btn-danger remove-type-btn">Remove</button>' +
+                    '</div>';
+                $('#typeContainer').append(newTypeInput);
+            });
+
+            // Function to remove a type input field
+            $(document).on('click', '.remove-type-btn', function () {
+                $(this).closest('.input-group').remove();
+            });
         });
 
     </script>
@@ -468,12 +482,6 @@
                                 <input type="hidden" id="hiddenCategoryIdInput" name="category_id">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="subCategoryType" class="form-label">Type<span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="subCategoryType" name="subcategory_type"
-                                       placeholder="Add Type" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
                                 <label for="subcategoryStatus" class="form-label">Status <span
                                         class="text-danger">*</span></label>
                                 <select class="form-control" name="status" id="subcategoryStatus" required>
@@ -481,6 +489,16 @@
                                     <option value="1" selected>Active</option>
                                     <option value="0">Inactive</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div id="typeContainer">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" name="subcategory_type[]" placeholder="Add Type" required>
+                                        <button type="button" class="btn btn-success" id="addTypeButton">Add Type</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="row">
