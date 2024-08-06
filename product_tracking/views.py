@@ -285,35 +285,24 @@ def add_sub_category(request):
         created_by = request.session.get('user_id')
         created_date = datetime.now()
 
+        types_combined = ','.join([stype.upper() for stype in subcategory_types])  # Combine and convert to upper case
+
         try:
             with connection.cursor() as cursor:
-                for subcategory_type in subcategory_types:
-                    subcategory_type = subcategory_type.upper()  # Convert to upper case
-
-                    # Check if subcategory already exists
-                    cursor.execute(
-                        "SELECT COUNT(*) FROM subcategories WHERE category_id=%s AND subcategory_name=%s AND subcategory_type=%s",
-                        [category_id, subcategory_name, subcategory_type]
-                    )
-                    if cursor.fetchone()[0] > 0:
-                        return JsonResponse({'success': False, 'message': 'Sub Category Already Exists!'})
-
-                # If no conflicts, insert each subcategory type
-                for subcategory_type in subcategory_types:
-                    subcategory_type = subcategory_type.upper()  # Convert to upper case
-                    cursor.execute(
-                        "SELECT add_sub_category(%s, %s, %s, %s, %s, %s);",
-                        [category_id, subcategory_name, subcategory_type, status, created_by, created_date]
-                    )
-
+                cursor.execute(
+                    "SELECT add_sub_category(%s, %s, %s, %s, %s, %s);",
+                    [category_id, subcategory_name, types_combined, status, created_by, created_date]
+                )
             return JsonResponse({'success': True})
         except Exception as e:
-            print("An unexpected error occurred:", e)
-            return JsonResponse({'success': False, 'message': 'An unexpected error occurred'})
+            print("An unexpected error occurred:", e)  # Print the error message
+            return JsonResponse({'success': False, 'message': 'An unexpected error occurred: ' + str(e)})
     else:
         categories = subcategory_list(request)
         return render(request, 'product_tracking/sub-performance1.html',
                       {'categories': categories})
+
+
 
 
 def subcategory_list(request, category_id):
@@ -346,17 +335,18 @@ def update_subcategory(request, id):
         print('Received POST request to update sub category details')
 
         # Extract the form data
-        name = request.POST.get('categoryName').upper()
+        name = request.POST.get('categoryName')
+        subcategory_types = request.POST.get('subcategoryTypes')
 
         print('Received data:', {
             'id': id,
             'name': name,
-
+            'subcategoryTypes': subcategory_types
         })
 
         try:
             with connection.cursor() as cursor:
-                cursor.callproc('update_subcategory', [id, name])
+                cursor.callproc('update_subcategory', [id, name, subcategory_types])
                 updated_category_id = cursor.fetchone()[0]
                 print(updated_category_id)
             return JsonResponse(
@@ -365,7 +355,6 @@ def update_subcategory(request, id):
             return JsonResponse({'error': 'Failed to update sub category details', 'exception': str(e)})
     else:
         return JsonResponse({'error': 'Invalid request method'})
-
 
 def delete_subcategory(request, id):
     if request.method == 'POST':

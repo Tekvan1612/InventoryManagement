@@ -36,11 +36,92 @@
         #pagination-controls button {
             margin-right: 10px;
         }
+
+        /* Style the input group to use flexbox */
+        .type-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Space between input and button */
+            margin-bottom: 10px; /* Space between input groups */
+        }
+
+        .type-input-container {
+            display: block; /* Ensure each container is on a new line */
+        }
+
+        /* Adjust the size of the input field */
+        .subcategory-type-input {
+            flex-grow: 1; /* Allows the input to take available space */
+            flex-basis: 0; /* Ensures the input field can shrink */
+        }
+
+        /* Ensure the button does not shrink */
+        .type-input-group button {
+            flex-shrink: 0;
+        }
+
+        /* Animation for the Add Button */
+        @keyframes button-hover {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .btn-success:hover {
+            animation: button-hover 0.5s ease-in-out;
+        }
+
+        .plus-icon {
+            cursor: pointer;
+            margin-left: 10px;
+            color: #0D99FF;
+        }
+
+        .plus-icon:hover {
+            color: #0056b3;
+        }
+
+        .type-list {
+            display: none;
+            list-style-type: none;
+            padding-left: 20px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .subcategory-type-input {
+                flex-basis: 60%; /* Adjust this value for smaller screens */
+            }
+
+            .type-input-group button {
+                font-size: 14px; /* Adjust the button size if needed */
+            }
+        }
+
+        /* Add spacing between search input and back button */
+        .search-back-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .type-list a {
+            color: #666666 ; /* Complementary color to #0D99FF */
+            text-decoration: underline;
+        }
+
+        .type-list a:hover {
+            color: #333333; /* Slightly darker shade for hover effect */
+        }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
         $(document).ready(function () {
-            var fetchingData = false;
             let currentPage = 1;
             const pageSize = 10;
 
@@ -81,23 +162,27 @@
                         console.log("Processing subcategory:", subcategory);
                         // Create a list of types
                         var typesArray = subcategory.type.split(',');
-                        var typeList = '<ul>';
+                        var typeList = '<ul class="type-list subcategory-type" style="display: none;">';
                         $.each(typesArray, function (typeIndex, type) {
                             console.log("Adding type:", type);
-                            typeList += '<li>' + type + '</li>';
+                            // Creating a hyperlink for each type
+                            typeList += '<li><a href="/equipment_list/?subcategory_id=' + subcategory.id + '">' + type.trim() + '</a></li>';
                         });
                         typeList += '</ul>';
 
                         var row = '<tr>' +
                             '<td>' + ((currentPage - 1) * pageSize + index + 1) + '</td>' +
                             '<td class="subcategory-id" style="display: none;">' + subcategory.id + '</td>' +
-                            '<td class="subcategory-name" data-subcategory-id="' + subcategory.id + '"><a href="#">' + subcategory.name + '</a></td>' +
+                            '<td class="subcategory-name" data-subcategory-id="' + subcategory.id + '">' +
+                            '<a href="/equipment_list/?subcategory_id=' + subcategory.id + '">' + subcategory.name + '</a>' +
+                            '<span class="plus-icon"><i class="fa fa-plus"></i></span>' +
+                            '</td>' +
                             '<td>' + subcategory.category_name + '</td>' +
-                            '<td>' + typeList + '</td>' +
                             '<td>' + subcategory.created_by.toUpperCase() + '</td>' +
                             '<td>' + subcategory.created_date + '</td>' +
                             '<td><button class="btn btn-sm btn-primary edit-btn me-2"><i class="fa fa-pencil"></i></button><button class="btn btn-sm btn-danger delete-btn"><i class="fa fa-trash"></i></button></td>' +
-                            '</tr>';
+                            '</tr>' +
+                            '<tr class="type-row"><td colspan="7">' + typeList + '</td></tr>';
                         $('#subcategory-table-body').append(row);
                     });
 
@@ -106,7 +191,6 @@
                     console.error("Error fetching subcategory list:", error);
                 }
             }
-
 
             function updatePaginationControls(totalItems, currentPage, totalPages) {
                 $('#pagination-controls').html('');
@@ -137,11 +221,11 @@
                 fetchSubCategoryList();
             });
 
-            $(document).on('click', '.subcategory-name a', function (e) {
+            $(document).on('click', '.plus-icon', function (e) {
                 e.preventDefault();
-                var subcategoryId = $(this).closest('.subcategory-name').data('subcategory-id');
-                console.log('Redirecting to /equipment_list/?subcategory_id=' + subcategoryId);
-                window.location.href = '/equipment_list/?subcategory_id=' + subcategoryId;
+                var $typeList = $(this).closest('tr').next('.type-row').find('.type-list');
+                $typeList.toggle(); // Toggle the display of the type list
+                $(this).find('i').toggleClass('fa-plus fa-minus'); // Toggle the plus/minus icon
             });
 
             // Populate edit modal with subcategory data
@@ -149,15 +233,27 @@
                 var row = $(this).closest('tr');
                 var subcategoryId = row.find('td:eq(1)').text().trim();
                 var subcategoryName = row.find('td:eq(2)').text().trim();
-                //var statusText = row.find('td:eq(3)').text().trim() === 'Active' ? '1' : '0';
+                var subcategoryTypes = row.next('.type-row').find('.type-list li').map(function () {
+                    return $(this).text().trim();
+                }).get();
 
                 console.log("Subcategory Id:", subcategoryId);
                 console.log("Subcategory Name:", subcategoryName);
+                console.log("Subcategory Types:", subcategoryTypes);
 
                 // Populate modal with subcategory data
                 $('#editCategoryId').val(subcategoryId);
                 $('#editCategoryName').val(subcategoryName);
-                //$('#editCategoryStatus').val(statusText).change();
+
+                // Clear and populate types
+                $('#editTypeContainer').empty();
+                $.each(subcategoryTypes, function (index, type) {
+                    var typeInput = '<div class="type-input-container"><div class="input-group mb-2 type-input-group">' +
+                        '<input type="text" class="form-control subcategory-type-input" name="edit_subcategory_type[]" value="' + type + '" required>' +
+                        '<button type="button" class="btn btn-danger remove-type-btn">Remove</button>' +
+                        '</div></div>';
+                    $('#editTypeContainer').append(typeInput);
+                });
 
                 $('#editCategoryModal').modal('show');
             });
@@ -191,7 +287,6 @@
             var categoryIdFromUrl = pathParts[pathParts.length - 2]; // Extract category_id from URL path
             fetchCategoryDetails(categoryIdFromUrl);
 
-
             $(document).on('click', '#closeFormBtn', function () {
                 $('#editCategoryModal').modal('hide');
             });
@@ -199,14 +294,14 @@
             function updateSubCategoryInDatabase() {
                 var subcategoryId = $('#editCategoryId').val();
                 var subcategoryName = $('#editCategoryName').val().trim();
-                //var statusText = $('#editCategoryStatus').val();
-
-                //console.log("Status Text:", statusText);
+                var subcategoryTypes = $('input[name="edit_subcategory_type[]"]').map(function () {
+                    return $(this).val().trim();
+                }).get().join(',');
 
                 var formData = {
                     'csrfmiddlewaretoken': getCookie('csrftoken'),
                     'categoryName': subcategoryName,
-                    //'statusText': statusText
+                    'subcategoryTypes': subcategoryTypes
                 };
 
                 $.ajax({
@@ -292,20 +387,38 @@
 
             // Function to add a new type input field
             $('#addTypeButton').click(function () {
-                var newTypeInput = '<div class="input-group mb-2">' +
-                    '<input type="text" class="form-control" name="subcategory_type[]" placeholder="Add Type" required>' +
+                var newTypeInput = '<div class="type-input-container"><div class="input-group mb-2 type-input-group">' +
+                    '<input type="text" class="form-control subcategory-type-input" name="subcategory_type[]" placeholder="Add Type" required>' +
                     '<button type="button" class="btn btn-danger remove-type-btn">Remove</button>' +
-                    '</div>';
+                    '</div></div>';
                 $('#typeContainer').append(newTypeInput);
+            });
+
+            // Function to add a new type input field in edit modal
+            $('#editAddTypeButton').click(function () {
+                var newTypeInput = '<div class="type-input-container"><div class="input-group mb-2 type-input-group">' +
+                    '<input type="text" class="form-control subcategory-type-input" name="edit_subcategory_type[]" placeholder="Add Type" required>' +
+                    '<button type="button" class="btn btn-danger remove-type-btn">Remove</button>' +
+                    '</div></div>';
+                $('#editTypeContainer').append(newTypeInput);
             });
 
             // Function to remove a type input field
             $(document).on('click', '.remove-type-btn', function () {
-                $(this).closest('.input-group').remove();
+                $(this).closest('.type-input-container').remove();
+            });
+
+            // Add a click event for the back button
+            $('#backButton').click(function () {
+                var currentURL = window.location.pathname;
+                if (currentURL.includes('/equipment_list/')) {
+                    window.location.href = '/subcategory_list/';
+                } else {
+                    window.history.back();
+                }
             });
 
         });
-
     </script>
     <body>
 
@@ -385,9 +498,10 @@
                         <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title mb-0">SubCategory List </h4>
-                                <div class="col-md-3">
+                                <div class="search-back-wrapper">
                                     <input type="text" class="form-control" id="searchSubCategory"
                                            placeholder="Search....">
+                                    <button class="btn btn-secondary btn-sm" id="backButton">Back</button>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -398,7 +512,6 @@
                                             <th>SR NO</th>
                                             <th>Sub Category Name</th>
                                             <th>Category Name</th>
-                                            <th>Type</th>
                                             <th>Created By</th>
                                             <th>Created Date</th>
                                             <th>Action</th>
@@ -420,107 +533,130 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!--**********************************
-            Content body end
-        ***********************************-->
-        <!-- Edit Category Modal -->
-        <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog"
-             aria-labelledby="editCategoryModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editCategoryModalLabel">Edit Category</h5>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Category Model Form -->
-                        <form id="editCategoryForm">
+            <!--**********************************
+                Content body end
+            ***********************************-->
+            <!-- Edit Category Modal -->
+            <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog"
+                 aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editCategoryModalLabel">Edit Category</h5>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Category Model Form -->
+                            <form id="editCategoryForm">
 
-                            <div class="form-group">
-                                <label for="editCategoryName">Sub Category Name</label>
-                                <input type="text" class="form-control" id="editCategoryName" name="editCategoryName">
-                            </div>
-                            <input type="hidden" id="editCategoryId" class="pagination-count">
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="closeFormBtn">Close</button>
-                        <button type="button" class="btn btn-primary update-category " id="saveChangesBtn">Save
-                            changes
-                        </button>
+                                <div class="form-group mb-3">
+                                    <label for="editCategoryName">Sub Category Name</label>
+                                    <input type="text" class="form-control" id="editCategoryName"
+                                           name="editCategoryName">
+                                </div>
+                                <div id="editTypeContainer" class="mb-3">
+                                    <!-- Type input fields will be appended here dynamically -->
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <button type="button" class="btn btn-success" id="editAddTypeButton"><i
+                                            class="fa fa-plus"></i> Add Type
+                                    </button>
+                                </div>
+                                <input type="hidden" id="editCategoryId" class="pagination-count">
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" id="closeFormBtn">Close</button>
+                            <button type="button" class="btn btn-primary update-category" id="saveChangesBtn">Save
+                                changes
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Type Input Template -->
+            <script id="type-input-template" type="text/x-custom-template">
+                <div class="form-group mb-2 type-input-container">
+                    <div class="input-group">
+                        <input type="text" class="form-control subcategory-type-input" name="edit_subcategory_type[]"
+                               placeholder="Type" required>
+                        <button type="button" class="btn btn-danger remove-type-btn">Remove</button>
+                    </div>
+                </div>
+            </script>
 
 
-        <!-- Add Sub Category Modal -->
-        <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample1">
-            <div class="offcanvas-header">
-                <h5 class="modal-title" id="#gridSystemModal1">Sub Category</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div class="offcanvas-body">
-                <div class="container-fluid">
-                    <form id="addSubCategoryForm" method="POST" action="{% url 'add_sub_category' %}">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="subCategoryName" class="form-label">Sub Category Name <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="subCategoryName" name="subcategory_name"
-                                       placeholder="Name" required>
+            <!-- Add Sub Category Modal -->
+            <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample1">
+                <div class="offcanvas-header">
+                    <h5 class="modal-title" id="#gridSystemModal1">Sub Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="container-fluid">
+                        <form id="addSubCategoryForm" method="POST" action="{% url 'add_sub_category' %}">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="subCategoryName" class="form-label">Sub Category Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="subCategoryName" name="subcategory_name"
+                                           placeholder="Name" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="exampleFormControlInputfour" class="form-label">Category Name<span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="exampleFormControlInputfour"
+                                           name="category_name" required>
+                                    <!-- Hidden input to store category_id -->
+                                    <input type="hidden" id="hiddenCategoryIdInput" name="category_id">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="subcategoryStatus" class="form-label">Status <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-control" name="status" id="subcategoryStatus" required>
+                                        <option value="">Select</option>
+                                        <option value="1" selected>Active</option>
+                                        <option value="0">Inactive</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="exampleFormControlInputfour" class="form-label">Category Name<span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="exampleFormControlInputfour"
-                                       name="category_name" required>
-                                <input type="hidden" id="hiddenCategoryIdInput" name="category_id">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="subcategoryStatus" class="form-label">Status <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-control" name="status" id="subcategoryStatus" required>
-                                    <option value="">Select</option>
-                                    <option value="1" selected>Active</option>
-                                    <option value="0">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <div id="typeContainer">
-                                    <div class="input-group mb-2">
-                                        <input type="text" class="form-control" name="subcategory_type[]"
-                                               placeholder="Add Type" required>
-                                        <button type="button" class="btn btn-success" id="addTypeButton">Add Type
-                                        </button>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div id="typeContainer" class="type-input-container">
+                                        <div class="input-group mb-2 type-input-group">
+                                            <input type="text" class="form-control subcategory-type-input"
+                                                   name="subcategory_type[]" placeholder="Add Type" required>
+                                            <button type="button" class="btn btn-success me-1" id="addTypeButton"><i
+                                                    class="fa fa-plus"></i> Add Type
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <button type="submit" class="btn btn-primary me-1">Submit</button>
-                                <button class="btn btn-danger light ms-1" type="button" id="cancelButton">Cancel
-                                </button>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <button type="submit" class="btn btn-primary me-1">Submit</button>
+                                    <button class="btn btn-danger light ms-1" type="button" id="cancelButton">Cancel
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+
+                    </div>
                 </div>
             </div>
-        </div>
-        u
 
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        {% include 'product_tracking/footer.html' %}
-    </div>
+
+            <!--**********************************
+                Footer start
+            ***********************************-->
+            {% include 'product_tracking/footer.html' %}
+        </div>
 
     </body>
     <script type="application/json" id="subcategories-data">{{ subcategories|safe }}</script>
