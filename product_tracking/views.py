@@ -368,6 +368,58 @@ def delete_subcategory(request, id):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
+def fetch_events(request):
+    # Extract month and year from query parameters
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+
+    # Default to current month and year if not provided
+    if not month or not year:
+        from datetime import datetime
+        now = datetime.now()
+        month = now.month
+        year = now.year
+
+    # Convert month and year to integers
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid month or year'}, status=400)
+
+    # SQL query to fetch events based on month and year
+    query = """
+        SELECT event_id, venue, client_name, person_name, start_date, end_date, created_date
+        FROM public.calender
+        WHERE EXTRACT(MONTH FROM start_date) = %s AND EXTRACT(YEAR FROM start_date) = %s
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(query, [month, year])
+        rows = cursor.fetchall()
+
+        # Convert the rows to a list of dictionaries
+        events_list = []
+        for row in rows:
+            created_date_time = row[6]
+            if created_date_time:
+                # Format the datetime to get the time part in 12-hour format with AM/PM
+                created_date_time = created_date_time.strftime('%I:%M %p')  # %I = 12-hour clock, %p = AM/PM
+            else:
+                created_date_time = 'No time available'
+
+            events_list.append({
+                'event_id': row[0],
+                'venue': row[1],
+                'client_name': row[2],
+                'person_name': row[3],
+                'start_date': row[4].strftime('%Y-%m-%d'),
+                'end_date': row[5].strftime('%Y-%m-%d') if row[5] else '',
+                'created_date': created_date_time
+            })
+
+    return JsonResponse(events_list, safe=False)
+
 # User Management Module
 def add_user(request):
     username = request.session.get('username')

@@ -112,4 +112,6 @@ urlpatterns = [
                   path('update_all_job_details/', views.update_all_job_details, name='update_all_job_details'),
                   path('save_job_details/', views.save_job_details, name='save_job_details'),
                   path('delete_job_detail/', views.delete_job_detail, name='delete_job_detail'),
+                  path('fetch-events/', views.fetch_events, name='fetch-events'),
+
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

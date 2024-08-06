@@ -1,18 +1,191 @@
- <!-- Head Section -->
+<!-- Head Section -->
 {% include 'product_tracking/head.html' %}
 
 {% load static %}
 {% block content %}
-<body data-typography="poppins" data-theme-version="light" data-layout="vertical" data-nav-headerbg="black" data-headerbg="color_1">
+    <body>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .col-xl-12 {
+            height: 750px;
+        }
+
+        #calendar {
+            max-width: 900px;
+            max-height: 450px;
+            margin: 0 auto;
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+                },
+                initialView: 'dayGridMonth',
+                events: '/get_eventvalue/',
+                selectable: true,
+                select: function (arg) {
+                    $('#startDate').val(arg.startStr);
+                    // Adjust the end date to be inclusive
+                    let endDate = new Date(arg.endStr);
+                    endDate.setDate(endDate.getDate() - 1);
+                    $('#endDate').val(endDate.toISOString().split('T')[0]);
+                    $('#action').val('CREATE');
+                    $('#eventModalLabel').text('Add Event');
+                    $('#saveEvent').text('Save');
+                    $('#deleteEvent').hide();
+                    $('#eventModal').modal('show');
+                },
+                eventClick: function (info) {
+                    $('#action').val('UPDATE');
+                    $('#event_id').val(info.event.id);
+                    $('#eventVenue').val(info.event.extendedProps.venue);
+                    $('#clientName').val(info.event.extendedProps.client_name);
+                    $('#personName').val(info.event.extendedProps.person_name);
+                    $('#startDate').val(info.event.startStr);
+
+                    // Display the end date exactly as it is received from FullCalendar
+                    if (info.event.end) {
+                        $('#endDate').val(info.event.end.toISOString().split('T')[0]);
+                    } else {
+                        $('#endDate').val(info.event.startStr);
+                    }
+
+                    $('#eventModalLabel').text('Update Event');
+                    $('#saveEvent').text('Update');
+                    $('#deleteEvent').show();
+                    $('#eventModal').modal('show');
+                },
+                datesSet: function (view) {
+                    // Get the start and end date of the current view
+                    var start = view.view.currentStart;
+                    var end = view.view.currentEnd;
+
+                    var month = start.getMonth() + 1; // Months are zero-based
+                    var year = start.getFullYear();
+
+                    // Log or use the month and year as needed
+                    console.log('Current month:', month);
+                    console.log('Current year:', year);
+
+                    // Optionally, make an AJAX request to fetch events based on the current month
+                    fetchEventsForMonth(month, year);
+                }
+            });
+            calendar.render();
+
+            function fetchEventsForMonth(month, year) {
+                $.ajax({
+                    url: '/fetch-events/',  // URL of your Django view function
+                    method: 'GET',
+                    data: {
+                        month: month,
+                        year: year
+                    }, // Pass the month and year
+                    success: function (data) {
+                        var eventList = $('#event-list');
+                        eventList.empty(); // Clear existing content
+
+                        $.each(data, function (index, event) {
+                            var eventDate = new Date(event.start_date);
+                            var day = eventDate.getDate();
+                            var dayName = eventDate.toLocaleDateString('en-US', {weekday: 'short'});
+
+                            var eventHtml = `
+                    <div class="event-media">
+                        <div class="d-flex align-items-center">
+                            <div class="event-box">
+                                <h5 class="mb-0">${day}</h5>
+                                <span>${dayName}</span>
+                            </div>
+                            <div class="event-data ms-2">
+                                <h5 class="mb-0"><a href="javascript:void(0)">${event.client_name}</a></h5>
+                                <span>${event.venue}</span>
+                            </div>
+                        </div>
+                        <span class="text-secondary">${event.created_date}</span>
+                    </div>
+                `;
+
+                            // Append HTML to the event list
+                            eventList.append(eventHtml);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching events:', error);
+                    }
+                });
+            }
+
+
+            function clearForm() {
+                $('#eventForm')[0].reset();
+                $('#event_id').val('');
+                $('#startDate').val('');
+                $('#endDate').val('');
+            }
+
+            $('#saveEvent').click(function () {
+                var action = $('#action').val();
+                var formData = $('#eventForm').serializeArray();
+                formData.push({name: 'action', value: action});
+
+                $.post("{% url 'add_event_view' %}", formData)
+                    .done(function (data) {
+                        if (data.success) {
+                            $('#eventModal').modal('hide');
+                            calendar.refetchEvents();
+                            clearForm();  // Clear the form after successful submission
+                        } else {
+                            alert('Error: ' + data.error_message);
+                        }
+                    })
+                    .fail(function (error) {
+                        alert('An error occurred while saving the event.');
+                    });
+            });
+
+            $('#deleteEvent').click(function () {
+                var event_id = $('#event_id').val();
+                if (!confirm('Are you sure you want to delete this event?')) {
+                    return;
+                }
+
+                $.post("{% url 'add_event_view' %}", {
+                    action: 'DELETE',
+                    event_id: event_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                })
+                    .done(function (data) {
+                        if (data.success) {
+                            $('#eventModal').modal('hide');
+                            calendar.refetchEvents();
+                            clearForm();
+                        } else {
+                            alert('Error: ' + data.error_message);
+                        }
+                    })
+                    .fail(function (error) {
+                        alert('An error occurred while deleting the event.');
+                    });
+            });
+        });
+
+    </script>
 
     <!--*******************
         Preloader start
     ********************-->
     <div id="preloader">
-		<div class="lds-ripple">
-			<div></div>
-			<div></div>
-		</div>
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
     </div>
     <!--*******************
         Preloader end
@@ -29,15 +202,7 @@
         <!--**********************************
             Nav header end
         ***********************************-->
-		
-		<!--**********************************
-            Chat box start
-        ***********************************-->
-		<!--**********************************
-            Chat box End
-        ***********************************-->
-		
-		<!--**********************************
+        <!--**********************************
             Header start
         ***********************************-->
         {% include 'product_tracking/header.html' %}
@@ -52,1086 +217,1206 @@
         <!--**********************************
             Sidebar end
         ***********************************-->
-		
-		<!--**********************************
+
+        <!--**********************************
             Content body start
         ***********************************-->
         <div class="content-body">
-            <!-- row -->	
-			<div class="page-titles">
-				<ol class="breadcrumb">
-					<li><h5 class="bc-title">Dashboard</h5></li>
-				</ol>
-			</div>
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col-xl-12 wid-100">
-						<div class="row">
-
-							<div class="col-xl-4 col-sm-6">
-								<div class="card same-card">
-									<div class="card-body d-flex align-items-center  py-2">
-										<div id="AllProject"></div>
-										<ul class="project-list">
-											<li><h6>All Projects</h6></li>
-											<li>
-												<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-													<rect width="10" height="10" rx="3" fill="#3AC977"/>
-												</svg>
-												Compete
-											</li>
-											<li>
-												<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-													<rect width="10" height="10" rx="3" fill="var(--primary)"/>
-												</svg>
-												Pending
-											</li>
-											<li>
-												<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-													<rect width="10" height="10" rx="3" fill="var(--secondary)"/>
-												</svg>
-												Not Start
-											</li>
-										</ul>
-									</div>
-								</div>
-							</div>
-
-							<div class="col-xl-8">
-								<div class="card overflow-hidden">
-									<div class="card-header border-0 pb-0 flex-wrap">
-										<h4 class="heading mb-0">Projects Overview</h4>
-										<ul class="nav nav-pills mix-chart-tab" id="pills-tab" role="tablist">
-										  <li class="nav-item" role="presentation">
-											<button class="nav-link active" data-series="week" id="pills-week-tab" data-bs-toggle="pill" data-bs-target="#pills-week" type="button" role="tab"  aria-selected="true">Week</button>
-										  </li>
-										  <li class="nav-item" role="presentation">
-											<button class="nav-link" data-series="month" id="pills-month-tab" data-bs-toggle="pill" data-bs-target="#pills-month" type="button" role="tab"  aria-selected="false">Month</button>
-										  </li>
-										  <li class="nav-item" role="presentation">
-											<button class="nav-link" data-series="year" id="pills-year-tab" data-bs-toggle="pill" data-bs-target="#pills-year" type="button" role="tab"  aria-selected="false">Year</button>
-										  </li>
-										   <li class="nav-item" role="presentation">
-											<button class="nav-link" data-series="all" id="pills-all-tab" data-bs-toggle="pill" data-bs-target="#pills-all" type="button" role="tab" aria-selected="false">All</button>
-										  </li>
-										</ul>
-									</div>
-									<div class="card-body  p-0">
-											<div id="overiewChart"></div>
-										<div class="ttl-project">
-											<div class="pr-data">
-												<h5>12,721</h5>
-												<span>Number of Projects</span>
-											</div>
-											<div class="pr-data">
-												<h5 class="text-primary">721</h5>
-												<span>Active Projects</span>
-											</div>
-											<div class="pr-data">
-												<h5>$2,50,523</h5>
-												<span>Revenue</span>
-											</div>
-											<div class="pr-data">
-												<h5 class="text-success">12,275h</h5>
-												<span>Working Hours</span>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-
-						</div>
-					</div>
-
-					<div class="col-xl-6 active-p">
-						<div class="card">
-							<div class="card-body p-0">
-								<div class="table-responsive active-projects shorting">
-								
-									<div class="tbl-caption">
-										<h4 class="heading mb-0">Active Projects</h4>
-									</div>
-									<table id="projects-tbl" class="table ItemsCheckboxSec">
-										<thead>
-                                            <tr>
-												<th>
-													<div class="form-check custom-checkbox ms-0">
-														<input type="checkbox" class="form-check-input checkAllInput" id="checkAll" required="">
-														<label class="form-check-label" for="checkAll"></label>
-													</div>
-												</th>
-                                                <th>Project Name</th>
-                                                <th>Project Lead</th>
-                                                <th>Progress</th>
-                                                <th>Assignee</th>
-                                                <th>Status</th>
-                                                <th>Due Date</th>
-                                            </tr>
-                                        </thead>
-										<tbody>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox2" required="">
-														<label class="form-check-label" for="customCheckBox2"></label>
-													</div>
-												</td>
-												<td>Batman</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Liam Risher</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-primary" style="width:53%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">53%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-primary light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>08 Sep 2023</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox3" required="">
-														<label class="form-check-label" for="customCheckBox3"></label>
-													</div>
-												</td>
-												<td>Mivy App</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Honey Risher</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-primary" style="width:53%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">52%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-danger light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox22" required="">
-														<label class="form-check-label" for="customCheckBox22"></label>
-													</div>
-												</td>
-												<td>Crypto App</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Ankites Risher</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-danger" style="width:53%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">58%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}" class="avatar rounded-circle" alt="">
-														
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox33" required="">
-														<label class="form-check-label" for="customCheckBox33"></label>
-													</div>
-												</td>
-												<td>Bender Project</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Oliver Noah</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-danger" style="width:30%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-danger">30%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox044" required="">
-														<label class="form-check-label" for="customCheckBox044"></label>
-													</div>
-												</td>
-												<td>Canary</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Elijah James</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-success" style="width:40%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-success">40%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-success light border-0">Completed</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox055" required="">
-														<label class="form-check-label" for="customCheckBox055"></label>
-													</div>
-												</td>
-												<td>Casanova</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">William Risher</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-primary" style="width:53%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">53%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-primary light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox23" required="">
-														<label class="form-check-label" for="customCheckBox23"></label>
-													</div>
-												</td>
-												<td>Bender Project</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Oliver Noah</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-danger" style="width:30%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-danger">30%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox44" required="">
-														<label class="form-check-label" for="customCheckBox44"></label>
-													</div>
-												</td>
-												<td>Canary</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Elijah James</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-success" style="width:40%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-success">40%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-success light border-0">Completed</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox55" required="">
-														<label class="form-check-label" for="customCheckBox55"></label>
-													</div>
-												</td>
-												<td>Casanova</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">William Risher</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-primary" style="width:53%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">53%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-primary light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox66" required="">
-														<label class="form-check-label" for="customCheckBox66"></label>
-													</div>
-												</td>
-												<td>Bigfish</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Donald Benjamin</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-danger" style="width:30%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-danger">30%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-danger light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox7" required="">
-														<label class="form-check-label" for="customCheckBox7"></label>
-													</div>
-												</td>
-												<td>Matadors</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Liam Risher</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-primary" style="width:53%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">53%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-primary light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox88" required="">
-														<label class="form-check-label" for="customCheckBox88"></label>
-													</div>
-												</td>
-												<td>Mercury</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Oliver Noah</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-danger" style="width:30%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-danger">30%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox99" required="">
-														<label class="form-check-label" for="customCheckBox99"></label>
-													</div>
-												</td>
-												<td>Whistler</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Elijah James</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-success" style="width:40%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-success">40%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-success light border-0">Completed</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox0102" required="">
-														<label class="form-check-label" for="customCheckBox0102"></label>
-													</div>
-												</td>
-												<td>Time Projects</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">Lucas</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-danger" style="width:33%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">33%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-primary light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<div class="form-check custom-checkbox">
-														<input type="checkbox" class="form-check-input" id="customCheckBox110" required="">
-														<label class="form-check-label" for="customCheckBox110"></label>
-													</div>
-												</td>
-												<td>Fast Ball</td>
-												<td>
-													<div class="d-flex align-items-center">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<p class="mb-0 ms-2">William Risher</p>	
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="tbl-progress-box">
-														<div class="progress">
-															<div class="progress-bar bg-primary" style="width:53%; height:5px; border-radius:4px;" role="progressbar"></div>
-														</div>
-														<span class="text-primary">53%</span>
-													</div>
-												</td>
-												<td class="pe-0">
-													<div class="avatar-list avatar-list-stacked">
-														<img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}" class="avatar rounded-circle" alt="">
-														<img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}" class="avatar rounded-circle" alt="">
-													</div>
-												</td>
-												<td class="pe-0">
-													<span class="badge badge-primary light border-0">Inprogress</span>
-												</td>
-												<td>
-													<span>06 Sep 2021</span>
-												</td>
-											</tr>
-											
-										</tbody>
-										
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="col-xl-3 col-md-6 up-shd">
-						<div class="card">
-							<div class="card-header border-0 pb-1">
-								<h4 class="heading mb-0">Upcoming Schedules</h4>
-							</div>
-							<div class="card-body schedules-cal p-2">
-                                <label for="datetimepicker1"></label><input type="text" class="form-control d-none" id="datetimepicker1">
-								<div class="events">
-									<h6>events</h6>
-									<div class="dz-scroll event-scroll">
-										<div class="event-media">
-											<div class="d-flex align-items-center">
-												<div class="event-box">
-													<h5 class="mb-0">20</h5>
-													<span>Mon</span>
-												</div>
-												<div class="event-data ms-2">
-													<h5 class="mb-0"><a href="javascript:void(0)">Development planning</a></h5>
-													<span>w3it Technologies</span>
-												</div>
-											</div>
-											<span class="text-secondary">12:05 PM</span>
-										</div>
-										<div class="event-media">
-											<div class="d-flex align-items-center">
-												<div class="event-box">
-													<h5 class="mb-0">20</h5>
-													<span>Mon</span>
-												</div>
-												<div class="event-data ms-2">
-													<h5 class="mb-0"><a href="javascript:void(0)">Development planning</a></h5>
-													<span>w3it Technologies</span>
-												</div>
-											</div>
-											<span class="text-secondary">12:05 PM</span>
-										</div>
-										<div class="event-media">
-											<div class="d-flex align-items-center">
-												<div class="event-box">
-													<h5 class="mb-0">20</h5>
-													<span>Mon</span>
-												</div>
-												<div class="event-data ms-2">
-													<h5 class="mb-0"><a href="javascript:void(0)">Development planning</a></h5>
-													<span>w3it Technologies</span>
-												</div>
-											</div>
-											<span class="text-secondary">12:05 PM</span>
-										</div>
-									</div>	
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="col-xl-3 col-md-6 up-shd">
-						<div class="card">
-							<div class="card-header pb-0 border-0">
-								<h4 class="heading mb-0">Projects Status</h4>
-                                <label>
-                                    <select class="default-select status-select normal-select">
-                                      <option value="Today">Today</option>
-                                      <option value="Week">Week</option>
-                                      <option value="Month">Month</option>
-                                    </select>
-                                </label>
+            <!-- row -->
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title">Dashboard</h5></li>
+                </ol>
+            </div>
+            <div class="container-fluid">
+                <div class="col-xl-12 col-xl-12">
+                    <div class="card">
+                        <div class="card-header border-0 pb-1">
+                            <h4 class="heading mb-0">Upcoming Schedules</h4>
+                        </div>
+                        <div class="card-body schedules-cal p-2">
+                            <div id="calendar"></div>
+                            <div class="events" id="event-calender">
+                                <h6>events</h6>
+                                <div class="dz-scroll event-scroll" id="event-list">
+                                    <!-- Events will be dynamically inserted here -->
+                                </div>
                             </div>
-							<div class="card-body">
-								<div id="projectChart" class="project-chart"></div>
-								<div class="project-date">
-									<div class="project-media">
-										<p class="mb-0">
-											<svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<rect y="0.5" width="12" height="12" rx="3" fill="var(--primary)"/>
-											</svg>
-											Completed Projects
-										</p>
-										<span>125 Projects</span>
-									</div>	
-									<div class="project-media">
-										<p class="mb-0">
-											<svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<rect y="0.5" width="12" height="12" rx="3" fill="#3AC977"/>
-											</svg>
-											Progress Projects
-										</p>
-										<span>125 Projects</span>
-									</div>
-									<div class="project-media">
-										<p class="mb-0">
-											<svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<rect y="0.5" width="12" height="12" rx="3" fill="#FF5E5E"/>
-											</svg>
-											Cancelled
-										</p>
-										<span>125 Projects</span>
-									</div>
-									<div class="project-media">
-										<p class="mb-0">
-											<svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<rect y="0.5" width="12" height="12" rx="3" fill="#FF9F00"/>
-											</svg>
-											Yet to Start 
-										</p>
-										<span>125 Projects</span>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			
-			</div>
+                            {#                                <div class="events" id="event-calender">#}
+                            {#                                    <h6>events</h6>#}
+                            {#                                    <div class="dz-scroll event-scroll">#}
+                            {#                                        <div class="event-media">#}
+                            {#                                            <div class="d-flex align-items-center">#}
+                            {#                                                <div class="event-box">#}
+                            {#                                                    <h5 class="mb-0">20</h5>#}
+                            {#                                                    <span>Mon</span>#}
+                            {#                                                </div>#}
+                            {#                                                <div class="event-data ms-2">#}
+                            {#                                                    <h5 class="mb-0"><a href="javascript:void(0)">Development#}
+                            {#                                                        planning</a></h5>#}
+                            {#                                                    <span>w3it Technologies</span>#}
+                            {#                                                </div>#}
+                            {#                                            </div>#}
+                            {#                                            <span class="text-secondary">12:05 PM</span>#}
+                            {#                                        </div>#}
+                            {#                                        <div class="event-media">#}
+                            {#                                            <div class="d-flex align-items-center">#}
+                            {#                                                <div class="event-box">#}
+                            {#                                                    <h5 class="mb-0">20</h5>#}
+                            {#                                                    <span>Mon</span>#}
+                            {#                                                </div>#}
+                            {#                                                <div class="event-data ms-2">#}
+                            {#                                                    <h5 class="mb-0"><a href="javascript:void(0)">Development#}
+                            {#                                                        planning</a></h5>#}
+                            {#                                                    <span>w3it Technologies</span>#}
+                            {#                                                </div>#}
+                            {#                                            </div>#}
+                            {#                                            <span class="text-secondary">12:05 PM</span>#}
+                            {#                                        </div>#}
+                            {#                                        <div class="event-media">#}
+                            {#                                            <div class="d-flex align-items-center">#}
+                            {#                                                <div class="event-box">#}
+                            {#                                                    <h5 class="mb-0">20</h5>#}
+                            {#                                                    <span>Mon</span>#}
+                            {#                                                </div>#}
+                            {#                                                <div class="event-data ms-2">#}
+                            {#                                                    <h5 class="mb-0"><a href="javascript:void(0)">Development#}
+                            {#                                                        planning</a></h5>#}
+                            {#                                                    <span>w3it Technologies</span>#}
+                            {#                                                </div>#}
+                            {#                                            </div>#}
+                            {#                                            <span class="text-secondary">12:05 PM</span>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6 active-p">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive active-projects shorting">
+
+                            <div class="tbl-caption">
+                                <h4 class="heading mb-0">Active Projects</h4>
+                            </div>
+                            <table id="projects-tbl" class="table ItemsCheckboxSec">
+                                <thead>
+                                <tr>
+                                    <th>
+                                        <div class="form-check custom-checkbox ms-0">
+                                            <input type="checkbox" class="form-check-input checkAllInput" id="checkAll"
+                                                   required="">
+                                            <label class="form-check-label" for="checkAll"></label>
+                                        </div>
+                                    </th>
+                                    <th>Project Name</th>
+                                    <th>Project Lead</th>
+                                    <th>Progress</th>
+                                    <th>Assignee</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox2"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox2"></label>
+                                        </div>
+                                    </td>
+                                    <td>Batman</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Liam Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>08 Sep 2023</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox3"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox3"></label>
+                                        </div>
+                                    </td>
+                                    <td>Mivy App</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Honey Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">52%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox22"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox22"></label>
+                                        </div>
+                                    </td>
+                                    <td>Crypto App</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Ankites Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">58%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox33"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox33"></label>
+                                        </div>
+                                    </td>
+                                    <td>Bender Project</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Oliver Noah</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox044"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox044"></label>
+                                        </div>
+                                    </td>
+                                    <td>Canary</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Elijah James</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success"
+                                                     style="width:40%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-success">40%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-success light border-0">Completed</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox055"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox055"></label>
+                                        </div>
+                                    </td>
+                                    <td>Casanova</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">William Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox23"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox23"></label>
+                                        </div>
+                                    </td>
+                                    <td>Bender Project</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Oliver Noah</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox44"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox44"></label>
+                                        </div>
+                                    </td>
+                                    <td>Canary</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Elijah James</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success"
+                                                     style="width:40%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-success">40%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-success light border-0">Completed</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox55"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox55"></label>
+                                        </div>
+                                    </td>
+                                    <td>Casanova</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">William Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox66"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox66"></label>
+                                        </div>
+                                    </td>
+                                    <td>Bigfish</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Donald Benjamin</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox7"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox7"></label>
+                                        </div>
+                                    </td>
+                                    <td>Matadors</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Liam Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox88"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox88"></label>
+                                        </div>
+                                    </td>
+                                    <td>Mercury</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Oliver Noah</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox99"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox99"></label>
+                                        </div>
+                                    </td>
+                                    <td>Whistler</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Elijah James</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success"
+                                                     style="width:40%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-success">40%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-success light border-0">Completed</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox0102"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox0102"></label>
+                                        </div>
+                                    </td>
+                                    <td>Time Projects</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Lucas</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:33%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">33%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox110"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox110"></label>
+                                        </div>
+                                    </td>
+                                    <td>Fast Ball</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">William Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+
+                                </tbody>
+
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-3 col-md-6 up-shd">
+                    <div class="card">
+                        <div class="card-header border-0 pb-0 flex-wrap">
+                            <h4 class="heading mb-0">Projects Overview</h4>
+                            <ul class="nav nav-pills mix-chart-tab" id="pills-tab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-series="week" id="pills-week-tab"
+                                            data-bs-toggle="pill" data-bs-target="#pills-week" type="button" role="tab"
+                                            aria-selected="true">Week
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-series="month" id="pills-month-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#pills-month" type="button" role="tab"
+                                            aria-selected="false">
+                                        Month
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-series="year" id="pills-year-tab"
+                                            data-bs-toggle="pill"
+                                            data-bs-target="#pills-year" type="button" role="tab" aria-selected="false">
+                                        Year
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-series="all" id="pills-all-tab" data-bs-toggle="pill"
+                                            data-bs-target="#pills-all" type="button" role="tab" aria-selected="false">
+                                        All
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body  p-0">
+                            <div id="overiewChart"></div>
+                            <div class="ttl-project">
+                                <div class="pr-data">
+                                    <h5>12,721</h5>
+                                    <span>Number of Projects</span>
+                                </div>
+                                <div class="pr-data">
+                                    <h5 class="text-primary">721</h5>
+                                    <span>Active Projects</span>
+                                </div>
+                                <div class="pr-data">
+                                    <h5>$2,50,523</h5>
+                                    <span>Revenue</span>
+                                </div>
+                                <div class="pr-data">
+                                    <h5 class="text-success">12,275h</h5>
+                                    <span>Working Hours</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 up-shd">
+                    <div class="card">
+                        <div class="card-header pb-0 border-0">
+                            <h4 class="heading mb-0">Projects Status</h4>
+                            <label>
+                                <select class="default-select status-select normal-select">
+                                    <option value="Today">Today</option>
+                                    <option value="Week">Week</option>
+                                    <option value="Month">Month</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="card-body">
+                            <div id="projectChart" class="project-chart"></div>
+                            <div class="project-date">
+                                <div class="project-media">
+                                    <p class="mb-0">
+                                        <svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <rect y="0.5" width="12" height="12" rx="3" fill="var(--primary)"/>
+                                        </svg>
+                                        Completed Projects
+                                    </p>
+                                    <span>125 Projects</span>
+                                </div>
+                                <div class="project-media">
+                                    <p class="mb-0">
+                                        <svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <rect y="0.5" width="12" height="12" rx="3" fill="#3AC977"/>
+                                        </svg>
+                                        Progress Projects
+                                    </p>
+                                    <span>125 Projects</span>
+                                </div>
+                                <div class="project-media">
+                                    <p class="mb-0">
+                                        <svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <rect y="0.5" width="12" height="12" rx="3" fill="#FF5E5E"/>
+                                        </svg>
+                                        Cancelled
+                                    </p>
+                                    <span>125 Projects</span>
+                                </div>
+                                <div class="project-media">
+                                    <p class="mb-0">
+                                        <svg class="me-2" width="12" height="13" viewBox="0 0 12 13" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <rect y="0.5" width="12" height="12" rx="3" fill="#FF9F00"/>
+                                        </svg>
+                                        Yet to Start
+                                    </p>
+                                    <span>125 Projects</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-		
-        <!--**********************************
-            Content body end
-        ***********************************-->
-		<div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample">
-		  <div class="offcanvas-header">
-		  <h5 class="modal-title" id="#gridSystemModal">Add Employee</h5>
-			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
-				<i class="fa-solid fa-xmark"></i>
-			</button>
-		  </div>
-		  <div class="offcanvas-body">
-			<div class="container-fluid">
-				<div>
-					<label>Profile Picture</label>
-					<div class="dz-default dlab-message upload-img mb-3">	
-						<form action="#" class="dropzone">
-							<svg width="41" height="40" viewBox="0 0 41 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M27.1666 26.6667L20.4999 20L13.8333 26.6667" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M20.5 20V35" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M34.4833 30.6501C36.1088 29.7638 37.393 28.3615 38.1331 26.6644C38.8731 24.9673 39.027 23.0721 38.5703 21.2779C38.1136 19.4836 37.0724 17.8926 35.6111 16.7558C34.1497 15.619 32.3514 15.0013 30.4999 15.0001H28.3999C27.8955 13.0488 26.9552 11.2373 25.6498 9.70171C24.3445 8.16614 22.708 6.94647 20.8634 6.1344C19.0189 5.32233 17.0142 4.93899 15.0001 5.01319C12.9861 5.0874 11.015 5.61722 9.23523 6.56283C7.45541 7.50844 5.91312 8.84523 4.7243 10.4727C3.53549 12.1002 2.73108 13.9759 2.37157 15.959C2.01205 17.9421 2.10678 19.9809 2.64862 21.9222C3.19047 23.8634 4.16534 25.6565 5.49994 27.1667" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-								<path d="M27.1666 26.6667L20.4999 20L13.8333 26.6667" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							<div class="fallback">
-								<input name="file" type="file" multiple>
-								
-							</div>
-						</form>
-					</div>	
-				</div>
-				<form>
-					<div class="row">
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput1" class="form-label">Employee ID <span class="text-danger">*</span></label>
-							<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="">
-						</div>	
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput2" class="form-label">Employee Name<span class="text-danger">*</span></label>
-							<input type="text" class="form-control" id="exampleFormControlInput2" placeholder="">
-						</div>	
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput3" class="form-label">Employee Email<span class="text-danger">*</span></label>
-							<input type="email" class="form-control" id="exampleFormControlInput3" placeholder="">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput4" class="form-label">Password<span class="text-danger">*</span></label>
-							<input type="password" class="form-control" id="exampleFormControlInput4" placeholder="">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Designation<span class="text-danger">*</span></label>
+
+    </div>
+    {#    </div>#}
+
+    <!--**********************************
+        Content body end
+    ***********************************-->
+    <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample">
+        <div class="offcanvas-header">
+            <h5 class="modal-title" id="#gridSystemModal">Add Employee</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="container-fluid">
+                <div>
+                    <label>Profile Picture</label>
+                    <div class="dz-default dlab-message upload-img mb-3">
+                        <form action="#" class="dropzone">
+                            <svg width="41" height="40" viewBox="0 0 41 40" fill="none"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M27.1666 26.6667L20.4999 20L13.8333 26.6667" stroke="#DADADA" stroke-width="2"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M20.5 20V35" stroke="#DADADA" stroke-width="2" stroke-linecap="round"
+                                      stroke-linejoin="round"/>
+                                <path d="M34.4833 30.6501C36.1088 29.7638 37.393 28.3615 38.1331 26.6644C38.8731 24.9673 39.027 23.0721 38.5703 21.2779C38.1136 19.4836 37.0724 17.8926 35.6111 16.7558C34.1497 15.619 32.3514 15.0013 30.4999 15.0001H28.3999C27.8955 13.0488 26.9552 11.2373 25.6498 9.70171C24.3445 8.16614 22.708 6.94647 20.8634 6.1344C19.0189 5.32233 17.0142 4.93899 15.0001 5.01319C12.9861 5.0874 11.015 5.61722 9.23523 6.56283C7.45541 7.50844 5.91312 8.84523 4.7243 10.4727C3.53549 12.1002 2.73108 13.9759 2.37157 15.959C2.01205 17.9421 2.10678 19.9809 2.64862 21.9222C3.19047 23.8634 4.16534 25.6565 5.49994 27.1667"
+                                      stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M27.1666 26.6667L20.4999 20L13.8333 26.6667" stroke="#DADADA" stroke-width="2"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <div class="fallback">
+                                <input name="file" type="file" multiple>
+
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <form>
+                    <div class="row">
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput1" class="form-label">Employee ID <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="exampleFormControlInput1" placeholder="">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput2" class="form-label">Employee Name<span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="exampleFormControlInput2" placeholder="">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput3" class="form-label">Employee Email<span
+                                    class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="exampleFormControlInput3" placeholder="">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput4" class="form-label">Password<span
+                                    class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="exampleFormControlInput4" placeholder="">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Designation<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Please select</option>
+                                    <option data-display="Select">Please select</option>
                                     <option value="html">Software Engineer</option>
                                     <option value="css">Civil Engineer</option>
                                     <option value="javascript">Web Doveloper</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Department<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Department<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Please select</option>
+                                    <option data-display="Select">Please select</option>
                                     <option value="html">Software</option>
                                     <option value="css">Doit</option>
                                     <option value="javascript">Designing</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Country<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Country<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Please select</option>
+                                    <option data-display="Select">Please select</option>
                                     <option value="html">Ind</option>
                                     <option value="css">USA</option>
                                     <option value="javascript">UK</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput88" class="form-label">Mobile<span class="text-danger">*</span></label>
-							<input type="number" class="form-control" id="exampleFormControlInput88" placeholder="">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Gender<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput88" class="form-label">Mobile<span
+                                    class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="exampleFormControlInput88" placeholder="">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Gender<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Please select</option>
+                                    <option data-display="Select">Please select</option>
                                     <option value="html">Male</option>
                                     <option value="css">Female</option>
                                     <option value="javascript">Other</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput99" class="form-label">Joining Date<span class="text-danger">*</span></label>
-							<input type="date" class="form-control" id="exampleFormControlInput99">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput8" class="form-label">Date of Birth<span class="text-danger">*</span></label>
-							<input type="date" class="form-control" id="exampleFormControlInput8">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInput10" class="form-label">Reporting To<span class="text-danger">*</span></label>
-							<input type="text" class="form-control" id="exampleFormControlInput10" placeholder="">
-						</div>		
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Language Select<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput99" class="form-label">Joining Date<span
+                                    class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="exampleFormControlInput99">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput8" class="form-label">Date of Birth<span
+                                    class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="exampleFormControlInput8">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInput10" class="form-label">Reporting To<span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="exampleFormControlInput10" placeholder="">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Language Select<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Please select</option>
+                                    <option data-display="Select">Please select</option>
                                     <option value="html">English</option>
                                     <option value="css">Hindi</option>
                                     <option value="javascript">Canada</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">User Role<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">User Role<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Please select</option>
+                                    <option data-display="Select">Please select</option>
                                     <option value="html">Parmanent</option>
                                     <option value="css">Parttime</option>
                                     <option value="javascript">Per Hours</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-12 mb-3">
-							<label class="form-label">Address<span class="text-danger">*</span></label>
+                        <div class="col-xl-12 mb-3">
+                            <label class="form-label">Address<span class="text-danger">*</span></label>
                             <label>
                                 <textarea rows="3" class="form-control"></textarea>
                             </label>
                         </div>
-						<div class="col-xl-12 mb-3">
-							<label class="form-label">About<span class="text-danger">*</span></label>
+                        <div class="col-xl-12 mb-3">
+                            <label class="form-label">About<span class="text-danger">*</span></label>
                             <label>
                                 <textarea rows="3" class="form-control"></textarea>
                             </label>
                         </div>
-					</div>
-					<div>
-						<button class="btn btn-danger light ms-1">Cancel</button>
-						<button class="btn btn-primary me-1">Submit</button>
-					</div>
-				</form>
-			  </div>
-		  </div>
-		</div>		
-		
-		<div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample1">
-		  <div class="offcanvas-header">
-		  <h5 class="modal-title" id="#gridSystemModal1">Add New Task</h5>
-			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
-				<i class="fa-solid fa-xmark"></i>
-			</button>
-		  </div>
-		  <div class="offcanvas-body">
-			<div class="container-fluid">
-				<form>
-					<div class="row">
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInputfirst" class="form-label">Title<span class="text-danger">*</span></label>
-							<input type="text" class="form-control" id="exampleFormControlInputfirst" placeholder="Title">
-						</div>	
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Project<span class="text-danger">*</span></label>
+                    </div>
+                    <div>
+                        <button class="btn btn-danger light ms-1">Cancel</button>
+                        <button class="btn btn-primary me-1">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample1">
+        <div class="offcanvas-header">
+            <h5 class="modal-title" id="#gridSystemModal1">Add New Task</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="container-fluid">
+                <form>
+                    <div class="row">
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInputfirst" class="form-label">Title<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="exampleFormControlInputfirst"
+                                   placeholder="Title">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Project<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Project</option>
+                                    <option data-display="Select">Project</option>
                                     <option value="html">Salesmate</option>
                                     <option value="css">ActiveCampaign</option>
                                     <option value="javascript">Insightly</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInputthree" class="form-label">Start Date<span class="text-danger">*</span></label>
-							<input type="date" class="form-control" id="exampleFormControlInputthree">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInputfour" class="form-label">End Date<span class="text-danger">*</span></label>
-							<input type="date" class="form-control" id="exampleFormControlInputfour">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Estimated Hour<span class="text-danger">*</span></label>
-							<div class="input-group">
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInputthree" class="form-label">Start Date<span
+                                    class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="exampleFormControlInputthree">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label for="exampleFormControlInputfour" class="form-label">End Date<span
+                                    class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="exampleFormControlInputfour">
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Estimated Hour<span class="text-danger">*</span></label>
+                            <div class="input-group">
                                 <label>
                                     <input type="text" class="form-control" value="09:30">
                                 </label><span class="input-group-text"><i
-											class="fas fa-clock"></i></span>
+                                    class="fas fa-clock"></i></span>
                             </div>
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Status<span class="text-danger">*</span></label>
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Status<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Status</option>
+                                    <option data-display="Select">Status</option>
                                     <option value="html">In Progess</option>
                                     <option value="css">Pending</option>
                                     <option value="javascript">Completed</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">priority<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">priority<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">priority</option>
+                                    <option data-display="Select">priority</option>
                                     <option value="html">Hight</option>
                                     <option value="css">Medium</option>
                                     <option value="javascript">Low</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Category<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Category<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Category</option>
+                                    <option data-display="Select">Category</option>
                                     <option value="html">Designing</option>
                                     <option value="css">Development</option>
                                     <option value="javascript">react developer</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Permission<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Permission<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Permission</option>
+                                    <option data-display="Select">Permission</option>
                                     <option value="html">Public</option>
                                     <option value="css">Private</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Deadline add<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Deadline add<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Deadline</option>
+                                    <option data-display="Select">Deadline</option>
                                     <option value="html">Yes</option>
                                     <option value="css">No</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Assigned to<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Assigned to<span class="text-danger">*</span></label>
                             <label>
                                 <select class="default-select style-1 form-control">
-                                    <option  data-display="Select">Assigned</option>
+                                    <option data-display="Select">Assigned</option>
                                     <option value="html">Bernard</option>
                                     <option value="css">Sergey Brin</option>
                                     <option value="javascript"> Larry Ellison</option>
                                 </select>
                             </label>
                         </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Responsible Person<span class="text-danger">*</span></label>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Responsible Person<span class="text-danger">*</span></label>
                             <label>
                                 <input name='tagify' class="form-control py-0 ps-0 h-auto" value='James, Harry'>
                             </label>
 
                         </div>
-						<div class="col-xl-12 mb-3">
-							<label class="form-label">Description<span class="text-danger">*</span></label>
+                        <div class="col-xl-12 mb-3">
+                            <label class="form-label">Description<span class="text-danger">*</span></label>
                             <label>
                                 <textarea rows="3" class="form-control"></textarea>
                             </label>
                         </div>
-						<div class="col-xl-12 mb-3">
-							<label class="form-label">Summary<span class="text-danger">*</span></label>
+                        <div class="col-xl-12 mb-3">
+                            <label class="form-label">Summary<span class="text-danger">*</span></label>
                             <label>
                                 <textarea rows="3" class="form-control"></textarea>
                             </label>
                         </div>
-						
-					</div>
-					<div>
-						<button class="btn btn-danger light ms-1">Cancel</button>
-						<button class="btn btn-primary me-1">Help Desk</button>
-					</div>
-				</form>
-			  </div>
-		  </div>
-		</div>	
-		<div class="modal fade" id="exampleModal1" tabindex="-1" aria-labelledby="exampleModalLabel1" aria-hidden="true">
-		  <div class="modal-dialog modal-dialog-center">
-			<div class="modal-content">
-			  <div class="modal-header">
-				<h1 class="modal-title fs-5" id="exampleModalLabel1">Invite Employee</h1>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			  </div>
-			  <div class="modal-body">
-					<div class="row">
-						<div class="col-xl-12">
-							<label class="form-label">Email ID<span class="text-danger">*</span></label>
+
+                    </div>
+                    <div>
+                        <button class="btn btn-danger light ms-1">Cancel</button>
+                        <button class="btn btn-primary me-1">Help Desk</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="exampleModal1" tabindex="-1" aria-labelledby="exampleModalLabel1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-center">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel1">Invite Employee</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xl-12">
+                            <label class="form-label">Email ID<span class="text-danger">*</span></label>
                             <label>
                                 <input type="email" class="form-control" placeholder="hello@gmail.com">
                             </label>
@@ -1140,64 +1425,70 @@
                                 <input class="form-control" type="date">
                             </label>
                             <div class="row">
-								<div class="col-xl-6">
-									<label class="form-label mt-3">First Name<span class="text-danger">*</span></label>
-									<div class="input-group">
+                                <div class="col-xl-6">
+                                    <label class="form-label mt-3">First Name<span class="text-danger">*</span></label>
+                                    <div class="input-group">
                                         <label>
                                             <input type="text" class="form-control" placeholder="Name">
                                         </label>
                                     </div>
-								</div>
-								<div class="col-xl-6">
-									<label class="form-label mt-3">Last Name<span class="text-danger">*</span></label>
-									<div class="input-group">
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label mt-3">Last Name<span class="text-danger">*</span></label>
+                                    <div class="input-group">
                                         <label>
                                             <input type="text" class="form-control" placeholder="Surname">
                                         </label>
                                     </div>
-								</div>
-							</div>
-							<div class="mt-3 invite">
-								<label class="form-label">Send invitation email<span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                            <div class="mt-3 invite">
+                                <label class="form-label">Send invitation email<span
+                                        class="text-danger">*</span></label>
                                 <label>
-                                    <input type ="email" class="form-control " placeholder="+ invite">
+                                    <input type="email" class="form-control " placeholder="+ invite">
                                 </label>
                             </div>
-							
-					
-						</div>
-					</div>
-					
-			  </div>
-			  <div class="modal-footer">
-				<button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-primary">Save changes</button>
-			  </div>
-			</div>
-		  </div>
-		</div>
-		
-        <!--**********************************
-            Footer start
-        ***********************************-->
-        {% include 'product_tracking/footer.html' %}
-        <!--**********************************
-            Footer end
-        ***********************************-->
-
-		<!--**********************************
-           Support ticket button start
-        ***********************************-->
-		
-        <!--**********************************
-           Support ticket button end
-        ***********************************-->
 
 
-	</div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--**********************************
+        Footer start
+    ***********************************-->
+    {% include 'product_tracking/footer.html' %}
+    <!--**********************************
+        Footer end
+    ***********************************-->
+
+    <!--**********************************
+       Support ticket button start
+    ***********************************-->
+
+    <!--**********************************
+       Support ticket button end
+    ***********************************-->
+
+
+    {#    </div>#}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.js"></script>
     <!--**********************************
         Main wrapper end
     ***********************************-->
 
-</body>
+    </body>
 {% endblock %}
