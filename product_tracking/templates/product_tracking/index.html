@@ -1,57 +1,24 @@
+<!-- Head Section -->
 {% include 'product_tracking/head.html' %}
 
 {% load static %}
 {% block content %}
-<body>
+    <body>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         .col-xl-12 {
-            height: 75vh; /* Use viewport height for fluid sizing */
+            height: 750px;
         }
 
         #calendar {
-            max-width: 90%;
-            max-height: 60vh;
+            max-width: 900px;
+            max-height: 450px;
             margin: 0 auto;
-        }
-
-        .events {
-            max-height: 30vh;
-            overflow-y: auto;
-        }
-
-        @media (max-width: 1200px) {
-            .col-xl-12 {
-                height: 60vh;
-            }
-
-            #calendar {
-                max-width: 100%;
-                max-height: 50vh;
-            }
-
-            .events {
-                max-height: 20vh;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .col-xl-12 {
-                height: 50vh;
-            }
-
-            #calendar {
-                max-width: 100%;
-                max-height: 40vh;
-            }
-
-            .events {
-                max-height: 20vh;
-            }
         }
     </style>
     <script>
         $(document).ready(function () {
+
             var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 headerToolbar: {
@@ -64,6 +31,7 @@
                 selectable: true,
                 select: function (arg) {
                     $('#startDate').val(arg.startStr);
+                    // Adjust the end date to be inclusive
                     let endDate = new Date(arg.endStr);
                     endDate.setDate(endDate.getDate() - 1);
                     $('#endDate').val(endDate.toISOString().split('T')[0]);
@@ -81,6 +49,7 @@
                     $('#personName').val(info.event.extendedProps.person_name);
                     $('#startDate').val(info.event.startStr);
 
+                    // Display the end date exactly as it is received from FullCalendar
                     if (info.event.end) {
                         $('#endDate').val(info.event.end.toISOString().split('T')[0]);
                     } else {
@@ -93,15 +62,18 @@
                     $('#eventModal').modal('show');
                 },
                 datesSet: function (view) {
+                    // Get the start and end date of the current view
                     var start = view.view.currentStart;
                     var end = view.view.currentEnd;
 
-                    var month = start.getMonth() + 1;
+                    var month = start.getMonth() + 1; // Months are zero-based
                     var year = start.getFullYear();
 
+                    // Log or use the month and year as needed
                     console.log('Current month:', month);
                     console.log('Current year:', year);
 
+                    // Optionally, make an AJAX request to fetch events based on the current month
                     fetchEventsForMonth(month, year);
                 }
             });
@@ -109,15 +81,15 @@
 
             function fetchEventsForMonth(month, year) {
                 $.ajax({
-                    url: '/fetch-events/',
+                    url: '/fetch-events/',  // URL of your Django view function
                     method: 'GET',
                     data: {
                         month: month,
                         year: year
-                    },
+                    }, // Pass the month and year
                     success: function (data) {
                         var eventList = $('#event-list');
-                        eventList.empty();
+                        eventList.empty(); // Clear existing content
 
                         $.each(data, function (index, event) {
                             var eventDate = new Date(event.start_date);
@@ -125,20 +97,22 @@
                             var dayName = eventDate.toLocaleDateString('en-US', {weekday: 'short'});
 
                             var eventHtml = `
-                                <div class="event-media">
-                                    <div class="d-flex align-items-center">
-                                        <div class="event-box">
-                                            <h5 class="mb-0">${day}</h5>
-                                            <span>${dayName}</span>
-                                        </div>
-                                        <div class="event-data ms-2">
-                                            <h5 class="mb-0"><a href="javascript:void(0)">${event.client_name}</a></h5>
-                                            <span>${event.venue}</span>
-                                        </div>
-                                    </div>
-                                    <span class="text-secondary">${event.created_date}</span>
-                                </div>
-                            `;
+                    <div class="event-media">
+                        <div class="d-flex align-items-center">
+                            <div class="event-box">
+                                <h5 class="mb-0">${day}</h5>
+                                <span>${dayName}</span>
+                            </div>
+                            <div class="event-data ms-2">
+                                <h5 class="mb-0"><a href="javascript:void(0)">${event.client_name}</a></h5>
+                                <span>${event.venue}</span>
+                            </div>
+                        </div>
+                        <span class="text-secondary">${event.created_date}</span>
+                    </div>
+                `;
+
+                            // Append HTML to the event list
                             eventList.append(eventHtml);
                         });
                     },
@@ -147,6 +121,7 @@
                     }
                 });
             }
+
 
             function clearForm() {
                 $('#eventForm')[0].reset();
@@ -165,7 +140,7 @@
                         if (data.success) {
                             $('#eventModal').modal('hide');
                             calendar.refetchEvents();
-                            clearForm();
+                            clearForm();  // Clear the form after successful submission
                         } else {
                             alert('Error: ' + data.error_message);
                         }
@@ -200,6 +175,7 @@
                     });
             });
         });
+
     </script>
 
     <!--*******************
@@ -266,6 +242,53 @@
                                     <!-- Events will be dynamically inserted here -->
                                 </div>
                             </div>
+                            {#                                <div class="events" id="event-calender">#}
+                            {#                                    <h6>events</h6>#}
+                            {#                                    <div class="dz-scroll event-scroll">#}
+                            {#                                        <div class="event-media">#}
+                            {#                                            <div class="d-flex align-items-center">#}
+                            {#                                                <div class="event-box">#}
+                            {#                                                    <h5 class="mb-0">20</h5>#}
+                            {#                                                    <span>Mon</span>#}
+                            {#                                                </div>#}
+                            {#                                                <div class="event-data ms-2">#}
+                            {#                                                    <h5 class="mb-0"><a href="javascript:void(0)">Development#}
+                            {#                                                        planning</a></h5>#}
+                            {#                                                    <span>w3it Technologies</span>#}
+                            {#                                                </div>#}
+                            {#                                            </div>#}
+                            {#                                            <span class="text-secondary">12:05 PM</span>#}
+                            {#                                        </div>#}
+                            {#                                        <div class="event-media">#}
+                            {#                                            <div class="d-flex align-items-center">#}
+                            {#                                                <div class="event-box">#}
+                            {#                                                    <h5 class="mb-0">20</h5>#}
+                            {#                                                    <span>Mon</span>#}
+                            {#                                                </div>#}
+                            {#                                                <div class="event-data ms-2">#}
+                            {#                                                    <h5 class="mb-0"><a href="javascript:void(0)">Development#}
+                            {#                                                        planning</a></h5>#}
+                            {#                                                    <span>w3it Technologies</span>#}
+                            {#                                                </div>#}
+                            {#                                            </div>#}
+                            {#                                            <span class="text-secondary">12:05 PM</span>#}
+                            {#                                        </div>#}
+                            {#                                        <div class="event-media">#}
+                            {#                                            <div class="d-flex align-items-center">#}
+                            {#                                                <div class="event-box">#}
+                            {#                                                    <h5 class="mb-0">20</h5>#}
+                            {#                                                    <span>Mon</span>#}
+                            {#                                                </div>#}
+                            {#                                                <div class="event-data ms-2">#}
+                            {#                                                    <h5 class="mb-0"><a href="javascript:void(0)">Development#}
+                            {#                                                        planning</a></h5>#}
+                            {#                                                    <span>w3it Technologies</span>#}
+                            {#                                                </div>#}
+                            {#                                            </div>#}
+                            {#                                            <span class="text-secondary">12:05 PM</span>#}
+                            {#                                        </div>#}
+                            {#                                    </div>#}
+                            {#                                </div>#}
                         </div>
                     </div>
                 </div>
@@ -275,6 +298,7 @@
                 <div class="card">
                     <div class="card-body p-0">
                         <div class="table-responsive active-projects shorting">
+
                             <div class="tbl-caption">
                                 <h4 class="heading mb-0">Active Projects</h4>
                             </div>
@@ -340,8 +364,616 @@
                                         <span>08 Sep 2023</span>
                                     </td>
                                 </tr>
-                                <!-- Add more rows here -->
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox3"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox3"></label>
+                                        </div>
+                                    </td>
+                                    <td>Mivy App</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Honey Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">52%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox22"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox22"></label>
+                                        </div>
+                                    </td>
+                                    <td>Crypto App</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Ankites Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">58%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox33"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox33"></label>
+                                        </div>
+                                    </td>
+                                    <td>Bender Project</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Oliver Noah</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox044"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox044"></label>
+                                        </div>
+                                    </td>
+                                    <td>Canary</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Elijah James</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success"
+                                                     style="width:40%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-success">40%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-success light border-0">Completed</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox055"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox055"></label>
+                                        </div>
+                                    </td>
+                                    <td>Casanova</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">William Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox23"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox23"></label>
+                                        </div>
+                                    </td>
+                                    <td>Bender Project</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Oliver Noah</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox44"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox44"></label>
+                                        </div>
+                                    </td>
+                                    <td>Canary</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Elijah James</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success"
+                                                     style="width:40%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-success">40%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-success light border-0">Completed</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox55"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox55"></label>
+                                        </div>
+                                    </td>
+                                    <td>Casanova</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">William Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox66"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox66"></label>
+                                        </div>
+                                    </td>
+                                    <td>Bigfish</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Donald Benjamin</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox7"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox7"></label>
+                                        </div>
+                                    </td>
+                                    <td>Matadors</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic888.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Liam Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox88"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox88"></label>
+                                        </div>
+                                    </td>
+                                    <td>Mercury</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Oliver Noah</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:30%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-danger">30%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic777.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-danger light border-0">Pending</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox99"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox99"></label>
+                                        </div>
+                                    </td>
+                                    <td>Whistler</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Elijah James</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success"
+                                                     style="width:40%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-success">40%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic666.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-success light border-0">Completed</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox0102"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox0102"></label>
+                                        </div>
+                                    </td>
+                                    <td>Time Projects</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic2.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">Lucas</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger"
+                                                     style="width:33%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">33%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="customCheckBox110"
+                                                   required="">
+                                            <label class="form-check-label" for="customCheckBox110"></label>
+                                        </div>
+                                    </td>
+                                    <td>Fast Ball</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <p class="mb-0 ms-2">William Risher</p>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="tbl-progress-box">
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary"
+                                                     style="width:53%; height:5px; border-radius:4px;"
+                                                     role="progressbar"></div>
+                                            </div>
+                                            <span class="text-primary">53%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <div class="avatar-list avatar-list-stacked">
+                                            <img src="{% static 'product_tracking/images/contacts/pic1.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic555.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                            <img src="{% static 'product_tracking/images/contacts/pic999.jpg' %}"
+                                                 class="avatar rounded-circle" alt="">
+                                        </div>
+                                    </td>
+                                    <td class="pe-0">
+                                        <span class="badge badge-primary light border-0">Inprogress</span>
+                                    </td>
+                                    <td>
+                                        <span>06 Sep 2021</span>
+                                    </td>
+                                </tr>
+
                                 </tbody>
+
                             </table>
                         </div>
                     </div>
@@ -467,7 +1099,9 @@
                 </div>
             </div>
         </div>
+
     </div>
+    {#    </div>#}
 
     <!--**********************************
         Content body end
@@ -815,8 +1449,11 @@
                                     <input type="email" class="form-control " placeholder="+ invite">
                                 </label>
                             </div>
+
+
                         </div>
                     </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
@@ -837,10 +1474,13 @@
     <!--**********************************
        Support ticket button start
     ***********************************-->
+
     <!--**********************************
        Support ticket button end
     ***********************************-->
 
+
+    {#    </div>#}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -849,5 +1489,6 @@
     <!--**********************************
         Main wrapper end
     ***********************************-->
-</body>
+
+    </body>
 {% endblock %}
