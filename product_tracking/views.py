@@ -285,25 +285,31 @@ def add_sub_category(request):
         created_by = request.session.get('user_id')
         created_date = datetime.now()
 
-        print("Received Data:", category_id, subcategory_name, subcategory_types, status, created_by, created_date)
-
         try:
             with connection.cursor() as cursor:
-                # Insert each subcategory type as a separate row
                 for subcategory_type in subcategory_types:
                     subcategory_type = subcategory_type.upper()  # Convert to upper case
-                    print("Inserting Subcategory Type:", subcategory_type)
+
+                    # Check if subcategory already exists
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM subcategories WHERE category_id=%s AND subcategory_name=%s AND subcategory_type=%s",
+                        [category_id, subcategory_name, subcategory_type]
+                    )
+                    if cursor.fetchone()[0] > 0:
+                        return JsonResponse({'success': False, 'message': 'Sub Category Already Exists!'})
+
+                # If no conflicts, insert each subcategory type
+                for subcategory_type in subcategory_types:
+                    subcategory_type = subcategory_type.upper()  # Convert to upper case
                     cursor.execute(
                         "SELECT add_sub_category(%s, %s, %s, %s, %s, %s);",
                         [category_id, subcategory_name, subcategory_type, status, created_by, created_date]
                     )
+
             return JsonResponse({'success': True})
         except Exception as e:
-            if 'Subcategory already exists' in str(e):
-                return JsonResponse({'success': False, 'message': 'Sub Category Already Exists!'})
-            else:
-                print("An unexpected error occurred:", e)
-                return JsonResponse({'success': False, 'message': 'An unexpected error occurred'})
+            print("An unexpected error occurred:", e)
+            return JsonResponse({'success': False, 'message': 'An unexpected error occurred'})
     else:
         categories = subcategory_list(request)
         return render(request, 'product_tracking/sub-performance1.html',
