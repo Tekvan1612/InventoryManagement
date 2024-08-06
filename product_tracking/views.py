@@ -285,11 +285,14 @@ def add_sub_category(request):
         created_by = request.session.get('user_id')
         created_date = datetime.now()
 
+        print("Received Data:", category_id, subcategory_name, subcategory_types, status, created_by, created_date)
+
         try:
             with connection.cursor() as cursor:
                 # Insert each subcategory type as a separate row
                 for subcategory_type in subcategory_types:
                     subcategory_type = subcategory_type.upper()  # Convert to upper case
+                    print("Inserting Subcategory Type:", subcategory_type)
                     cursor.execute(
                         "SELECT add_sub_category(%s, %s, %s, %s, %s, %s);",
                         [category_id, subcategory_name, subcategory_type, status, created_by, created_date]
@@ -305,7 +308,6 @@ def add_sub_category(request):
         categories = subcategory_list(request)
         return render(request, 'product_tracking/sub-performance1.html',
                       {'categories': categories})
-
 
 
 def subcategory_list(request, category_id):
