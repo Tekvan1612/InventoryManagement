@@ -14116,7 +14116,7 @@ The smaller device rules always should write below the bigger device rules
 Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Component
 */
 [data-sidebar-style="full"][data-layout="vertical"] .deznav .metismenu > li > a {
-  font-size: 0.813rem;
+  font-size: 1.1rem;
   padding: 0.75rem 1.5rem;
   margin: 0px;
   -webkit-transition: all 0.5s;
