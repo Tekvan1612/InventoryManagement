@@ -144,7 +144,7 @@ LOGGING = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Set the session cookie to expire after 5 minute of inactivity.
-SESSION_COOKIE_AGE = 600  # seconds
+SESSION_COOKIE_AGE = 2400  # seconds
 
 # Ensure session cookies are deleted when the user closes their browser.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
