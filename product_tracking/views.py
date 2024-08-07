@@ -302,9 +302,6 @@ def add_sub_category(request):
         return render(request, 'product_tracking/sub-performance1.html',
                       {'categories': categories})
 
-
-
-
 def subcategory_list(request, category_id):
     with connection.cursor() as cursor:
         cursor.execute("SELECT * FROM get_sub(%s)", [category_id])
@@ -860,6 +857,9 @@ def modify_employee(request):
 @csrf_exempt
 def add_equipment(request):
     if request.method == 'POST':
+        if not request.session.get('username'):
+            return JsonResponse({'success': False, 'message': 'Session expired. Please log in again.'}, status=401)
+
         try:
             equipment_name = request.POST.get('equipment_name')
             subcategory_id = request.POST.get('subcategory_id')
