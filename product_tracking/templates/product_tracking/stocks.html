@@ -133,7 +133,6 @@
                 $.each(equipmentList, function (index, equipment) {
                     var row = '<tr>' +
                         '<td>' + (index + 1) + '</td>' +
-                        '<td>' + equipment.category_type + '</td>' +
                         '<td>' + equipment.sub_category_name + '</td>' +
                         '<td class="equipment_name"><a href="#" onclick="fetchDetails(this)" data-equipment-name="' + equipment.equipment_name + '">' + equipment.equipment_name + '</a></td>' +
                         '<td>' + equipment.total_units + '</td>' +
@@ -593,7 +592,6 @@
                                         <thead class="thead-primary" style="text-align: center;">
                                         <tr>
                                             <th scope="col">SR NO</th>
-                                            <th scope="col">Category</th>
                                             <th scope="col">Sub Category</th>
                                             <th scope="col">Equipment Name</th>
                                             <th scope="col">Current Qty</th>
