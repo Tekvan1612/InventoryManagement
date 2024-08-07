@@ -988,6 +988,7 @@
 
             $('#backButton').click(function () {
                 var category_id = '{{ category_id }}';
+                console.log("categoryId:",category_id)
                 window.location.href = '/sub_category/' + category_id + '/';
             });
             $(document).on('click', '#saveChanges', function () {
