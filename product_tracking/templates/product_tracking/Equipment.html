@@ -97,26 +97,26 @@
             $('[data-toggle="tooltip"]').tooltip();
             fetchEquipmentList();
 
-            function fetchEquipmentList() {
-                const equipmentListData = document.getElementById('equipment-list-data').textContent;
-                let equipmentlist = [];
+          function fetchEquipmentList() {
+        const equipmentListData = document.getElementById('equipment-list-data').textContent;
+        let equipmentlist = [];
 
-                try {
-                    equipmentlist = JSON.parse(equipmentListData);
-                } catch (e) {
-                    console.error("Error parsing JSON data: ", e);
-                    return;
-                }
+        try {
+            equipmentlist = JSON.parse(equipmentListData);
+        } catch (e) {
+            console.error("Error parsing JSON data: ", e);
+            return;
+        }
 
-                const totalItems = equipmentlist.length;
-                const totalPages = Math.ceil(totalItems / pageSize);
+        const totalItems = equipmentlist.length;
+        const totalPages = Math.ceil(totalItems / pageSize);
 
-                const paginatedEquipment = equipmentlist.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-                console.log("Equipment Listing:", paginatedEquipment);
+        const paginatedEquipment = equipmentlist.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+        console.log("Equipment Listing:", paginatedEquipment);
 
-                $('#equipment-table-body').empty();
-                $.each(paginatedEquipment, function (index, equipment) {
-                    const row = `<tr>
+        $('#equipment-table-body').empty();
+        $.each(paginatedEquipment, function (index, equipment) {
+            const row = `<tr>
                 <td>${((currentPage - 1) * pageSize + index + 1)}</td>
                 <td style="display: none;">${equipment.id}</td>
                 <td class="equipment_name" data-id="${equipment.id}">
@@ -134,11 +134,12 @@
                     <button class="btn btn-sm btn-primary vendor-btn btn-group" data-toggle="tooltip" title="Add Stock and Serial number"><i class="fa fa-add"></i></button>
                 </td>
             </tr>`;
-                    $('#equipment-table-body').append(row);
-                });
+            $('#equipment-table-body').append(row);
+        });
 
-                updatePaginationControls(totalItems, currentPage, totalPages);
-            }
+        updatePaginationControls(totalItems, currentPage, totalPages);
+    }
+
 
             function updatePaginationControls(totalItems, currentPage, totalPages) {
                 $('#pagination-controls').html('');
@@ -168,7 +169,6 @@
                 currentPage++;
                 fetchEquipmentList();
             });
-
             $(document).on('click', '.edit-btn', function () {
                 var row = $(this).closest('tr');
                 var employeeId = row.find('td:eq(1)').text().trim();
@@ -201,6 +201,28 @@
                             console.error('Error fetching category name:', error);
                         }
                     });
+
+                    // Fetch and populate the types dropdown
+                    $.ajax({
+                        url: '/edit_subcategory_dropdown/',
+                        type: 'GET',
+                        dataType: 'json',
+                        data: {subcategory_id: selectedSubcategory},
+                        success: function (response) {
+                            var selectedSubcategoryData = response.sub.find(sub => sub.id == selectedSubcategory);
+                            if (selectedSubcategoryData) {
+                                var types = selectedSubcategoryData.type.split(',');
+                                var $select = $('#editEquipmentType');
+                                $select.empty();
+                                types.forEach(function (type) {
+                                    $select.append('<option value="' + type + '">' + type + '</option>');
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error fetching subcategories:', error);
+                        }
+                    });
                 });
 
                 $.ajax({
@@ -211,9 +233,9 @@
                         var dropdown = $('#editSubCategoryName');
                         dropdown.empty();
                         dropdown.append($('<option></option>').attr('value', subCategory).text(subCategory));
-                        $.each(data.sub, function (index, subcategories) {
-                            if (subcategories.name !== subCategory) {
-                                dropdown.append($('<option></option>').attr('value', subcategories.id).text(subcategories.name));
+                        $.each(data.sub, function (index, subcategory) {
+                            if (subcategory.name !== subCategory) {
+                                dropdown.append($('<option></option>').attr('value', subcategory.id).text(subcategory.name));
                             }
                         });
                     },
@@ -222,6 +244,7 @@
                     }
                 });
             });
+
 
             $(document).on('click', '#saveChangesBtn', function () {
                 updateCategoryInDatabase();
@@ -963,7 +986,10 @@
                 });
             });
 
-
+            $('#backButton').click(function () {
+                var category_id = '{{ category_id }}';
+                window.location.href = '/sub_category/' + category_id + '/';
+            });
             $(document).on('click', '#saveChanges', function () {
                 var formData = new FormData($('#vendorForm')[0]);
 
@@ -1066,11 +1092,13 @@
                 <div class="row">
                     <div class="col-xl-12">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <h4 class="card-title mb-0">Equipment List </h4>
-                                <div class="col-md-3">
-                                    <input type="text" class="form-control" id="searchSubCategory"
+                                <div class="d-flex">
+                                    <input type="text" class="form-control me-2" id="searchSubCategory"
                                            placeholder="Search....">
+                                    <button class="btn btn-secondary" id="backButton">Back</button>
+                                    <input type="hidden" id="categoryId" value="{{ category_id }}">
                                 </div>
                             </div>
                             <div class="card-body">
@@ -1090,9 +1118,7 @@
                                         </tr>
                                         </thead>
                                         <tbody id="equipment-table-body">
-
                                         </tbody>
-
                                     </table>
                                 </div>
                             </div>
@@ -1101,16 +1127,13 @@
                                 <div id="pagination-controls" style="padding-bottom: 10px;margin: 5px;">
                                     <!-- Pagination buttons will be appended here -->
                                 </div>
-                                {#                                <div style="padding-bottom: 10px;margin: 5px;">#}
-                                {#                                    <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>#}
-                                {#                                    <button id="next-page-btn" class="btn btn-primary">Next</button>#}
-                                {#                                </div>#}
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
+
+
         </div>
 
         <!--**********************************
