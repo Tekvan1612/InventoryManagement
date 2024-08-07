@@ -1083,7 +1083,8 @@ def equipment_list(request):
                     'attachment': row[12],  # Ensure this is the Cloudinary URL
                     'status': row[13],
                     'created_by': row[14],
-                    'created_date': created_date
+                    'created_date': created_date,
+                    'category_id': row[16]  # Ensure that your query returns this column
                 })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -1094,7 +1095,8 @@ def equipment_list(request):
     context = {
         'equipment_listing': json.dumps(equipment_listing),
         'subcategory_id': subcategory_id,
-        'username': username
+        'username': username,
+        'category_id': equipment_listing[0]['category_id'] if equipment_listing else None  # Fetch category_id from the listing
     }
     return render(request, 'product_tracking/Equipment.html', context)
 
@@ -1127,7 +1129,7 @@ def update_equipment(request, id):
         volume = request.POST.get('volume')
         hsn_no = request.POST.get('hsnNo')
         country = request.POST.get('employeeCountry')
-        # status = request.POST.get('statusText')
+        status = request.POST.get('status') == '1'  # Convert status to boolean
 
         print(id, name, sub_category_name, country)
         try:
@@ -1136,7 +1138,7 @@ def update_equipment(request, id):
                 print('Inside the cursor')
                 cursor.callproc('update_equipment', [
                     id, name, sub_category_name, category_type, equipment_type, dimension_height,
-                    dimension_width, dimension_length, weight, volume, hsn_no, country
+                    dimension_width, dimension_length, weight, volume, hsn_no, country, status
                 ])
                 print('Inside the callproc', id)
                 updated_employee_id = cursor.fetchone()[0]
@@ -1150,12 +1152,11 @@ def update_equipment(request, id):
     else:
         return JsonResponse({'error': 'Invalid request method'})
 
-
 def edit_subcategory_dropdown(request):
     try:
         with connection.cursor() as cursor:
-            cursor.execute('SELECT id, category_name, name FROM get_sub()')
-            sub = [{'id': row[0], 'category_name': row[1], 'name': row[2]} for row in cursor.fetchall()]
+            cursor.execute('SELECT id, category_name, name, type FROM get_subcategory(56)')  # Example category_id=56
+            sub = [{'id': row[0], 'category_name': row[1], 'name': row[2], 'type': row[3]} for row in cursor.fetchall()]
             print('sub category fetched successfully:', sub)
             return JsonResponse({'sub': sub}, safe=False)
     except Exception as e:
@@ -1167,9 +1168,13 @@ def edit_subcategory_dropdown(request):
 def edit_get_category_name(request):
     try:
         subcategory_id = request.GET.get('subcategory_id')
-        # Fetch category name based on subcategory_id
+        if subcategory_id is None:
+            return JsonResponse({'category_name': None})
+
         with connection.cursor() as cursor:
-            cursor.execute('SELECT category_name FROM get_sub() WHERE id = %s', [subcategory_id])
+            cursor.execute(
+                'SELECT category_name FROM master_category mc JOIN sub_category sc ON mc.category_id = sc.category_id WHERE sc.id = %s',
+                [subcategory_id])
             row = cursor.fetchone()
             category_name = row[0] if row else None
         return JsonResponse({'category_name': category_name})
@@ -1177,7 +1182,6 @@ def edit_get_category_name(request):
         # Handle exceptions, maybe log the error for debugging
         print("Error fetching category name:", e)
         return JsonResponse({'category_name': None})
-
 
 def fetch_stock_status(request, equipment_id):
     with connection.cursor() as cursor:
