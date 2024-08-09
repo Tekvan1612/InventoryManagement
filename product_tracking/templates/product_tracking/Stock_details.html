@@ -1,0 +1,552 @@
+{% load static %}
+{% include 'product_tracking/head.html' %}
+{% block content %}
+
+    <body data-typography="poppins" data-theme-version="light" data-layout="vertical" data-nav-headerbg="black"
+          data-headerbg="color_1">
+
+    <!-- Preloader start -->
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <!-- Preloader end -->
+
+    <!-- Main wrapper start -->
+    <div id="main-wrapper">
+        <!-- Nav header start -->
+        {% include 'product_tracking/navheader.html' %}
+        <!-- Nav header end -->
+
+        <!-- Header start -->
+        {% include 'product_tracking/header.html' %}
+        <!-- Header end -->
+
+        <!-- Sidebar start -->
+        {% include 'product_tracking/sidebar.html' %}
+        <!-- Sidebar end -->
+
+        <!-- Content body start -->
+        <div class="content-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="row">
+                            <!-- Side Panel for Equipment List -->
+                            <div class="col-lg-3">
+                                <div class="card h-auto">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <input type="text" class="form-control" placeholder="Search Equipment"
+                                                   id="search-equipment">
+                                            <button class="btn btn-primary ms-2"><i class="fa-solid fa-plus"></i>
+                                            </button>
+                                        </div>
+                                        <div id="equipment-list">
+                                            {% for equipment in equipment_list %}
+                                                <a href="#"
+                                                   class="list-group-item list-group-item-action {% if forloop.first %}active{% endif %}"
+                                                   data-equipment="{{ equipment.1 }}">
+                                                    {{ equipment.1 }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Main Content Area with Tabs -->
+                            <div class="col-lg-9">
+                                <div class="card h-auto">
+                                    <div class="card-body">
+                                        <ul class="nav nav-tabs" id="equipmentTabs" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link active" id="general-tab" data-bs-toggle="tab"
+                                                   href="#general" role="tab" aria-controls="general"
+                                                   aria-selected="true">General</a>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link" id="images-tab" data-bs-toggle="tab" href="#images"
+                                                   role="tab" aria-controls="images" aria-selected="false">Images</a>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link" id="usages-tab" data-bs-toggle="tab" href="#usages"
+                                                   role="tab" aria-controls="usages" aria-selected="false">Usages</a>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link" id="stock-details-tab" data-bs-toggle="tab"
+                                                   href="#stock-details" role="tab" aria-controls="stock-details"
+                                                   aria-selected="false">Stock Details</a>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <a class="nav-link" id="service-tab" data-bs-toggle="tab"
+                                                   href="#service" role="tab" aria-controls="service"
+                                                   aria-selected="false">Service</a>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content p-3 border border-top-0 rounded-bottom"
+                                             id="equipmentTabContent">
+                                            <div class="tab-pane fade show active" id="general" role="tabpanel"
+                                                 aria-labelledby="general-tab">
+                                                <h5 class="section-title">General Information</h5>
+                                                <div id="general-info" class="table-responsive">
+                                                    <!-- General Info Table -->
+                                                    <table class="table table-bordered">
+                                                        <tbody>
+                                                        <tr>
+                                                            <th scope="row">Equipment Name</th>
+                                                            <td id="equipment-name"></td>
+                                                            <th scope="row">Category Name</th>
+                                                            <td id="category-name"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="row">Subcategory Name</th>
+                                                            <td id="subcategory-name"></td>
+                                                            <th scope="row">Warehouse</th>
+                                                            <td id="warehouse"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="row">Available Quantity</th>
+                                                            <td id="available-qty"></td>
+                                                            <th scope="row">Stock Quantity</th>
+                                                            <td id="stock-qty"></td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <h5 class="section-title mt-3">Physical Details</h5>
+                                                <div id="physical-info" class="table-responsive">
+                                                    <table class="table table-bordered">
+                                                        <tbody>
+                                                        <tr>
+                                                            <th scope="row">Weight</th>
+                                                            <td id="weight"></td>
+                                                            <th scope="row">Length</th>
+                                                            <td id="length"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="row">Height</th>
+                                                            <td id="height"></td>
+                                                            <th scope="row">Width</th>
+                                                            <td id="width"></td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <h5 class="section-title mt-3">Monetary Details</h5>
+                                                <div id="monetary-info" class="table-responsive">
+                                                    <table class="table table-bordered">
+                                                        <tbody>
+                                                        <tr>
+                                                            <th scope="row">Unit Price</th>
+                                                            <td id="unit-price"></td>
+                                                            <th scope="row">Rental Price</th>
+                                                            <td id="rental-price"></td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="images" role="tabpanel"
+                                                 aria-labelledby="images-tab">
+                                                <h5>Images</h5>
+                                                <div id="equipment-images">
+                                                    <!-- Equipment images will be dynamically inserted here -->
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="usages" role="tabpanel"
+                                                 aria-labelledby="usages-tab">
+                                                <h5>Usages</h5>
+                                                <div id="equipment-usages">
+                                                    <!-- Equipment usages will be dynamically inserted here -->
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="stock-details" role="tabpanel"
+                                                 aria-labelledby="stock-details-tab">
+                                                <h5 class="section-title">Stock Details</h5>
+                                                <div id="equipment-stock-summary" class="table-responsive">
+                                                    <!-- Stock summary table will be dynamically inserted here -->
+                                                </div>
+                                                <div id="stock-details-info" class="mt-4">
+                                                    <!-- Detailed stock info will be dynamically inserted here -->
+                                                </div>
+                                            </div>
+
+
+                                            <div class="tab-pane fade" id="service" role="tabpanel"
+                                                 aria-labelledby="service-tab">
+                                                <h5>Service</h5>
+                                                <div id="equipment-service">
+                                                    <!-- Equipment service details will be dynamically inserted here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> <!-- End of inner row -->
+                    </div> <!-- End of outer column -->
+                </div> <!-- End of outer row -->
+            </div>
+        </div>
+
+        <!-- Content body end -->
+        <!-- Footer start -->
+        {% include 'product_tracking/footer.html' %}
+        <!-- Footer end -->
+    </div>
+    <!-- Main wrapper end -->
+
+    <!-- Scripts -->
+    <!-- Required vendors -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            let allEquipmentList = [];
+
+            // Fetch the complete equipment list via AJAX
+            function fetchEquipmentList() {
+                $.ajax({
+                    url: "{% url 'equipment_view' %}",
+                    method: "GET",
+                    dataType: "json",
+                    success: function (data) {
+                        allEquipmentList = data.equipment_list;
+                        displayEquipmentList(allEquipmentList);
+
+                        // Make the first equipment item active and trigger click to display its details
+                        if (allEquipmentList.length > 0) {
+                            const firstEquipmentItem = $('#equipment-list a:first');
+                            firstEquipmentItem.addClass('active');
+                            firstEquipmentItem.trigger('click');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Failed to load equipment list: ", error);
+                    }
+                });
+            }
+
+            // Display equipment list in the HTML
+            function displayEquipmentList(equipmentList) {
+                let equipmentHtml = '';
+                $.each(equipmentList, function (index, equipment) {
+                    equipmentHtml += `
+            <a href="#" class="list-group-item list-group-item-action" data-equipment="${equipment.equipment_name}" data-id="${equipment.id}">
+                ${equipment.equipment_name}
+            </a>`;
+                });
+
+                $('#equipment-list').html(equipmentHtml);
+            }
+
+            // Event listener for equipment search
+            $('#search-equipment').on('keyup', function () {
+                const searchValue = $(this).val().toLowerCase();
+                const filteredEquipmentList = allEquipmentList.filter(function (equipment) {
+                    return equipment.equipment_name.toLowerCase().includes(searchValue);
+                });
+
+                displayEquipmentList(filteredEquipmentList);
+            });
+
+
+            // Fetch the initial equipment list
+            fetchEquipmentList();
+            $(document).on('click', '.list-group-item', function (e) {
+                e.preventDefault();
+
+                const equipmentId = $(this).data('id'); // Assuming 'data-id' holds the equipment ID
+
+                if (equipmentId) {
+                    $.ajax({
+                        url: `/get_equipment_details/${equipmentId}/`,  // Construct the URL manually with the equipment ID
+                        method: "GET",
+                        dataType: "json",
+                        success: function (data) {
+                            // Update the UI with the retrieved data
+                            $('#equipment-name').text(data.equipment_name || 'N/A');
+                            $('#category-name').text(data.category_type || 'N/A');
+                            $('#subcategory-name').text(data.sub_category_name || 'N/A');
+                            $('#warehouse').text(data.warehouse || 'N/A');
+
+                            $('#available-qty').text(data.available_qty || 'N/A');
+                            $('#stock-qty').text(data.stock_qty || 'N/A');
+
+                            // Append "kg" to weight, and "inch" to dimensions
+                            $('#weight').text((data.weight ? data.weight + ' kg' : 'N/A'));
+                            $('#length').text((data.dimension_length ? data.dimension_length + ' inch' : 'N/A'));
+                            $('#height').text((data.dimension_height ? data.dimension_height + ' inch' : 'N/A'));
+                            $('#width').text((data.dimension_width ? data.dimension_width + ' inch' : 'N/A'));
+
+                            // Add the rupee symbol before unit price and rental price
+                            $('#unit-price').text(data.unit_price ? `₹${data.unit_price}` : 'N/A');
+                            $('#rental-price').text(data.rental_price ? `₹${data.rental_price}` : 'N/A');
+
+                            // Display images
+                            let imagesHtml = '';
+                            if (data.image_urls && data.image_urls.length > 0) {
+                                $.each(data.image_urls, function (index, url) {
+                                    imagesHtml += `<img src="${url}" class="img-thumbnail" alt="Equipment Image" style="max-width: 200px; margin: 10px;">`;
+                                });
+                            } else {
+                                imagesHtml = '<p>No images available.</p>';
+                            }
+                            $('#equipment-images').html(imagesHtml);
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Failed to load equipment details: ", error);
+                        }
+                    });
+                } else {
+                    console.error("Invalid equipment ID.");
+                }
+            });
+
+            $('#equipment-list').on('click', 'a.list-group-item', function (e) {
+                e.preventDefault();
+
+                // Remove active class from all items
+                $('#equipment-list .list-group-item').removeClass('active');
+
+                // Add active class to the clicked item
+                $(this).addClass('active');
+
+                const equipmentId = $(this).data('id');
+
+                // Fetch the selected equipment details via AJAX
+                // Fetch the selected equipment details via AJAX
+                $.ajax({
+                    url: `/get_stock_details/${equipmentId}/`,
+                    method: "GET",
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.message) {
+                            // Display the message when no stock details are available
+                            $('#equipment-stock-summary').html(`<p>${data.message}</p>`);
+                            $('#stock-details-info').html(''); // Clear stock details
+                        } else {
+                            let stockSummaryHtml = `
+            <table class="table header-border table-hover verticle-middle">
+                <thead>
+                    <tr>
+                        <th>Vendor Name</th>
+                        <th>Purchase Date</th>
+                        <th>Reference No</th>
+                        <th>Units</th>
+                        <th>Additional Info</th> <!-- Added a new column for additional info -->
+                    </tr>
+                </thead>
+                <tbody>`;
+
+                            $.each(data.stock_summary, function (index, summary) {
+                                stockSummaryHtml += `
+                <tr>
+                    <td>${summary.vendor_name}</td>
+                    <td>${summary.purchase_date}</td>
+                    <td>${summary.reference_no}</td>
+                    <td>${summary.unique_barcode_count}</td>
+                    <td><button class="btn btn-primary view-details-btn" style="padding: 0.3rem 0.3rem; border-radius: 0.375rem; font-weight: 200; font-size: 12px; line-height: 15px" data-reference-no="${summary.reference_no}">View Details</button></td>
+                </tr>`;
+                            });
+
+                            stockSummaryHtml += '</tbody></table>';
+                            $('#equipment-stock-summary').html(stockSummaryHtml);
+
+                            // Add event listener to display detailed info when a summary item is clicked
+                            $('#equipment-stock-summary').on('click', '.view-details-btn', function () {
+                                const referenceNo = $(this).data('reference-no');
+                                let stockDetailsHtml = `
+                <div class="stock-details">
+                    <!-- Display detailed stock info -->
+                    <h5>Stock Details for Reference No: ${referenceNo}</h5>
+                    <table class="table header-border table-hover verticle-middle">
+                        <thead>
+                            <tr>
+                                <th>Barcode No</th>
+                                <th>Serial No</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                                $.each(data.stock_details, function (index, detail) {
+                                    if (detail.reference_no === referenceNo) {
+                                        stockDetailsHtml += `
+                        <tr>
+                            <td>${detail.barcode_no}</td>
+                            <td>${detail.serial_no}</td>
+
+                        </tr>`;
+                                    }
+                                });
+
+                                stockDetailsHtml += '</tbody></table></div>';
+                                $('#stock-details-info').html(stockDetailsHtml);
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Failed to load stock details: ", error);
+                    }
+                });
+
+            });
+
+
+        });
+
+    </script>
+    <style>
+        /* Custom styles for interactive design */
+        #equipment-list .list-group-item {
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        #equipment-list .list-group-item:hover,
+        #equipment-list .list-group-item.active {
+            background-color: #007bff;
+            color: #fff;
+            transform: scale(1.02);
+        }
+
+        #equipment-list {
+            max-height: 500px; /* Adjust the max height as needed */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+
+        .nav-tabs .nav-link {
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .tab-content {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            padding: 15px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .table th, .table td {
+            vertical-align: middle;
+            font-size: 1rem; /* Adjust font size to match the rest of the content */
+        }
+
+
+        .mt-3 {
+            margin-top: 0.5rem !important; /* Reduce space between sections */
+        }
+
+        .table-secondary {
+            background-color: #f8f9fa;
+        }
+
+        #equipment-list .list-group-item {
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            border-radius: 3px; /* Adds border-radius to list items */
+            margin-bottom: 2px; /* Adds some space between items */
+            padding: 5px; /* Optional: Adds some padding inside the items */
+        }
+
+        #equipment-list .list-group-item:hover,
+        #equipment-list .list-group-item.active {
+            background-color: #007bff;
+            color: #fff;
+            transform: scale(1.02);
+        }
+
+
+        #stock-details-info {
+            margin-top: 15px;
+        }
+
+        .table th, .table td {
+            vertical-align: middle;
+            font-size: 1rem; /* Adjust font size to match the rest of the content */
+        }
+
+        .section-title {
+            background-color: #007bff;
+            color: #fff;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 1.2rem;
+        }
+
+        .card {
+            transition: transform 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .card:hover {
+            transform: scale(1.03);
+        }
+
+        .table {
+            margin-top: 20px;
+        }
+
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+
+        /* Reduce margin and padding for the content area */
+        .content-body {
+            padding: 10px; /* Reduce padding inside the content area */
+        }
+
+        .table {
+            margin-top: 10px; /* Reduce margin at the top of tables */
+            margin-bottom: 10px; /* Reduce margin at the bottom of tables */
+        }
+
+        .table th, .table td {
+            padding: 8px; /* Reduce padding inside table cells */
+            font-size: 0.875rem; /* Slightly smaller font size for table content */
+        }
+
+        .card {
+            padding: 10px; /* Reduce padding inside cards */
+            margin-bottom: 15px; /* Reduce margin at the bottom of cards */
+        }
+
+        .card-body {
+            padding: 10px; /* Reduce padding inside card bodies */
+        }
+
+        .nav-tabs .nav-link {
+            padding: 8px 12px; /* Reduce padding in tab links */
+            font-size: 1rem; /* Adjust font size in tabs */
+        }
+
+        #equipment-list .list-group-item {
+            padding: 8px 12px; /* Reduce padding inside list items */
+            margin-bottom: 5px; /* Reduce margin between list items */
+        }
+
+        .section-title {
+            padding: 6px 12px; /* Reduce padding for section titles */
+            margin-bottom: 10px; /* Reduce margin at the bottom of section titles */
+        }
+
+        #stock-details-info {
+            margin-top: 10px; /* Reduce margin at the top of stock details info */
+        }
+
+
+    </style>
+
+    </body>
+
+{% endblock %}

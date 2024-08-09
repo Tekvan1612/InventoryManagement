@@ -52,6 +52,7 @@ urlpatterns = [
                   path('subcategory_dropdown/', views.subcategory_dropdown, name='subcategory_dropdown'),
                   path('get_category_name/', views.get_category_name, name='get_category_name'),
                   path('Stock_list/', views.stock_list, name='Stock_list'),
+                  path('Stock_details/', views.Stock_details, name='Stock_details'),
                   path('fetch-equipment-list/', views.fetch_equipment_list, name='fetch_equipment_list'),
                   path('stock-in/<int:equipment_id>/', views.stock_in, name='stock_in'),
                   path('update-stock-in/<int:row_id>/', views.update_stock_in, name='update-stock-in'),
@@ -113,5 +114,9 @@ urlpatterns = [
                   path('save_job_details/', views.save_job_details, name='save_job_details'),
                   path('delete_job_detail/', views.delete_job_detail, name='delete_job_detail'),
                   path('fetch-events/', views.fetch_events, name='fetch-events'),
+                  path('equipment/', views.equipment_view, name='equipment_view'),
+                  path('get_equipment_details/<int:equipment_id>/', views.get_equipment_details,
+                       name='get_equipment_details'),
+                  path('get_stock_details/<int:equipment_id>/', views.get_stock_details, name='get_stock_details'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

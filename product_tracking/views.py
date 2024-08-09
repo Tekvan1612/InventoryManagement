@@ -1280,7 +1280,220 @@ def get_dimension_list(request, equipment_id):
 
 def stock_list(request):
     username = request.session.get('username')
-    return render(request, 'product_tracking/stocks.html', {'username': username})
+    return render(request, 'product_tracking/Stock_details.html', {'username': username})
+
+def Stock_details(request):
+    username = request.session.get('username')
+    return render(request, 'product_tracking/Stock_details.html', {'username': username})
+
+
+def equipment_view(request):
+    with connection.cursor() as cursor:
+        # Inline SQL query to fetch the equipment list
+        cursor.execute("""
+            SELECT 
+                el.id,
+                el.equipment_name,
+                sc.name AS sub_category_name,
+                el.category_type,
+                el.type,
+                el.dimension_height,
+                el.dimension_width,
+                el.dimension_length,
+                el.weight,
+                el.volume,
+                el.hsn_no,
+                el.country_origin,
+                el.attachment,
+                el.status,
+                um.user_name AS created_by,
+                el.created_date,
+                sc.category_id
+            FROM 
+                equipment_list el
+            LEFT JOIN 
+                sub_category sc ON el.sub_category_id = sc.id
+            LEFT JOIN 
+                user_master um ON el.created_by = um.user_id
+            ORDER BY 
+                el.equipment_name
+        """)
+        equipment_list = cursor.fetchall()
+
+    # Prepare the equipment list as dictionaries to return as JSON
+    equipment_list_data = [
+        {
+            'id': equipment[0],
+            'equipment_name': equipment[1],
+            'sub_category_name': equipment[2],
+            'category_type': equipment[3],
+            'type': equipment[4],
+            'dimension_height': equipment[5],
+            'dimension_width': equipment[6],
+            'dimension_length': equipment[7],
+            'weight': equipment[8],
+            'volume': equipment[9],
+            'hsn_no': equipment[10],
+            'country_origin': equipment[11],
+            'attachment': equipment[12],
+            'status': equipment[13],
+            'created_by': equipment[14],
+            'created_date': equipment[15],
+            'category_id': equipment[16],
+        }
+        for equipment in equipment_list
+    ]
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'equipment_list': equipment_list_data})
+
+    context = {
+        'equipment_list': equipment_list_data,
+    }
+
+    return render(request, 'product_tracking/Stock_details.html', context)
+
+
+def get_equipment_details(request, equipment_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    el.equipment_name,
+                    sc.name AS sub_category_name,
+                    el.category_type,
+                    el.type,
+                    el.dimension_height,
+                    el.dimension_width,
+                    el.dimension_length,
+                    el.weight,
+                    el.volume,
+                    el.hsn_no,
+                    el.country_origin,
+                    el.attachment,
+                    el.status,
+                    um.user_name AS created_by,
+                    el.created_date,
+                    sc.category_id,
+                    sd.unit_price,  -- from stock_details
+                    sd.rental_price,  -- from stock_details
+                    (SELECT COUNT(*) FROM stock_details WHERE equipment_id = el.id) AS stock_qty,
+                    (SELECT COUNT(*) FROM stock_details WHERE equipment_id = el.id AND scan_flag = TRUE) AS available_qty
+                FROM 
+                    equipment_list el
+                LEFT JOIN 
+                    sub_category sc ON el.sub_category_id = sc.id
+                LEFT JOIN 
+                    user_master um ON el.created_by = um.user_id
+                LEFT JOIN 
+                    stock_details sd ON sd.equipment_id = el.id
+                WHERE 
+                    el.id = %s
+            """, [equipment_id])
+
+            equipment_details = cursor.fetchone()
+
+        if equipment_details:
+            data = {
+                'equipment_name': equipment_details[0],
+                'sub_category_name': equipment_details[1],
+                'category_type': equipment_details[2],
+                'type': equipment_details[3],
+                'dimension_height': equipment_details[4],
+                'dimension_width': equipment_details[5],
+                'dimension_length': equipment_details[6],
+                'weight': equipment_details[7],
+                'volume': equipment_details[8],
+                'hsn_no': equipment_details[9],
+                'country_origin': equipment_details[10],
+                'attachment': equipment_details[11],
+                'status': equipment_details[12],
+                'created_by': equipment_details[13],
+                'created_date': equipment_details[14],
+                'category_id': equipment_details[15],
+                'unit_price': equipment_details[16],
+                'rental_price': equipment_details[17],
+                'stock_qty': equipment_details[18],
+                'available_qty': equipment_details[19],
+                'image_urls': []  # Add image URLs here if available
+            }
+            return JsonResponse(data)
+        else:
+            return JsonResponse({'error': 'Equipment not found'}, status=404)
+
+    except Exception as e:
+        # Log the error to help with debugging
+        print(f"Error fetching equipment details: {e}")
+        return JsonResponse({'error': 'Internal Server Error'}, status=500)
+
+
+def get_stock_details(request, equipment_id):
+    try:
+        with connection.cursor() as cursor:
+            # Fetch stock details grouped by reference_no with unique barcode count
+            cursor.execute("""
+                SELECT 
+                    
+                    vender_name,
+                    purchase_date,
+                    reference_no,
+                    COUNT(DISTINCT barcode_no) AS unique_barcode_count
+                FROM 
+                    stock_details
+                WHERE 
+                    equipment_id = %s
+                GROUP BY 
+                    reference_no, vender_name, purchase_date
+                ORDER BY 
+                    reference_no
+            """, [equipment_id])
+            stock_summary = cursor.fetchall()
+
+            # Fetch detailed stock info by reference_no
+            cursor.execute("""
+                SELECT 
+                    reference_no,
+                    unit,
+                    barcode_no,
+                    serial_no
+                FROM 
+                    stock_details
+                WHERE 
+                    equipment_id = %s
+                ORDER BY 
+                    reference_no
+            """, [equipment_id])
+            stock_details = cursor.fetchall()
+
+        if not stock_summary:
+            data = {'message': 'No information available for the selected equipment.'}
+        else:
+            data = {
+                'stock_summary': [
+                    {
+                        'vendor_name': summary[0],
+                        'purchase_date': summary[1],
+                        'reference_no': summary[2],
+                        'unique_barcode_count': summary[3]
+                    }
+                    for summary in stock_summary
+                ],
+                'stock_details': [
+                    {
+                        'reference_no': detail[0],
+                        'unit': detail[1],
+                        'barcode_no': detail[2],
+                        'serial_no': detail[3]
+                    }
+                    for detail in stock_details
+                ]
+            }
+
+        return JsonResponse(data)
+
+    except Exception as e:
+        print(f"Error fetching stock details: {e}")
+        return JsonResponse({'error': 'Internal Server Error'}, status=500)
 
 
 def fetch_equipment_list(request):
