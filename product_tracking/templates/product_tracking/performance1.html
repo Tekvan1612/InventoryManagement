@@ -1,285 +1,325 @@
-{% include 'product_tracking/head.html' %}
 {% load static %}
+{% include 'product_tracking/head.html' %}
+<style>
+    .table-responsive {
+    max-height: 800px; /* Set the maximum height for the table */
+    overflow-y: auto;  /* Enable vertical scrolling */
+}
+
+</style>
 {% block content %}
-    <style>
-        .category-name {
-            color: #007bff; /* Change this to the color you want */
-            text-decoration: underline; /* Optional: underline the links */
-        }
 
-        .category-name:hover {
-            color: #0056b3; /* Change this to the color you want on hover */
-        }
+    <body data-typography="poppins" data-theme-version="light" data-layout="vertical" data-nav-headerbg="black"
+          data-headerbg="color_1">
 
-        .table th, .table td {
-            padding: 8px; /* Adjust padding as needed */
-            vertical-align: middle;
-        }
+    <!-- Preloader start -->
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <!-- Preloader end -->
 
-        .table tbody tr:hover {
-            background-color: #f2f2f2; /* Change this to the color you want */
-        }
+    <!-- Main wrapper start -->
+    <div id="main-wrapper">
+        <!-- Nav header start -->
+        {% include 'product_tracking/navheader.html' %}
+        <!-- Nav header end -->
 
-        .table {
-            width: 100%;
-            border-collapse: collapse; /* Ensure borders are collapsed */
-        }
+        <!-- Header start -->
+        {% include 'product_tracking/header.html' %}
+        <!-- Header end -->
 
-        .table thead th {
-            border-bottom: 2px solid #dee2e6; /* Adjust border style as needed */
-        }
+        <!-- Sidebar start -->
+        {% include 'product_tracking/sidebar.html' %}
+        <!-- Sidebar end -->
 
-        .table tbody td {
-            border-top: 1px solid #dee2e6; /* Adjust border style as needed */
-        }
+        <!-- Content body start -->
+        <div class="content-body">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card h-auto">
+                            <div class="card-body">
+                                <ul class="nav nav-tabs custom-tab" id="categoryTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link active" id="master-category-tab" data-bs-toggle="tab"
+                                           href="#master-category" role="tab" aria-controls="master-category"
+                                           aria-selected="true">Master Category</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" id="subcategory-tab" data-bs-toggle="tab"
+                                           href="#subcategory" role="tab" aria-controls="subcategory"
+                                           aria-selected="false">Subcategory</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" id="equipment-tab" data-bs-toggle="tab"
+                                           href="#equipment" role="tab" aria-controls="equipment"
+                                           aria-selected="false">Equipment</a>
+                                    </li>
+                                </ul>
 
-        .custom-offcanvas {
-            width: 100px; /* Adjust the width as per your requirement */
-        }
+                                <div class="tab-content p-3 border border-top-0 rounded-bottom"
+                                     id="categoryTabContent">
+                                    <!-- Master Category Tab Content -->
+                                    <div class="tab-pane fade show active" id="master-category" role="tabpanel"
+                                         aria-labelledby="master-category-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-responsive-sm">
+                                                <thead>
+                                                <tr>
+                                                    <th><span class="plus-icon" id="addMasterCategoryRow">+</span></th>
+                                                    <th>Master Category</th>
+                                                    <th>Created By</th>
+                                                    <th>Created Date</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="master-category-table-body">
+                                                <!-- Master Category rows will be appended here by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
 
-        .custom-offcanvas .offcanvas-body {
-            padding: 5px; /* Add padding inside the offcanvas body */
-        }
+                                    <!-- Subcategory Tab Content -->
+                                    <div class="tab-pane fade" id="subcategory" role="tabpanel"
+                                         aria-labelledby="subcategory-tab">
+                                        <div class="table-responsive">
+                                            <table class="">
+                                                <thead>
+                                                <tr>
+                                                    <th><span class="plus-icon" id="addSubcategoryRow">+</span></th>
+                                                    <th>Name</th>
+                                                    <th>Category</th>
+                                                    <th>Created By</th>
+                                                    <th>Created Date</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="subcategory-table-body">
+                                                <!-- Subcategory rows will be appended here by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
 
-        .custom-offcanvas .form-label {
-            font-size: 4px; /* Adjust label font size */
-        }
+                                    <!-- Equipment Tab Content -->
+                                    <div class="tab-pane fade" id="equipment" role="tabpanel"
+                                         aria-labelledby="equipment-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-hover table-bordered">
+                                                <thead>
+                                                <tr>
+                                                    <th><span class="plus-icon" id="addEquipmentRow">+</span></th>
+                                                    <th>Name</th>
+                                                    <th>Subcategory</th>
+                                                    <th>Created By</th>
+                                                    <th>Created Date</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="equipment-table-body">
+                                                <!-- Equipment rows will be appended here by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- End of outer column -->
+                </div> <!-- End of outer row -->
+            </div>
+        </div>
 
-        .custom-offcanvas .form-control {
-            font-size: 4px; /* Adjust input/select font size */
-        }
+        <!-- Content body end -->
+        <!-- Footer start -->
+        {% include 'product_tracking/footer.html' %}
+        <!-- Footer end -->
+    </div>
+    <!-- Main wrapper end -->
 
-        #pagination-controls button {
-            margin-right: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .align-end {
-            display: flex;
-            align-items: flex-end;
-        }
-    </style>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function () {
-            var fetchingData = false;
-            let currentPage = 1;
-            const pageSize = 10;
 
-            $('#searchCategory').on('input', function () {
-                var searchText = $(this).val().trim().toLowerCase();
+            console.log("jQuery version:", $.fn.jquery);
 
-                $('#category-table-body tr').each(function () {
-                    var categoryName = $(this).find('td:eq(2)').text().trim().toLowerCase();
+            // Load existing data
+            loadMasterCategoryList();
+            loadSubCategoryList();
 
-                    if (categoryName.includes(searchText)) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
+            // Function to activate the edit mode
+            function activateEditMode(row) {
+                console.log("Activating edit mode for row:", row);
 
-                if (searchText === '') {
-                    $('#category-table-body tr').show(); // Show all rows if search input is empty
-                }
-            });
+                row.find('td').each(function (index, element) {
+                    const cell = $(element);
+                    console.log("Processing cell:", cell);
 
-            $('#categoryForm').on('submit', function (e) {
-                e.preventDefault();
-
-                var formData = new FormData(this);
-                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-
-                $.ajax({
-                    url: $(this).attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (response) {
-                        if (response.success) {
-                            alert('Category added successfully!');
-                            $('#categoryForm')[0].reset();
-                            $('#offcanvasExample1').modal('hide');
-                            fetchCategoryList();
-                            location.reload();
-                        } else {
-                            alert(response.message);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error adding category:', error);
-                    }
-                });
-            });
-
-            fetchCategoryList();
-
-            function fetchCategoryList() {
-                $.ajax({
-                    url: '/category_list/',
-                    type: 'GET',
-                    data: {page: currentPage},
-                    success: function (data) {
-                        $('#category-table-body').empty();
-                        $.each(data.categories, function (index, category) {
-                            var row = '<tr>' +
-                                '<td>' + ((currentPage - 1) * pageSize + index + 1) + '</td>' +
-                                '<td style="display: none;">' + category.category_id + '</td>' +
-                                '<td><a href="/sub_category/' + category.category_id + '/" class="category-name text-primary" data-category-id="' + category.category_id + '">' + category.category_name + '</a></td>' +
-                                '<td>' + (category.status ? 'Active' : 'Inactive').toUpperCase() + '</td>' +
-                                '<td>' + category.created_by.toUpperCase() + '</td>' +
-                                '<td>' + category.created_date + '</td>' +
-                                '<td><button class="btn btn-sm btn-primary edit-btn me-2"><i class="fa fa-pencil"></i></button><button class="btn btn-sm btn-danger delete-btn"><i class="fa fa-trash"></i></button></td>' +
-                                '</tr>';
-                            $('#category-table-body').append(row);
-                        });
-
-                        updatePaginationControls(data.total_items, data.current_page);
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching data:', error);
+                    if (cell.data('editable') === true) {
+                        const text = cell.text();
+                        console.log("Editable cell text:", text);
+                        cell.html('<input type="text" class="form-control" value="' + text + '">');
+                    } else if (cell.data('editable-select') === true) {
+                        const statusText = cell.text().trim();
+                        console.log("Editable select cell text:", statusText);
+                        const status = statusText === 'Active' ? '1' : '0';
+                        cell.html('<select class="form-control"><option value="1" ' + (status === '1' ? 'selected' : '') + '>Active</option><option value="0" ' + (status === '0' ? 'selected' : '') + '>Inactive</option></select>');
                     }
                 });
             }
 
-            function updatePaginationControls(totalItems, currentPage) {
-                $('#pagination-controls').html('');
 
-                const totalPages = Math.ceil(totalItems / pageSize);
-                if (currentPage > 1) {
-                    $('#pagination-controls').append('<button id="prev-page-btn" class="btn btn-primary">Previous</button>');
+            // Adding new row for Master Category
+            $(document).on('click', '#addMasterCategoryRow', function () {
+                console.log("Plus sign clicked");
+                const newRow = `
+            <tr class="editable-row">
+                <td></td>
+                <td data-editable="true"><input type="text" class="form-control"></td>
+                <td></td>
+                <td></td>
+                <td data-editable-select="true"><select class="form-control">
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
+                </select></td>
+            </tr>
+        `;
+                $('#master-category-table-body').prepend(newRow);
+            });
+
+            // Saving data on Tab or Enter key press
+            $(document).on('keydown', 'input, select', function (e) {
+                if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    const row = $(this).closest('tr');
+                    saveRowData(row);
                 }
-
-                if (currentPage < totalPages) {
-                    $('#pagination-controls').append('<button id="next-page-btn" class="btn btn-primary">Next</button>');
-                }
-
-                const startItem = (currentPage - 1) * pageSize + 1;
-                const endItem = Math.min(currentPage * pageSize, totalItems);
-
-                $('#pagination-count').text(`Showing ${startItem} to ${endItem} of ${totalItems} entries`);
-            }
-
-            $(document).on('click', '#prev-page-btn', function () {
-                if (currentPage > 1) {
-                    currentPage--;
-                    fetchCategoryList();
-                }
             });
 
-            $(document).on('click', '#next-page-btn', function () {
-                currentPage++;
-                fetchCategoryList();
+            // Double-click to edit existing row
+            $(document).on('dblclick', '.editable-row', function () {
+                console.log("Row double-clicked for editing");
+                activateEditMode($(this));
             });
 
-            $(document).on('click', '.category-name', function (e) {
-                e.preventDefault();
-                var categoryId = $(this).data('category-id');
-                window.location.href = '/sub_category/' + categoryId + '/';
-            });
+            // Function to save row data
+            function saveRowData(row) {
+                const categoryId = row.data('category-id');
+                const categoryName = row.find('td:eq(1) input').val().trim();
+                const csrfToken = getCookie('csrftoken');
+                let status = row.find('td:eq(4) select').val() || '1';
 
-            $(document).on('click', '.edit-btn', function () {
-                var row = $(this).closest('tr');
-                var categoryId = row.find('td:eq(1)').text().trim();
-                var categoryName = row.find('td:eq(2)').text().trim();
-                var statusText = row.find('td:eq(3)').text().trim() === 'Active' ? '0' : '1';
-
-                $('#editCategoryId').val(categoryId);
-                $('#editCategoryName').val(categoryName);
-                $('#editCategoryStatus').val(statusText).change();
-
-                $('#editCategoryModal').modal('show');
-            });
-
-            $(document).on('click', '#saveChangesBtn', function () {
-                updateCategoryInDatabase();
-            });
-
-            $(document).on('click', '#cancelChangeBtn', function () {
-                $('#editCategoryModal').modal('hide');
-            });
-
-            function updateCategoryInDatabase() {
-                var categoryId = $('#editCategoryId').val();
-                var categoryName = $('#editCategoryName').val().trim();
-                var statusText = $('#editCategoryStatus').val();
-                var statusValue = statusText === '1';
-
-                var formData = new FormData();
-                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-                formData.append('categoryId', categoryId);
-                formData.append('categoryName', categoryName);
-                formData.append('statusText', statusValue);
-
-                $.ajax({
-                    url: '/update_category/' + categoryId + '/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (response) {
-                        if (response.success) {
-                            fetchCategoryList();
-                            $('#editCategoryModal').modal('hide');
-                        } else {
-                            alert(response.message);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error updating category:', error);
-                    }
-                });
-            }
-
-            $(document).on('click', '.delete-btn', function () {
-                var row = $(this).closest('tr');
-                var categoryId = row.find('td:eq(1)').text().trim();
-
-                if (confirm('Are you sure you want to delete this category?')) {
-                    var csrftoken = getCookie('csrftoken');
-
-                    $.ajax({
-                        url: '/delete_category/' + categoryId + '/',
-                        type: 'POST',
-                        beforeSend: function (xhr) {
-                            xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                        },
-                        success: function (response) {
-                            if (response.message) {
-                                alert(response.message);
-                                fetchCategoryList();
-                            } else if (response.error) {
-                                alert(response.error);
+                if (!categoryName) {
+                    if (confirm("Are you sure you want to delete this category?")) {
+                        $.ajax({
+                            url: `/check_associated_subcategories/${categoryId}/`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response.has_subcategories) {
+                                    alert('Cannot delete this category because it has associated subcategories.');
+                                } else {
+                                    // Proceed with deletion since no subcategories are found
+                                    deleteCategory(categoryId, csrfToken, row);
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                alert('An error occurred while checking subcategories: ' + error);
                             }
-                        },
-                        error: function (xhr, status, error) {
-                            console.error('Error deleting category:', xhr.responseText);
-                            alert('Error deleting category: ' + xhr.responseText);
-                        }
-                    });
+                        });
+                    }
+                    return;
                 }
-            });
 
-            // Cancel button functionality
-            $('#cancelButton').click(function () {
-                $('#offcanvasExample1').offcanvas('hide');
-            });
+                const url = categoryId ? `/update_category/${categoryId}/` : '{% url "add_category" %}';
 
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        'category_name': categoryName,
+                        'status': status,
+                        'csrfmiddlewaretoken': csrfToken
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            alert('Category saved successfully!');
+                            row.find('td:eq(1)').text(categoryName);
+                            row.find('td:eq(4)').text(status === '1' ? 'Active' : 'Inactive');
+                        } else if (response.message === 'Category already exists') {
+                            alert('Category name already exists. Please choose a different name.');
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            }
+
+            // Function to load master category list
+            function loadMasterCategoryList() {
+                $.ajax({
+                    url: '{% url "category_list" %}',
+                    type: 'GET',
+                    success: function (response) {
+                        $('#master-category-table-body').empty();
+                        response.categories.forEach(function (category, index) {
+                            $('#master-category-table-body').append(`
+                <tr class="editable-row" data-category-id="${category.id}">
+                    <td></td>
+                    <td data-editable="true">${category.category_name}</td>
+                    <td>${category.created_by}</td>
+                    <td>${category.created_date}</td>
+                    <td data-editable-select="true">${category.status ? 'Active' : 'Inactive'}</td>
+                </tr>
+            `);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error loading master category list:', error);
+                    }
+                });
+            }
+
+
+            function loadSubCategoryList() {
+                $.ajax({
+                    url: '{% url "subcategory_list" %}',  // Adjust the URL if needed
+                    type: 'GET',
+                    success: function (response) {
+                        $('#subcategory-table-body').empty();
+                        response.subcategories.forEach(function (subcategory, index) {
+                            $('#subcategory-table-body').append(`
+                    <tr class="editable-row" data-subcategory-id="${subcategory.id}">
+                        <td></td>
+                        <td>${subcategory.name}</td>
+                        <td>${subcategory.category_name}</td>
+                        <td>${subcategory.created_by}</td>
+                        <td>${subcategory.created_date}</td>
+                        <td>${subcategory.status ? 'Active' : 'Inactive'}</td>
+                    </tr>
+                `);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error loading subcategory list:', error);
+                    }
+                });
+            }
+
+            // Function to get CSRF token from cookies
             function getCookie(name) {
-                var cookieValue = null;
+                let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
-                    var cookies = document.cookie.split(';');
-                    for (var i = 0; i < cookies.length; i++) {
-                        var cookie = cookies[i].trim();
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
                         if (cookie.substring(0, name.length + 1) === (name + '=')) {
                             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                             break;
@@ -288,195 +328,51 @@
                 }
                 return cookieValue;
             }
-
         });
     </script>
+    <style>
+        .nav-tabs .nav-link {
+            font-size: 1rem; /* Increased font size */
+            border-radius: 5px;
+            font-weight: 600;
+            padding: 10px 20px;
+            color: #495057;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
 
-    <body>
-        <!--*******************
-            Preloader start
-        ********************-->
-        <div id="preloader">
-            <div class="lds-ripple">
-                <div></div>
-                <div></div>
-            </div>
-        </div>
-        <!--*******************
-            Preloader end
-        ********************-->
+        .nav-tabs .nav-link.active {
+            color: #fff !important;
+            background-color: #007bff !important; /* Highlighted background color */
+            border-color: #007bff #007bff #fff !important;
+            border-radius: 5px;
+        }
 
-        <!--**********************************
-            Main wrapper start
-        ***********************************-->
-        <div id="main-wrapper">
-            <!--**********************************
-                Nav header start
-            ***********************************-->
-            {% include 'product_tracking/navheader.html' %}
-            <!--**********************************
-                Nav header end
-            ***********************************-->
+        .table thead th {
+            background-color: #170c0c; /* Light grey header background */
+            border-bottom: 2px solid #dee2e6;
+            color: #ffffff; /* Black color for header text */
+        }
 
-            <!--**********************************
-                Header start
-            ***********************************-->
-            {% include 'product_tracking/header.html' %}
-            <!--**********************************
-                Header end ti-comment-alt
-            ***********************************-->
+        .plus-icon {
+            cursor: pointer;
+            color: #ffffff;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            font-size: 1.2rem; /* Increase font size if needed */
+        }
 
-            <!--**********************************
-                Sidebar start
-            ***********************************-->
-            {% include 'product_tracking/sidebar.html' %}
-            <!--**********************************
-                Sidebar end
-            ***********************************-->
+        .editable-cell {
+            cursor: pointer;
+        }
 
-            <!--**********************************
-                Content body start
-            ***********************************-->
-            <div class="content-body">
-                <!-- row -->
-                <div class="page-titles">
-                    <ol class="breadcrumb">
-                        <li><h5 class="bc-title">Master Category</h5></li>
-                        <li class="breadcrumb-item"><a href="javascript:void(0)">
-                            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
-                                      stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
-                                      stroke-linejoin="round"/>
-                            </svg>
-                            Home </a>
-                        </li>
-                    </ol>
-                    <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" href="#offcanvasExample1" role="button"
-                       aria-controls="offcanvasExample1">+ Add Master Category</a>
-                </div>
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-xl-12">
-                            <div class="card">
-                                <div class="card-header row">
-                                    <div class="col-md-3 d-flex align-items-center">
-                                        <h4 class="card-title mb-0">Category List</h4>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <input type="text" class="form-control" id="searchCategory"
-                                               placeholder="Search....">
-                                    </div>
-                                </div>
+        .form-inline {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
 
-                                <div class="card-body">
-                                    <div class="table-responsive table-card">
-                                        <table class="table primary-table-bordered">
-                                            <thead class="thead-primary">
-                                            <tr>
-                                                <th scope="col">SR NO</th>
-                                                <th scope="col">Category Name</th>
-                                                <th scope="col">Status</th>
-                                                <th scope="col">Added By</th>
-                                                <th scope="col">Created Date</th>
-                                                <th scope="col">Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody id="category-table-body">
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div><!-- end card-body -->
-                                <div class="d-flex justify-content-between align-items-center mt-3">
-                                    <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
-                                    <div id="pagination-controls" style="padding-bottom: 10px;margin: 5px;">
-                                        <!-- Pagination buttons will be appended here -->
-                                    </div>
-                                </div>
-                            </div><!-- end card -->
-
-                        </div><!-- end col -->
-                    </div><!-- end row -->
-                </div>
-            </div>
-
-            <!--**********************************
-                Content body end
-            ***********************************-->
-            <!-- Edit Category Modal -->
-            <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog"
-                 aria-labelledby="editCategoryModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="editCategoryModalLabel">Edit Category</h5>
-                        </div>
-                        <div class="modal-body">
-                            <!-- Category Model Form -->
-                            <form id="editCategoryForm">
-                                <div class="form-group">
-                                    <label for="editCategoryName">Category Name</label>
-                                    <input type="text" class="form-control" id="editCategoryName" name="editCategoryName">
-                                </div>
-                                <div class="form-group">
-                                    <label for="editCategoryStatus" class="form-label">Status</label>
-                                    <select class="form-control" id="editCategoryStatus"
-                                            name="editCategoryStatus">
-                                        <option value="1" data-display="Select">Active</option>
-                                        <option value="0">Inactive</option>
-                                    </select>
-                                </div>
-                                <input type="hidden" id="editCategoryId" class="pagination-count">
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancelChangeBtn">
-                                Close
-                            </button>
-                            <button type="button" class="btn btn-primary update-category" id="saveChangesBtn">Save changes
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="container">
-                <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample1">
-                    <div class="offcanvas-header">
-                        <h5 class="modal-title" id="#gridSystemModal1">Master Category</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">×</button>
-                    </div>
-                    <div class="offcanvas-body">
-                        <form action="{% url 'add_category' %}" method="POST" id="categoryForm">
-                            {% csrf_token %}
-                            <div class="form-group">
-                                <label for="exampleFormControlInputfirst" class="form-label">Category Name<span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="exampleFormControlInputfirst"
-                                       name="category_name" placeholder="Name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="exampleFormControlInputfour" class="form-label" required>Status<span
-                                        class="text-danger">*</span></label>
-                                <select class="form-control" name="status" required>
-                                    <option value="1" data-display="Select">Active</option>
-                                    <option value="0">Inactive</option>
-                                </select>
-                            </div>
-                            <div class="form-group align-end">
-                                <button class="btn btn-primary me-1">Submit</button>
-                                <button class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!--**********************************
-                Footer start
-            ***********************************-->
-            {% include 'product_tracking/footer.html' %}
-        </div>
     </body>
 {% endblock %}

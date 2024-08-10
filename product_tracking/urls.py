@@ -118,5 +118,7 @@ urlpatterns = [
                   path('get_equipment_details/<int:equipment_id>/', views.get_equipment_details,
                        name='get_equipment_details'),
                   path('get_stock_details/<int:equipment_id>/', views.get_stock_details, name='get_stock_details'),
+                  path('check_associated_subcategories/<int:category_id>/', views.check_associated_subcategories,
+                       name='check_associated_subcategories'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

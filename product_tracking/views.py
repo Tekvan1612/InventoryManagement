@@ -144,6 +144,8 @@ def task(request):
 
 
 # Category Module
+
+@csrf_exempt
 def add_category(request):
     username = request.session.get('username')
     if request.method == 'POST':
@@ -160,17 +162,17 @@ def add_category(request):
                 category_count = cursor.fetchone()[0]
 
                 if category_count > 0:
-                    return JsonResponse({'success': False, 'message': 'Category Already Exists!'})
+                    return JsonResponse({'success': False, 'message': 'Category already exists!'})
 
                 # If the category doesn't exist, insert it
                 cursor.execute(
                     "SELECT add_category(%s, %s, %s, %s, %s);",
                     [category_name, description, status, created_by, created_date]
                 )
-            return JsonResponse({'success': True})
+            return JsonResponse({'success': True, 'message': 'Category added successfully'})
         except Exception as e:
             print("An unexpected error occurred:", e)
-            return JsonResponse({'success': False, 'message': 'An unexpected error occurred'})
+            return JsonResponse({'success': False, 'message': 'An unexpected error occurred', 'exception': str(e)})
     else:
         return render(request, 'product_tracking/performance1.html', {'username': username})
 
@@ -209,47 +211,74 @@ def category_list(request):
 @csrf_exempt
 def update_category(request, category_id):
     if request.method == 'POST':
-        print('Received POST request to update category details')
-
-        # Extract the form data
-        category_name = request.POST.get('categoryName').upper()
-        category_description = request.POST.get('categoryDescription', '')
-        status = request.POST.get('statusText') == 'true' or request.POST.get(
-            'statusText') == 'True' or request.POST.get('statusText') == '1'
-
-        print('Received data:', {
-            'category_id': category_id,
-            'category_name': category_name,
-            'category_description': category_description,
-            'status': status,
-        })
+        category_name = request.POST.get('category_name').upper()
+        status = request.POST.get('status') == '1'  # Convert to boolean
+        category_description = request.POST.get('category_description', '')
 
         try:
             with connection.cursor() as cursor:
+                # Call the stored procedure to update the existing category
                 cursor.callproc('update_category', [category_id, category_name, category_description, status])
-                updated_category_id = cursor.fetchone()[0]
-                print(updated_category_id)
-            return JsonResponse(
-                {'success': True, 'message': 'Category details updated successfully',
-                 'updated_category_id': updated_category_id})
+            return JsonResponse({'success': True, 'message': 'Category updated successfully'})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': 'Failed to update category details', 'exception': str(e)})
+            return JsonResponse({'success': False, 'message': 'Failed to update category', 'exception': str(e)})
     else:
         return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
-
+@csrf_exempt
 def delete_category(request, category_id):
     if request.method == 'POST':
         try:
             with transaction.atomic():
                 with connection.cursor() as cursor:
+                    # Check if there are any subcategories associated with this category
+                    cursor.execute("SELECT COUNT(*) FROM sub_category WHERE category_id = %s", [category_id])
+                    subcategory_count = cursor.fetchone()[0]
+                    logger.debug(f'Subcategory count for category ID {category_id}: {subcategory_count}')
+
+                    # Check if there are any equipment associated with this category
+                    cursor.execute("SELECT COUNT(*) FROM equipment_list WHERE category_id = %s", [category_id])
+                    equipment_count = cursor.fetchone()[0]
+                    logger.debug(f'Equipment count for category ID {category_id}: {equipment_count}')
+
+                    # If there are associated subcategories or equipment, prevent deletion
+                    if subcategory_count > 0 or equipment_count > 0:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'Cannot delete category with associated subcategories or equipment.'
+                        })
+
+                    # If no associated subcategories or equipment, proceed with deletion using stored procedure
                     cursor.callproc('delete_category', [category_id])
-            return JsonResponse({'message': 'Category deleted successfully', 'category_id': category_id})
+
+            return JsonResponse({'success': True, 'message': 'Category deleted successfully', 'category_id': category_id})
         except Exception as e:
             logger.error(f'Failed to delete category with ID {category_id}: {e}', exc_info=True)
-            return JsonResponse({'error': 'Failed to delete category', 'exception': str(e)})
+            return JsonResponse({
+                'success': False,
+                'message': 'Failed to delete category',
+                'exception': str(e)
+            })
     else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+def check_associated_subcategories(request, category_id):
+    if request.method == 'GET':
+        try:
+            with connection.cursor() as cursor:
+                # Execute a raw SQL query to check if subcategories exist for the given category_id
+                cursor.execute("SELECT COUNT(*) FROM sub_category WHERE category_id = %s", [category_id])
+                subcategory_count = cursor.fetchone()[0]
+
+                # If subcategories exist, return that subcategories are present
+                has_subcategories = subcategory_count > 0
+                return JsonResponse({'has_subcategories': has_subcategories})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
 
 def category_dropdown(request):
