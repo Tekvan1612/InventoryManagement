@@ -120,5 +120,10 @@ urlpatterns = [
                   path('get_stock_details/<int:equipment_id>/', views.get_stock_details, name='get_stock_details'),
                   path('check_associated_subcategories/<int:category_id>/', views.check_associated_subcategories,
                        name='check_associated_subcategories'),
+                  path('equipment_by_category/', views.equipment_by_category, name='equipment_by_category'),
+                  path('get_categories/', views.get_categories, name='get_categories'),
+                  path('export_excel/<int:category_id>/', views.export_equipment_to_excel, name='export_excel'),
+                  path('export_pdf/<int:category_id>/', views.export_equipment_to_pdf, name='export_pdf'),
+                  path('get_serial_details/<int:equipment_id>/', views.get_serial_details, name='get_serial_details'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -281,6 +281,148 @@ def check_associated_subcategories(request, category_id):
         return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
 
+def equipment_by_category(request):
+    category_id = request.GET.get('category_id')
+
+    if not category_id:
+        return JsonResponse({'error': 'category_id is required'}, status=400)
+
+    try:
+        with connection.cursor() as cursor:
+            # Use the above SQL query to fetch equipment by category
+            cursor.execute("""
+                SELECT e.id, e.equipment_name, e.category_type, e.type, e.dimension_height, e.dimension_width, 
+                       e.dimension_length, e.weight, e.volume, e.hsn_no, e.country_origin, e.attachment, 
+                       e.status, e.created_by, e.created_date
+                FROM equipment_list e
+                JOIN sub_category s ON e.sub_category_id = s.id
+                JOIN master_category m ON s.category_id = m.category_id
+                WHERE m.category_id = %s;
+            """, [category_id])
+            equipment_list = cursor.fetchall()
+
+        # Convert the result to a list of dictionaries
+        equipment_data = [
+            {
+                'id': row[0],
+                'equipment_name': row[1],
+                'category_type': row[2],
+                'type': row[3],
+                'dimension_height': row[4],
+                'dimension_width': row[5],
+                'dimension_length': row[6],
+                'weight': row[7],
+                'volume': row[8],
+                'hsn_no': row[9],
+                'country_origin': row[10],
+                'attachment': row[11],
+                'status': row[12],
+                'created_by': row[13],
+                'created_date': row[14].strftime('%Y-%m-%d %H:%M:%S') if row[14] else None,
+            }
+            for row in equipment_list
+        ]
+
+        return JsonResponse({'equipment_list': equipment_data})
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return JsonResponse({'error': 'Internal Server Error'}, status=500)
+
+def get_categories(request):
+    with connection.cursor() as cursor:
+        # Fetch categories ordered by category_name in ascending order
+        cursor.execute(
+            "SELECT category_id, category_name FROM master_category WHERE status = TRUE ORDER BY category_name ASC")
+        categories = cursor.fetchall()
+
+    # Convert the result into a list of dictionaries
+    category_list = [{'id': category[0], 'name': category[1]} for category in categories]
+
+    # Determine the default category (first in alphabetical order)
+    default_category = category_list[0] if category_list else None
+
+    return JsonResponse({'categories': category_list, 'default_category': default_category})
+
+
+def export_equipment_to_excel(request, category_id):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT e.id, e.equipment_name, e.category_type, e.type, e.dimension_height, e.dimension_width, 
+                   e.dimension_length, e.weight, e.volume, e.hsn_no, e.country_origin, e.attachment, 
+                   e.status, e.created_by, e.created_date
+            FROM equipment_list e
+            JOIN sub_category s ON e.sub_category_id = s.id
+            JOIN master_category m ON s.category_id = m.category_id
+            WHERE m.category_id = %s;
+        """, [category_id])
+        equipment_list = cursor.fetchall()
+
+    df = pd.DataFrame(equipment_list, columns=[
+        'ID', 'Equipment Name', 'Category Type', 'Type', 'Dimension Height', 'Dimension Width',
+        'Dimension Length', 'Weight', 'Volume', 'HSN No', 'Country Origin', 'Attachment',
+        'Status', 'Created By', 'Created Date'
+    ])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename=equipment_list_{category_id}.xlsx'
+    df.to_excel(response, index=False, engine='openpyxl')
+
+    return response
+
+def export_equipment_to_pdf(request, category_id):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename=equipment_list_{category_id}.pdf'
+
+    p = canvas.Canvas(response, pagesize=letter)
+    p.setFont("Helvetica", 12)
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT e.id, e.equipment_name, e.category_type, e.type, e.dimension_height, e.dimension_width, 
+                   e.dimension_length, e.weight, e.volume, e.hsn_no, e.country_origin, e.attachment, 
+                   e.status, e.created_by, e.created_date
+            FROM equipment_list e
+            JOIN sub_category s ON e.sub_category_id = s.id
+            JOIN master_category m ON s.category_id = m.category_id
+            WHERE m.category_id = %s;
+        """, [category_id])
+        equipment_list = cursor.fetchall()
+
+    y = 750
+    for row in equipment_list:
+        p.drawString(30, y, f"{row}")
+        y -= 15
+        if y < 50:
+            p.showPage()
+            p.setFont("Helvetica", 12)
+            y = 750
+
+    p.showPage()
+    p.save()
+    return response
+
+
+def get_serial_details(request, equipment_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT serial_no, barcode_no
+                FROM stock_details  -- Replace this with your actual table name
+                WHERE equipment_id = %s
+            """, [equipment_id])
+            serial_details = cursor.fetchall()
+
+        # Prepare the data to be returned
+        serial_data = [{'serial_no': detail[0], 'barcode_no': detail[1]} for detail in serial_details]
+
+        return JsonResponse({'serial_details': serial_data})
+
+    except Exception as e:
+        # Log the error and return a generic error message
+        print(f"Error fetching serial details for equipment_id {equipment_id}: {str(e)}")
+        return JsonResponse({'error': 'Failed to fetch serial details'}, status=500)
+
 def category_dropdown(request):
     try:
         with connection.cursor() as cursor:
