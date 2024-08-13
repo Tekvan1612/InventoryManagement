@@ -2,9 +2,9 @@
 {% include 'product_tracking/head.html' %}
 <style>
     .table-responsive {
-    max-height: 800px; /* Set the maximum height for the table */
-    overflow-y: auto;  /* Enable vertical scrolling */
-}
+        max-height: 800px; /* Set the maximum height for the table */
+        overflow-y: auto; /* Enable vertical scrolling */
+    }
 
 </style>
 {% block content %}
@@ -59,6 +59,14 @@
                                            aria-selected="false">Equipment</a>
                                     </li>
                                 </ul>
+
+                                <!-- Search bar -->
+                                <div class="row my-3">
+                                    <div class="col-md-6">
+                                        <input type="text" id="search-input" class="form-control"
+                                               placeholder="Search...">
+                                    </div>
+                                </div>
 
                                 <div class="tab-content p-3 border border-top-0 rounded-bottom"
                                      id="categoryTabContent">
@@ -132,6 +140,7 @@
                     </div> <!-- End of outer column -->
                 </div> <!-- End of outer row -->
             </div>
+
         </div>
 
         <!-- Content body end -->
@@ -210,10 +219,20 @@
             // Function to save row data
             function saveRowData(row) {
                 const categoryId = row.data('category-id');
-                const categoryName = row.find('td:eq(1) input').val().trim();
-                const csrfToken = getCookie('csrftoken');
-                let status = row.find('td:eq(4) select').val() || '1';
+                const categoryNameInput = row.find('td:eq(1) input');
+                const statusSelect = row.find('td:eq(4) select');
 
+                // Check if the inputs exist
+                if (categoryNameInput.length === 0 || statusSelect.length === 0) {
+                    console.error("Input or select element not found in the row.");
+                    return; // Exit the function if inputs are not found
+                }
+
+                const categoryName = categoryNameInput.val().trim();
+                const csrfToken = getCookie('csrftoken');
+                let status = statusSelect.val() || '1';
+
+                // Handle empty category name for deletion scenario
                 if (!categoryName) {
                     if (confirm("Are you sure you want to delete this category?")) {
                         $.ajax({
@@ -262,6 +281,7 @@
                 });
             }
 
+
             // Function to load master category list
             function loadMasterCategoryList() {
                 $.ajax({
@@ -287,6 +307,21 @@
                 });
             }
 
+            $('#search-input').on('input', function () {
+                let searchTerm = $(this).val().toLowerCase();
+
+                $('#master-category-table-body tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
+                });
+
+                $('#subcategory-table-body tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
+                });
+
+                $('#equipment-table-body tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
+                });
+            });
 
             function loadSubCategoryList() {
                 $.ajax({
