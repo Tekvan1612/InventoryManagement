@@ -3728,8 +3728,8 @@ def equipment_by_category(request):
         with connection.cursor() as cursor:
             # Use the above SQL query to fetch equipment by category
             cursor.execute("""
-                SELECT e.id, e.equipment_name, e.category_type, e.type, e.dimension_height, e.dimension_width, 
-                       e.dimension_length, e.weight, e.volume, e.hsn_no, e.country_origin, e.attachment, 
+                SELECT e.id, e.equipment_name, e.category_type, e.dimension_height, e.dimension_width, 
+                       e.dimension_length, e.weight, e.volume, e.hsn_no, e.country_origin,
                        e.status, e.created_by, e.created_date
                 FROM equipment_list e
                 JOIN sub_category s ON e.sub_category_id = s.id
@@ -3744,18 +3744,16 @@ def equipment_by_category(request):
                 'id': row[0],
                 'equipment_name': row[1],
                 'category_type': row[2],
-                'type': row[3],
-                'dimension_height': row[4],
-                'dimension_width': row[5],
-                'dimension_length': row[6],
-                'weight': row[7],
-                'volume': row[8],
-                'hsn_no': row[9],
-                'country_origin': row[10],
-                'attachment': row[11],
-                'status': row[12],
-                'created_by': row[13],
-                'created_date': row[14].strftime('%Y-%m-%d %H:%M:%S') if row[14] else None,
+                'dimension_height': row[3],
+                'dimension_width': row[4],
+                'dimension_length': row[5],
+                'weight': row[6],
+                'volume': row[7],
+                'hsn_no': row[8],
+                'country_origin': row[9],
+                'status': row[10],
+                'created_by': row[11],
+                'created_date': row[12].strftime('%Y-%m-%d %H:%M:%S') if row[12] else None,
             }
             for row in equipment_list
         ]
@@ -3765,6 +3763,93 @@ def equipment_by_category(request):
     except Exception as e:
         print(f"Error: {e}")
         return JsonResponse({'error': 'Internal Server Error'}, status=500)
+
+def get_equipment_details(request, equipment_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT e.equipment_name, e.category_type, s.name, sd.unit, e.weight, e.dimension_length, 
+                       e.dimension_height, e.dimension_width, sd.unit_price, sd.rental_price, 
+                       ea.image_1, ea.image_2, ea.image_3
+                FROM equipment_list e
+                LEFT JOIN sub_category s ON e.sub_category_id = s.id
+                LEFT JOIN equipment_list_attachments ea ON e.id = ea.equipment_list_id
+                LEFT JOIN stock_details sd ON e.id = sd.equipment_id
+                WHERE e.id = %s
+            """, [equipment_id])
+
+            equipment_details = cursor.fetchone()
+
+        if not equipment_details:
+            return JsonResponse({'error': 'Equipment not found'}, status=404)
+
+        if len(equipment_details) < 13:  # Check if all expected columns are present
+            print(f"Debug: Fetched columns: {equipment_details}")
+            return JsonResponse({'error': 'Incomplete data returned from the query'}, status=500)
+
+        data = {
+            'equipment_name': equipment_details[0],
+            'category_type': equipment_details[1],
+            'sub_category_name': equipment_details[2],
+            'unit': equipment_details[3],
+            'weight': equipment_details[4],
+            'dimension_length': equipment_details[5],
+            'dimension_height': equipment_details[6],
+            'dimension_width': equipment_details[7],
+            'unit_price': equipment_details[8],
+            'rental_price': equipment_details[9],
+            'image_urls': [equipment_details[10], equipment_details[11], equipment_details[12]]
+        }
+
+        return JsonResponse(data)
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+
+def get_serial_details(request, equipment_id):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT serial_no, barcode_no
+            FROM stock_details
+            WHERE equipment_id = %s
+        """, [equipment_id])
+        serial_details = cursor.fetchall()
+
+    if serial_details:
+        serial_data = [{'serial_no': sd[0], 'barcode_no': sd[1]} for sd in serial_details]
+        return JsonResponse({'serial_details': serial_data})
+    else:
+        return JsonResponse({'serial_details': []})
+
+def get_stock_details(request, equipment_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT s.vender_name, s.purchase_date, s.reference_no, COUNT(DISTINCT s.barcode_no) AS unique_barcode_count
+                FROM stock_details s
+                WHERE s.equipment_id = %s
+                GROUP BY s.vender_name, s.purchase_date, s.reference_no
+            """, [equipment_id])
+            stock_summary = cursor.fetchall()
+
+            if not stock_summary:
+                return JsonResponse({'message': 'No stock details available for this equipment.'}, status=404)
+
+            stock_summary_list = [
+                {
+                    'vendor_name': row[0],
+                    'purchase_date': row[1],
+                    'reference_no': row[2],
+                    'unique_barcode_count': row[3],
+                }
+                for row in stock_summary
+            ]
+
+        return JsonResponse({'stock_summary': stock_summary_list})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def get_categories(request):
     with connection.cursor() as cursor:

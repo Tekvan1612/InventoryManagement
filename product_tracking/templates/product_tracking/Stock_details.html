@@ -251,7 +251,6 @@
                 window.print();
             }
 
-            // Fetch the complete equipment list via AJAX
             function fetchEquipmentListByCategory(categoryId) {
                 $.ajax({
                     url: "{% url 'equipment_by_category' %}",
@@ -262,7 +261,7 @@
                         allEquipmentList = data.equipment_list;
                         displayEquipmentList(allEquipmentList);
 
-                        // Make the first equipment item active and trigger click to display its details
+                        // Automatically select and click the first item
                         if (allEquipmentList.length > 0) {
                             const firstEquipmentItem = $('#equipment-list a:first');
                             firstEquipmentItem.addClass('active');
@@ -275,17 +274,17 @@
                 });
             }
 
-            // Display equipment list in the HTML
             function displayEquipmentList(equipmentList) {
                 let equipmentHtml = '';
                 $.each(equipmentList, function (index, equipment) {
                     equipmentHtml += `
-                <a href="#" class="list-group-item list-group-item-action" data-equipment="${equipment.equipment_name}" data-id="${equipment.id}">
-                    ${equipment.equipment_name}
-                </a>`;
+            <a href="#" class="list-group-item list-group-item-action" data-equipment="${equipment.equipment_name}" data-id="${equipment.id}">
+                ${equipment.equipment_name}
+            </a>`;
                 });
                 $('#equipment-list').html(equipmentHtml);
             }
+
 
             $('#search-equipment').on('keyup', function () {
                 const searchValue = $(this).val().toLowerCase();
@@ -296,13 +295,13 @@
                 displayEquipmentList(filteredEquipmentList);
             });
 
-            function fetchSerialDetails(equipmentId) {
-                $.ajax({
-                    url: `/get_serial_details/${equipmentId}/`,
-                    method: "GET",
-                    dataType: "json",
-                    success: function (data) {
-                        let serialDetailsHtml = `
+         function fetchSerialDetails(equipmentId) {
+        $.ajax({
+            url: `/get_serial_details/${equipmentId}/`,
+            method: "GET",
+            dataType: "json",
+            success: function (data) {
+                let serialDetailsHtml = `
                 <table class="table header-border table-hover verticle-middle">
                     <thead>
                         <tr>
@@ -312,29 +311,29 @@
                     </thead>
                     <tbody>`;
 
-                        if (data.serial_details && data.serial_details.length > 0) {
-                            $.each(data.serial_details, function (index, detail) {
-                                serialDetailsHtml += `
+                if (data.serial_details && data.serial_details.length > 0) {
+                    $.each(data.serial_details, function (index, detail) {
+                        serialDetailsHtml += `
                         <tr>
                             <td>${detail.serial_no}</td>
                             <td>${detail.barcode_no}</td>
                         </tr>`;
-                            });
-                        } else {
-                            serialDetailsHtml += `
+                    });
+                } else {
+                    serialDetailsHtml += `
                     <tr>
                         <td colspan="2">No serial details available.</td>
                     </tr>`;
-                        }
+                }
 
-                        serialDetailsHtml += '</tbody></table>';
-                        $('#serial-details-info').html(serialDetailsHtml); // Ensure this ID matches the one in your HTML
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Failed to load serial details: ", error);
-                    }
-                });
+                serialDetailsHtml += '</tbody></table>';
+                $('#serial-details-info').html(serialDetailsHtml); // Ensure this ID matches the one in your HTML
+            },
+            error: function (xhr, status, error) {
+                console.error("Failed to load serial details:", error);
             }
+        });
+    }
 
 
             // Fetch the initial equipment list
@@ -351,10 +350,15 @@
 
                 // Fetch general equipment details
                 $.ajax({
-                    url: `/get_equipment_details/${equipmentId}/`,  // Adjust this URL as needed
+                    url: `/get_equipment_details/${equipmentId}/`,
                     method: "GET",
                     dataType: "json",
                     success: function (data) {
+                        if (data.error) {
+                            console.error("Error loading equipment details:", data.error);
+                            return;
+                        }
+
                         // Update general tab details
                         $('#equipment-name').text(data.equipment_name || 'N/A');
                         $('#category-name').text(data.category_type || 'N/A');
@@ -363,10 +367,10 @@
                         $('#available-qty').text(data.available_qty || 'N/A');
                         $('#stock-qty').text(data.stock_qty || 'N/A');
 
-                        $('#weight').text((data.weight ? data.weight + ' kg' : 'N/A'));
-                        $('#length').text((data.dimension_length ? data.dimension_length + ' inch' : 'N/A'));
-                        $('#height').text((data.dimension_height ? data.dimension_height + ' inch' : 'N/A'));
-                        $('#width').text((data.dimension_width ? data.dimension_width + ' inch' : 'N/A'));
+                        $('#weight').text(data.weight ? data.weight + ' kg' : 'N/A');
+                        $('#length').text(data.dimension_length ? data.dimension_length + ' inch' : 'N/A');
+                        $('#height').text(data.dimension_height ? data.dimension_height + ' inch' : 'N/A');
+                        $('#width').text(data.dimension_width ? data.dimension_width + ' inch' : 'N/A');
 
                         $('#unit-price').text(data.unit_price ? `₹${data.unit_price}` : 'N/A');
                         $('#rental-price').text(data.rental_price ? `₹${data.rental_price}` : 'N/A');
@@ -375,7 +379,9 @@
                         let imagesHtml = '';
                         if (data.image_urls && data.image_urls.length > 0) {
                             $.each(data.image_urls, function (index, url) {
-                                imagesHtml += `<img src="${url}" class="img-thumbnail" alt="Equipment Image" style="max-width: 200px; margin: 10px;">`;
+                                if (url) {
+                                    imagesHtml += `<img src="${url}" class="img-thumbnail" alt="Equipment Image" style="max-width: 200px; margin: 10px;">`;
+                                }
                             });
                         } else {
                             imagesHtml = '<p>No images available.</p>';
@@ -383,13 +389,21 @@
                         $('#equipment-images').html(imagesHtml);
                     },
                     error: function (xhr, status, error) {
-                        console.error("Failed to load equipment details: ", error);
+                        console.error("Failed to load equipment details:", xhr.responseText);
                     }
                 });
-
-                // Fetch serial details
-                fetchSerialDetails(equipmentId);
             });
+
+            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        const target = $(e.target).attr("href"); // Get the target tab pane
+
+        if (target === '#serial') { // Adjust this selector to match the ID of your serial details tab pane
+            const equipmentId = $('#equipment-list .list-group-item.active').data('id'); // Get the active equipment ID
+            if (equipmentId) {
+                fetchSerialDetails(equipmentId);
+            }
+        }
+    });
 
 
             $('#equipment-list').on('click', 'a.list-group-item', function (e) {
@@ -506,85 +520,6 @@
                 }
             });
 
-            $('#equipment-list').on('click', 'a.list-group-item', function (e) {
-                e.preventDefault();
-
-                $('#equipment-list .list-group-item').removeClass('active');
-
-                $(this).addClass('active');
-
-                const equipmentId = $(this).data('id');
-
-                $.ajax({
-                    url: `/get_stock_details/${equipmentId}/`,
-                    method: "GET",
-                    dataType: "json",
-                    success: function (data) {
-                        if (data.message) {
-                            $('#equipment-stock-summary').html(`<p>${data.message}</p>`);
-                            $('#stock-details-info').html('');
-                        } else {
-                            let stockSummaryHtml = `
-                    <table class="table header-border table-hover verticle-middle">
-                        <thead>
-                            <tr>
-                                <th>Vendor Name</th>
-                                <th>Purchase Date</th>
-                                <th>Reference No</th>
-                                <th>Units</th>
-                                <th>Additional Info</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-                            $.each(data.stock_summary, function (index, summary) {
-                                stockSummaryHtml += `
-                            <tr>
-                                <td>${summary.vendor_name}</td>
-                                <td>${summary.purchase_date}</td>
-                                <td>${summary.reference_no}</td>
-                                <td>${summary.unique_barcode_count}</td>
-                                <td><button class="btn btn-primary view-details-btn" data-reference-no="${summary.reference_no}">View Details</button></td>
-                            </tr>`;
-                            });
-
-                            stockSummaryHtml += '</tbody></table>';
-                            $('#equipment-stock-summary').html(stockSummaryHtml);
-
-                            $('#equipment-stock-summary').on('click', '.view-details-btn', function () {
-                                const referenceNo = $(this).data('reference-no');
-                                let stockDetailsHtml = `
-                            <div class="stock-details">
-                                <h5>Stock Details for Reference No: ${referenceNo}</h5>
-                                <table class="table header-border table-hover verticle-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Barcode No</th>
-                                            <th>Serial No</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-
-                                $.each(data.stock_details, function (index, detail) {
-                                    if (detail.reference_no === referenceNo) {
-                                        stockDetailsHtml += `
-                                    <tr>
-                                        <td>${detail.barcode_no}</td>
-                                        <td>${detail.serial_no}</td>
-                                    </tr>`;
-                                    }
-                                });
-
-                                stockDetailsHtml += '</tbody></table></div>';
-                                $('#stock-details-info').html(stockDetailsHtml);
-                            });
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Failed to load stock details: ", error);
-                    }
-                });
-            });
         });
     </script>
 
