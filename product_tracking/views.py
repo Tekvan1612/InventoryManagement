@@ -4014,7 +4014,3 @@ def fetch_all_subcategories(request):
 
     return JsonResponse(subcategory_list, safe=False)
 
-
-
-
-

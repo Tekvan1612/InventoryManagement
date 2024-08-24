@@ -145,5 +145,4 @@ urlpatterns = [
                        name='insert_transportation_data'),
                   path('insert-sub-vendor-details/', views.insert_sub_vendor_details, name='insert_sub_vendor_details'),
                   path('fetch-all-subcategories/', views.fetch_all_subcategories, name='fetch_all_subcategories'),
-
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
