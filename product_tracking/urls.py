@@ -145,4 +145,9 @@ urlpatterns = [
                        name='insert_transportation_data'),
                   path('insert-sub-vendor-details/', views.insert_sub_vendor_details, name='insert_sub_vendor_details'),
                   path('fetch-all-subcategories/', views.fetch_all_subcategories, name='fetch_all_subcategories'),
+                  path('equipment_by_category/', views.equipment_by_category, name='equipment_by_category'),
+                  path('get_equipment_details/<int:equipment_id>/', views.get_equipment_details,
+                       name='get_equipment_details'),
+                  path('get_serial_details/<int:equipment_id>/', views.get_serial_details, name='get_serial_details'),
+                  path('get_stock_details/<int:equipment_id>/', views.get_stock_details, name='get_stock_details'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
