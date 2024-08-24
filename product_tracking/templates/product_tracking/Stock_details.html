@@ -235,7 +235,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function () {
-            const exportBaseUrl = "{% url 'export_excel' 1 %}".replace('/1/', '/');
+
             let allEquipmentList = [];
             $('#export-excel').click(function () {
                 const categoryId = $('#master-category').val();
@@ -246,15 +246,6 @@
                 }
             });
 
-            $('#export-pdf').click(function () {
-                const categoryId = $('#master-category').val();
-                if (categoryId) {
-                    const pdfUrl = "{% url 'export_pdf' 1 %}".replace('/1/', '/');
-                    window.location.href = pdfUrl + categoryId + "/";
-                } else {
-                    alert("Please select a category.");
-                }
-            });
 
             function printEquipmentDetails() {
                 window.print();
