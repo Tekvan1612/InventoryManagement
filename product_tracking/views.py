@@ -3386,7 +3386,7 @@ def get_sub_categories(request):
 #
 #     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
-# Cloudinary insert for image
+#Cloudinary insert for image
 @csrf_exempt
 def submit_equipment(request):
     if request.method == 'POST':
@@ -3400,9 +3400,12 @@ def submit_equipment(request):
             dimension_l = request.POST.get('dimension_l')
             weight = request.POST.get('weight')
             volume = request.POST.get('volume')
-            hsn_no = request.POST.get('hsn_no')
+            hsn_no = str(request.POST.get('hsn_no'))
             country_origin = request.POST.get('country_origin')
             created_by = 1  # Assuming `created_by` is 1
+
+            # Log received form data
+            print(f"Received data: {equipment_name}, {equipment_SubCategory}, {category_type}")
 
             # Handle file uploads to Cloudinary
             image_urls = []
@@ -3412,10 +3415,14 @@ def submit_equipment(request):
                         # Upload to Cloudinary
                         result = cloudinary.uploader.upload(image)
                         image_urls.append(result['secure_url'])
+                        print(f"Uploaded {field_name} to Cloudinary:", result['secure_url'])
 
             # Ensure we have 3 image URLs, even if some are None
             while len(image_urls) < 3:
                 image_urls.append(None)
+
+            # Log the URLs to ensure they're correct
+            print("Image URLs:", image_urls)
 
             # Call the PostgreSQL function to insert equipment and attachments
             with connection.cursor() as cursor:
@@ -3431,6 +3438,7 @@ def submit_equipment(request):
             return JsonResponse({'status': 'success', 'equipment_id': equipment_list_id})
 
         except Exception as e:
+            print("Error:", str(e))  # Log the error for debugging
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
