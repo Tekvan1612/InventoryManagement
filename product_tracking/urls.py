@@ -112,7 +112,7 @@ urlpatterns = [
                   path('delete_job_detail/', views.delete_job_detail, name='delete_job_detail'),
                   path('fetch-events/', views.fetch_events, name='fetch-events'),
                   path('job_form/', views.job_form, name='job_form'),
-                  path('add_job_test/', views.add_job_test, name='add_job_test'),
+                  # path('add_job_test/', views.add_job_test, name='add_job_test'),
                   path('search-equipment/', views.search_equipment, name='search_equipment'),
                   path('fetch-equipment-with-barcodes/', views.fetch_equipment_with_barcodes,
                        name='fetch_equipment_with_barcodes'),
