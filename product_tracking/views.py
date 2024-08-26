@@ -4364,3 +4364,7 @@ def update_venue_data(request):
 
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+def add_job_test(request):
+    return render(request, 'product_tracking/add-job.html')

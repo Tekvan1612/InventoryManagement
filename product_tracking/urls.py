@@ -159,5 +159,6 @@ urlpatterns = [
                   path('update_company_data/', views.update_company_data, name='update_company_data'),
                   path('update-venue-data/', views.update_venue_data, name='update_venue_data'),
                   path('update-individual-data/', views.update_individual_data, name='update_individual_data'),
+                  path('add_job_test/', views.add_job_test, name='add_job_test'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
