@@ -1,650 +1,1065 @@
 {% include 'product_tracking/head.html' %}
 {% load static %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+<!-- Include Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+    .plus-icon {
+        cursor: pointer;
+        color: #ffffff;
+        text-align: center;
+        display: inline-block;
+        width: 100%;
+        font-size: 1.2rem; /* Increase font size if needed */
+    }
+
+    .modal-content {
+        max-width: 800px;
+        margin: auto;
+    }
+
+    .table-responsive table th,
+    .table-responsive table td {
+        padding: 0.75rem;
+        vertical-align: middle;
+    }
+
+    .table-responsive table th.country-col,
+    .table-responsive table td.country-col {
+        width: 15%; /* Adjust this percentage as needed */
+    }
+
+    .table-responsive table th.state-col,
+    .table-responsive table td.state-col {
+        width: 15%; /* Adjust this percentage as needed */
+    }
+
+    .table-responsive table th.city-col,
+    .table-responsive table td.city-col {
+        width: 10%; /* Adjust this percentage as needed */
+    }
+
+    .table-responsive table th.postcode-col,
+    .table-responsive table td.postcode-col {
+        width: 10%; /* Adjust this percentage as needed */
+    }
+
+    .table-responsive table th.billing-col,
+    .table-responsive table td.billing-col {
+        width: 20%; /* Adjust this percentage as needed */
+    }
+
+    .table-responsive table th.company-col,
+    .table-responsive table td.company-col {
+        width: 20%; /* Adjust this percentage as needed */
+    }
+
+    #addContactPerson .fa-plus {
+        font-size: 1.5rem;
+        margin-right: 5px;
+    }
+
+    /* Table Styling */
+    .table {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: #212529;
+        border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .table thead th {
+        vertical-align: bottom;
+        border-bottom: 2px solid #dee2e6;
+        background-color: #170c0c;
+        color: #ffffff;
+    }
+
+    .table tbody + tbody {
+        border-top: 2px solid #dee2e6;
+    }
+
+    .table-bordered {
+        border: 1px solid #dee2e6;
+    }
+
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #dee2e6;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .table-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+    }
+
+    .table-footer .pagination {
+        margin: 0;
+    }
+
+    .table-footer .pagination .page-item .page-link {
+        color: #007bff;
+        border-radius: 50%;
+        padding: 0.5rem 0.75rem;
+        margin: 0 2px;
+        border: 1px solid #dee2e6;
+    }
+
+    .table-footer .pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: #fff;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background-color: #007bff;
+        border-radius: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background-color: #f1f1f1;
+    }
+
+    .modal-header {
+        background-color: #007bff;
+        color: white;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .nav-tabs .nav-link {
+        font-size: 1rem;
+        border-radius: 5px;
+        font-weight: 600;
+        padding: 10px 20px;
+        color: #495057;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        margin-right: 5px;
+        border: 1px solid #ddd;
+        background-color: #f8f9fa;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #fff !important;
+        background-color: #007bff !important;
+        border-color: #007bff #007bff #fff !important;
+        border-radius: 5px;
+    }
+
+    .tab-content {
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-top: 0;
+        border-radius: 0 5px 5px 5px;
+        background-color: #fff;
+    }
+
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    #main-wrapper {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-body {
+        flex: 1;
+    }
+
+    .form-control {
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        padding: 10px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #dee2e6;
+        padding: 10px;
+    }
+</style>
+
 {% block content %}
-
-
-    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            $('#cancelButton').click(function () {
-                $('#offcanvasExample').offcanvas('hide');
-            });
-        });
-
-        let currentPage = 1;
-        const pageSize = 10;
-        let totalItems = 0;
-
-        function fetchConnectList() {
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = startIndex + pageSize;
-
-            $.ajax({
-                url: '/connect_list/',
-                type: 'GET',
-                success: function (data) {
-                    totalItems = data.length;
-                    const currentPageData = data.slice(startIndex, endIndex);
-                    $('#category-table-body').empty();
-                    $.each(currentPageData, function (index, category) {
-                        var row = '<tr>' +
-                            '<td>' + (index + 1) + '</td>' +
-                            '<td><span>' + (category.type || '') + '</span></td>';
-
-                        if (category.type === 'Company') {
-                            row += '<td><span>' + (category.company_name || '') + '</span></td>' +
-                                '<td><span>' + (category.contact_email || '') + '</span></td>' +
-                                '<td><span>' + (category.contact_person_no || '') + '</span></td>' +
-                                '<td><span>' + (category.office_address || '') + '</span></td>';
-                        } else if (category.type === 'Venue') {
-                            row += '<td><span>' + (category.venue_name || '') + '</span></td>' +
-                                '<td><span>' + (category.email_add || '') + '</span></td>' +
-                                '<td><span>' + (category.email_add || '') + '</span></td>' +
-                                '<td><span>' + (category.venue_address || '') + '</span></td>';
-                        } else if (category.type === 'Individual') {
-                            row += '<td><span>' + (category.name || '') + '</span></td>' +
-                                '<td><span>' + (category.email || '') + '</span></td>' +
-                                '<td><span>' + (category.mobile || '') + '</span></td>' +
-                                '<td><span>' + (category.address || '') + '</span></td>';
-                        } else if (category.type === 'Client') {
-                            row += '<td><span>' + (category.client_name || '') + '</span></td>' +
-                                '<td><span>' + (category.email || '') + '</span></td>' +
-                                '<td><span>' + (category.client_mobile_no || '') + '</span></td>' +
-                                '<td><span>' + (category.client_address || '') + '</span></td>';
-                        }
-
-                        row += '<td><span>' + (category.city || '') + '</span></td>' +
-                            '<td><span>' + (category.country || '') + '</span></td>' +
-                            '<td><span>' + (category.post_code || '') + '</span></td>' +
-                            '<td style="display: none"><span>' + (category.id || '') + '</span></td>' +
-                            '<td>' +
-                            '<div class="hstack gap-3 flex-wrap">' +
-                            '<a href="#" class="link-success fs-base edit-btn me-2"><i class="ri-pencil-fill"></i></a>' +
-                            '<a href="#" class="link-danger fs-base delete-btn"><i class="ri-delete-bin-fill"></i></a>' +
-                            '</div>' +
-                            '</td>' +
-                            '</tr>';
-                        $('#category-table-body').append(row);
-                    });
-
-
-                    updatePaginationCount(totalItems);
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error fetching data:', error);
-                }
-            });
-        }
-
-        function updatePaginationCount(totalItems) {
-            const totalPages = Math.ceil(totalItems / pageSize);
-            $('#pagination-count').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
-
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-        }
-
-        $(document).on('click', '.edit-btn', function () {
-            var row = $(this).closest('tr');
-            var connectId = row.find('td:eq(9)').text().trim();
-            var connectType = row.find('td:eq(1)').text().trim();
-            var connectName = row.find('td:eq(2)').text().trim();
-            var connectEmail = row.find('td:eq(3)').text().trim();
-            var connectMobile = row.find('td:eq(4)').text().trim();
-            var connectAddress = row.find('td:eq(5)').text().trim();
-            var connectCity = row.find('td:eq(6)').text().trim();
-            var connectCountry = row.find('td:eq(7)').text().trim();
-            var connectPostCode = row.find('td:eq(8)').text().trim();
-
-
-            console.log('connect ID:', connectId)
-            console.log('Connect Type', connectType, connectName, connectEmail, connectMobile, connectAddress)
-            // Populate modal with connect data
-            $('#editConnectId').val(connectId);
-            $('#editConnectType').val(connectType);
-            $('#editConnectName').val(connectName);
-            $('#editConnectEmail').val(connectEmail);
-            $('#editConnectMobile').val(connectMobile);
-            $('#editConnectAddress').val(connectAddress);
-            $('#editConnectCity').val(connectCity);
-            $('#editConnectCountry').val(connectCountry);
-            $('#editConnectPostCode').val(connectPostCode);
-
-            // Show edit modal
-            $('#editConnectModal').modal('show');
-        });
-
-        $(document).on('click', '#saveChangesBtn', function () {
-            updateConnectInDatabase();
-        });
-
-        function updateConnectInDatabase() {
-            var connectId = $('#editConnectId').val();
-            var connectType = $('#editConnectType').val().trim();
-            var connectName = $('#editConnectName').val().trim();
-            var connectEmail = $('#editConnectEmail').val().trim();
-            var connectMobile = $('#editConnectMobile').val().trim();
-            var connectAddress = $('#editConnectAddress').val().trim();
-            var connectCity = $('#editConnectCity').val().trim();
-            var connectCountry = $('#editConnectCountry').val().trim();
-            var connectPostCode = $('#editConnectPostCode').val().trim();
-
-            var formData = {
-                'type': connectType,
-                'name': connectName,
-                'email': connectEmail,
-                'mobile': connectMobile,
-                'address': connectAddress,
-                'city': connectCity,
-                'country': connectCountry,
-                'post_code': connectPostCode
-            };
-
-            var csrftoken = getCookie('csrftoken');
-
-            $.ajax({
-                url: '/update_connect/' + connectId + '/',
-                type: 'POST',
-                data: JSON.stringify(formData),
-                contentType: 'application/json',
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                },
-                success: function (response) {
-                    console.log(response);
-                    $('#editConnectModal').modal('hide');
-                    fetchConnectList();
-
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error updating connect:', error);
-                }
-            });
-        }
-
-
-
-        $(document).on('click', '.delete-btn', function () {
-            var row = $(this).closest('tr');
-            var ConnectID = row.find('td:eq(9)').text().trim();
-
-            if (confirm('Are you sure you want to delete this contact?')) {
-                var csrftoken = getCookie('csrftoken');
-
-                $.ajax({
-                    url: '/delete_connect/' + ConnectID + '/',
-                    type: 'POST',
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                    },
-                    success: function (response) {
-                        console.log(response);
-
-                        fetchConnectList();
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error deleting subcategory:', error);
-                    }
-                });
-            }
-        });
-
-        function getCookie(name) {
-            var cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
-        $(document).ready(function () {
-            fetchConnectList();
-
-            $('#prev-page-btn').click(function () {
-                if (currentPage > 1) {
-                    currentPage--;
-                    fetchConnectList();
-                }
-            });
-
-            $('#next-page-btn').click(function () {
-                const totalPages = Math.ceil(totalItems / pageSize);
-
-                if (currentPage < totalPages) {
-                    currentPage++;
-
-                    fetchConnectList();
-                }
-            });
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-            var companyFields = document.getElementById("companyFields");
-            var individualFields = document.getElementById("individualFields");
-            var venueFields = document.getElementById("venueFields");
-
-            function toggleFields() {
-                if (document.getElementById("customRadioBox7").checked) {
-                    companyFields.style.display = "block";
-                    individualFields.style.display = "none";
-                    venueFields.style.display = "none";
-                    clientFields.style.display = "none";
-                } else if (document.getElementById("customRadioBox8").checked) {
-                    companyFields.style.display = "none";
-                    individualFields.style.display = "block";
-                    venueFields.style.display = "none";
-                    clientFields.style.display = "none";
-                } else if (document.getElementById("customRadioBox9").checked) {
-                    companyFields.style.display = "none";
-                    individualFields.style.display = "none";
-                    venueFields.style.display = "block";
-                    clientFields.style.display = "none";
-                } else if (document.getElementById("customRadioBox10").checked) {
-                    companyFields.style.display = "none";
-                    individualFields.style.display = "none";
-                    venueFields.style.display = "none";
-                    clientFields.style.display = "block";
-                }
-            }
-
-            document.getElementById("customRadioBox7").addEventListener("change", toggleFields);
-            document.getElementById("customRadioBox8").addEventListener("change", toggleFields);
-            document.getElementById("customRadioBox9").addEventListener("change", toggleFields);
-            toggleFields();
-        });
-        $.ajax({
-            url: '/company_dropdown_view/',
-            type: 'GET',
-            success: function (data) {
-                $('#Selectcompany').empty();
-                $('#Selectcompany').append($('<option></option>').attr('value', '').text('Select Company'));
-                $.each(data, function (index, category) {
-                    $('#Selectcompany').append('<option value="' + category.company_name + '">' + category.company_name + '</option>');
-                });
-            },
-            error: function (xhr, status, error) {
-                console.error('Error fetching data:', error);
-            }
-        })
-
-        $(document).on('click', '#closeFormBtn', function () {
-            $('#editConnectModal').modal('hide');
-        });
-
-    </script>
-
-
     <body data-typography="poppins" data-theme-version="light" data-layout="vertical" data-nav-headerbg="black"
           data-headerbg="color_1">
 
-    <!--*******************
-        Preloader start
-    ********************-->
+    <!-- Preloader start -->
     <div id="preloader">
         <div class="lds-ripple">
             <div></div>
             <div></div>
         </div>
     </div>
-    <!--*******************
-        Preloader end
-    ********************-->
+    <!-- Preloader end -->
 
-    <!--**********************************
-        Main wrapper start
-    ***********************************-->
+    <!-- Main wrapper start -->
     <div id="main-wrapper">
-        <!--**********************************
-            Nav header start
-        ***********************************-->
+        <!-- Nav header start -->
         {% include 'product_tracking/navheader.html' %}
-        <!--**********************************
-            Nav header end
-        ***********************************-->
+        <!-- Nav header end -->
 
-        <!--**********************************
-            Chat box start
-        ***********************************-->
-
-        <!--**********************************
-            Chat box End
-        ***********************************-->
-
-        <!--**********************************
-            Header start
-        ***********************************-->
+        <!-- Header start -->
         {% include 'product_tracking/header.html' %}
-        <!--**********************************
-            Header end ti-comment-alt
-        ***********************************-->
+        <!-- Header end -->
 
-        <!--**********************************
-            Sidebar start
-        ***********************************-->
+        <!-- Sidebar start -->
         {% include 'product_tracking/sidebar.html' %}
-        <!--**********************************
-            Sidebar end
-        ***********************************-->
+        <!-- Sidebar end -->
 
-        <!--**********************************
-            Content body start
-        ***********************************-->
+        <!-- Content body start -->
         <div class="content-body">
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-xl-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title mb-0">Contact List </h4>
-                                <div>
-                                    <a class="btn btn-primary btn-sm me-1" data-bs-toggle="offcanvas"
-                                       href="#offcanvasExample" role="button" aria-controls="offcanvasExample">+ Add
-                                        Contacts</a>
-                                </div>
-                            </div><!-- end card header -->
-
+                    <div class="col-12">
+                        <div class="card h-auto">
                             <div class="card-body">
-                                <div class="table-responsive table-card">
-                                    <table class="table primary-table-bordered"
-                                           id="contact-table">
-                                        <thead class="thead-primary" style="text-align: center;">
-                                        <tr>
-                                            <th scope="col">SR NO</th>
-                                            <th scope="col">Type</th>
-                                            <th scope="col">Name</th>
-                                            <th scope="col">Email</th>
-                                            <th scope="col">Phone</th>
-                                            <th scope="col">Address</th>
-                                            <th scope="col">City</th>
-                                            <th scope="col">Country</th>
-                                            <th scope="col">PostCode</th>
-                                            <th scope="col" style="width: 150px;">Action</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody id="category-table-body" style="text-align: center;">
+                                <ul class="nav nav-tabs custom-tab" id="contactTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link active" id="company-tab" data-bs-toggle="tab"
+                                           href="#company" role="tab" aria-controls="company"
+                                           aria-selected="true">Company</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" id="venue-tab" data-bs-toggle="tab"
+                                           href="#venue" role="tab" aria-controls="venue"
+                                           aria-selected="false">Venue</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link" id="individual-tab" data-bs-toggle="tab"
+                                           href="#individual" role="tab" aria-controls="individual"
+                                           aria-selected="false">Individual</a>
+                                    </li>
+                                </ul>
 
-                                        </tbody>
-                                    </table>
+                                <!-- Search bar -->
+                                <div class="row my-3">
+                                    <div class="col-md-6">
+                                        <input type="text" id="search-input" class="form-control"
+                                               placeholder="Search...">
+                                    </div>
                                 </div>
-                            </div><!-- end card-body -->
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
-                                <div style="padding-bottom: 10px;margin: 5px;">
-                                    <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>
-                                    <button id="next-page-btn" class="btn btn-primary">Next</button>
+
+                                <div class="tab-content p-3 border border-top-0 rounded-bottom"
+                                     id="contactTabContent">
+                                    <!-- Company Tab Content -->
+                                    <div class="tab-pane fade show active" id="company" role="tabpanel"
+                                         aria-labelledby="company-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-responsive-sm">
+                                                <thead>
+                                                <tr>
+                                                    <th><span class="plus-icon" id="addCompanyRow">+</span></th>
+                                                    <th>Company Name</th>
+                                                    <th>GST No</th>
+                                                    <th>PAN No</th>
+                                                    <th>Email</th>
+                                                    <th>Office Address</th>
+                                                    <th>Billing Address</th>
+                                                    <th>Country</th>
+                                                    <th>State</th>
+                                                    <th>City</th>
+                                                    <th>Postcode</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="company-table-body">
+                                                <!-- Company rows will be appended here by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Venue Tab Content -->
+                                    <div class="tab-pane fade" id="venue" role="tabpanel" aria-labelledby="venue-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-responsive-sm">
+                                                <thead>
+                                                <tr>
+                                                    <th><span class="plus-icon" id="addVenueRow">+</span></th>
+                                                    <th>Venue Name</th>
+                                                    <th>Venue Address</th>
+                                                    <th>Country</th>
+                                                    <th>State</th>
+                                                    <th>City</th>
+                                                    <th>Postcode</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="venue-table-body">
+                                                <!-- Venue rows will be appended here by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Individual Tab Content -->
+                                    <div class="tab-pane fade" id="individual" role="tabpanel"
+                                         aria-labelledby="individual-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-responsive-sm">
+                                                <thead>
+                                                <tr>
+                                                    <th><span class="plus-icon" id="addIndividualRow">+</span></th>
+                                                    <th>Name</th>
+                                                    <th>Mobile No</th>
+                                                    <th>Social No</th>
+                                                    <th>Email</th>
+                                                    <th>Company</th>
+                                                    <th>Address</th>
+                                                    <th>Country</th>
+                                                    <th>State</th>
+                                                    <th>City</th>
+                                                    <th>Postcode</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody id="individual-table-body">
+                                                <!-- Individual rows will be appended here by JavaScript -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div><!-- end card -->
-                    </div><!-- end col -->
-                </div><!-- end row -->
+                        </div>
+                    </div> <!-- End of outer column -->
+                </div> <!-- End of outer row -->
             </div>
         </div>
+        <!-- Content body end -->
 
-        <!--**********************************
-            Content body end
-        ***********************************-->
-        <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample">
-            <div class="offcanvas-header">
-                <h5 class="modal-title" id="#gridSystemModal">Add Contacts</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div class="offcanvas-body">
-                <div class="container-fluid">
-                    <form action="{% url 'add_connects' %}" method="post">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-xl-12 mb-3">
-                                <div class="form-check custom-checkbox form-check-inline">
-                                    <input type="radio" class="form-check-input" id="customRadioBox7" name="type"
-                                           value="Company" checked>
-                                    <label class="form-check-label" for="customRadioBox7">Company</label>
-                                </div>
-                                <div class="form-check custom-checkbox form-check-inline">
-                                    <input type="radio" class="form-check-input" id="customRadioBox8" name="type"
-                                           value="Individual">
-                                    <label class="form-check-label" for="customRadioBox8">Individual</label>
-                                </div>
-                                <div class="form-check custom-checkbox form-check-inline">
-                                    <input type="radio" class="form-check-input" id="customRadioBox9" name="type"
-                                           value="Venue" checked>
-                                    <label class="form-check-label" for="customRadioBox9">Venue</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="companyFields" style="display: none;">
-                            <div class="row">
-                                <div class="col-xl-6 mb-3">
-                                    <label for="companyName" class="form-label">Company Name<span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="companyName" name="company_name">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="gstNo" class="form-label">GST NO<span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="gstNo" name="gst_no" placeholder="">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="panNo" class="form-label">PAN NO<span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="panNo" name="pan_no">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="personName" class="form-label">Contact Person Name<span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="personName" name="person_name">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="personNo" class="form-label">Contact Person No<span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="personNo" name="person_no">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="contactEmail" class="form-label">Email Id<span
-                                            class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" id="contactEmail" name="contact_email">
-                                </div>
-                                <div class="col-xl-12 mb-3">
-                                    <label for="billingAddress" class="form-label">Billing Address<span
-                                            class="text-danger">*</span></label>
-                                    <textarea rows="2" class="form-control" id="billingAddress"
-                                              name="billing_address"></textarea>
-                                </div>
-                                <div class="col-xl-12 mb-3">
-                                    <label for="officeAddress" class="form-label">Office Address<span
-                                            class="text-danger">*</span></label>
-                                    <textarea rows="2" class="form-control" id="officeAddress"
-                                              name="office_address"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="individualFields" style="display: none;">
-                            <div class="row">
-                                <div class="col-xl-6 mb-3">
-                                    <label for="name" class="form-label">Name<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="name" name="name">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="mobileNo" class="form-label">Mobile No<span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="mobileNo" name="mobile_no"
-                                           placeholder="">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="socialNo" class="form-label">Social No<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="socialNo" name="social_no"
-                                           placeholder="">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="email2" class="form-label">Email Id<span
-                                            class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" id="email2" name="email">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="company" class="form-label">Company<span
-                                            class="text-danger">*</span></label>
-                                    <select class="default-select form-control" name="company" id="Selectcompany">
-                                        <option value="" selected>Select Company</option>
-                                        {% for company in companies %}
-                                            <option value="{{ company.id }}">{{ company.company_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="address" class="form-label">Address<span
-                                            class="text-danger">*</span></label>
-                                    <textarea rows="2" class="form-control" id="address" name="address"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="venueFields" style="display: none;">
-                            <div class="row">
-                                <div class="col-xl-6 mb-3">
-                                    <label for="venueName" class="form-label">Name<span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="venueName" name="venue_name">
-                                </div>
-                                <div class="col-xl-6 mb-3">
-                                    <label for="venueAddress" class="form-label">Address<span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="venueAddress" name="venue_address"
-                                           placeholder="">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-xl-6 mb-3">
-                                <label class="form-label">Country<span class="text-danger">*</span></label>
-                                <select class="default-select form-control" name="country">
-                                    <option value="">Please select</option>
-                                    <option value="India">Ind</option>
-                                    <option value="USA">USA</option>
-                                    <option value="UK">UK</option>
-                                </select>
-                            </div>
-                            <div class="col-xl-6 mb-3">
-                                <label for="city" class="form-label">City<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="city" name="city">
-                            </div>
-                            <div class="col-xl-6 mb-3">
-                                <label for="postCode" class="form-label">Post Code<span
-                                        class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="postCode" name="post_code">
-                            </div>
-                            <div class="col-xl-6 mb-3">
-                                <label class="form-label">Status<span class="text-danger">*</span></label>
-                                <select class="default-select form-control" name="status">
-                                    <option value="Active" data-display="Select">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary me-1" type="submit">Submit</button>
-                            <button type="button" class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-
-        <!--************************
-            Update Form
-        *************************-->
-
-        <div class="modal fade" id="editConnectModal" tabindex="-1" role="dialog"
-             aria-labelledby="editConnectModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editConnectModalLabel">Edit Contact List</h5>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Category Model Form -->
-                        <form id="editCategoryForm">
-                            <div class="row">
-                                <input type="hidden" id="editConnectId">
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectType">Type</label>
-                                    <input type="text" class="form-control" id="editConnectType" name="employeeName">
-                                </div>
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectName" class="form-label">Name</label>
-                                    <input type="text" class="form-control" id="editConnectName" name="employeeName">
-
-                                </div>
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectEmail" class="form-label">Email</label>
-                                    <input type="text" class="form-control" id="editConnectEmail" name="categoryType">
-                                </div>
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectMobile" class="form-label">Mobile</label>
-                                    <input type="text" class="form-control" id="editConnectMobile" name="categoryType">
-                                </div>
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectAddress" class="form-label">Address</label>
-                                    <input type="text" class="form-control" id="editConnectAddress" name="categoryType">
-                                </div>
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectCity" class="form-label">City</label>
-                                    <input type="text" class="form-control" id="editConnectCity" name="categoryType">
-                                </div>
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectCountry" class="form-label">Country</label>
-                                    <input type="text" class="form-control" id="editConnectCountry" name="categoryType">
-                                </div>
-                                <div class="col-xl-3 mb-3">
-                                    <label for="editConnectPostCode" class="form-label">PostCode</label>
-                                    <input type="text" class="form-control" id="editConnectPostCode"
-                                           name="categoryType">
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="closeFormBtn">Close</button>
-                        <button type="button" class="btn btn-primary" id="saveChangesBtn">Save changes</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--**********************************
-            Footer start
-        ***********************************-->
+        <!-- Footer start -->
         {% include 'product_tracking/footer.html' %}
-        <!--**********************************
-            Footer end
-        ***********************************-->
-
-        <!--**********************************
-           Support ticket button start
-        ***********************************-->
-
-        <!--**********************************
-           Support ticket button end
-        ***********************************-->
-
-
+        <!-- Footer end -->
     </div>
-    <!--**********************************
-        Main wrapper end
-    ***********************************-->
+    <!-- Main wrapper end -->
 
-    <!--**********************************
-        Scripts
-    ***********************************-->
+    <!-- Scripts -->
+    <script>
 
+        $(document).ready(function () {
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
 
+            $('#search-input').on('input', function () {
+                let searchTerm = $(this).val().toLowerCase();
+
+                $('#company-table-body tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
+                });
+
+                $('#venue-table-body tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
+                });
+
+                $('#individual-table-body tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
+                });
+            });
+
+            // Add a new row to Company, Venue, or Individual table
+            $('#addCompanyRow, #addVenueRow, #addIndividualRow').on('click', function () {
+                const type = $(this).attr('id').replace('add', '').replace('Row', '').toLowerCase();
+                let newRow = '';
+
+                if (type === 'company') {
+                    newRow = `
+                        <tr>
+                            <td>
+                                <button class="btn btn-sm btn-primary save-btn-company me-2"><i class="fa fa-save"></i></button>
+                                <button class="btn btn-sm btn-danger delete-row"><i class="fa fa-trash"></i></button>
+                            </td>
+                            <td><input type="text" class="form-control company-name" placeholder="Company Name" name="company_name"></td>
+                            <td><input type="text" class="form-control gst-no" placeholder="GST No" name="gst_no"></td>
+                            <td><input type="text" class="form-control pan-no" placeholder="PAN No" name="pan_no"></td>
+                            <td><input type="email" class="form-control company-email" placeholder="Email" name="company_email"></td>
+                            <td><input type="text" class="form-control office-address" placeholder="Office Address" name="office_address"></td>
+                            <td><input type="text" class="form-control billing-address" placeholder="Billing Address" name="billing_address"></td>
+                           <td>
+                                <select class="form-control country">
+                                    <option value="India" selected>India</option>
+                                </select>
+                            </td>
+                           <td>
+                                <select class="form-control state">
+                                    <option value="">Please select</option>
+                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                    <option value="Assam">Assam</option>
+                                    <option value="Bihar">Bihar</option>
+                                    <option value="Chhattisgarh">Chhattisgarh</option>
+                                    <option value="Goa">Goa</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Haryana">Haryana</option>
+                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                    <option value="Jharkhand">Jharkhand</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Kerala">Kerala</option>
+                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Manipur">Manipur</option>
+                                    <option value="Meghalaya">Meghalaya</option>
+                                    <option value="Mizoram">Mizoram</option>
+                                    <option value="Nagaland">Nagaland</option>
+                                    <option value="Odisha">Odisha</option>
+                                    <option value="Punjab">Punjab</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                    <option value="Sikkim">Sikkim</option>
+                                    <option value="Tamil Nadu">Tamil Nadu</option>
+                                    <option value="Telangana">Telangana</option>
+                                    <option value="Tripura">Tripura</option>
+                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                    <option value="Uttarakhand">Uttarakhand</option>
+                                    <option value="West Bengal">West Bengal</option>
+                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                    <option value="Chandigarh">Chandigarh</option>
+                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                    <option value="Lakshadweep">Lakshadweep</option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Puducherry">Puducherry</option>
+                                    <option value="Ladakh">Ladakh</option>
+                                    <option value="Jammu & Kashmir">Jammu & Kashmir</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control city" placeholder="City"></td>
+                            <td><input type="text" class="form-control post-code" placeholder="Postcode"></td>
+                        </tr>`;
+                    $('#company-table-body').prepend(newRow);
+                } else if (type === 'venue') {
+                    newRow = `
+                        <tr>
+                            <td>
+                                <button class="btn btn-sm btn-primary save-btn-venue me-2"><i class="fa fa-save"></i></button>
+                                <button class="btn btn-sm btn-danger delete-row1"><i class="fa fa-trash"></i></button>
+                            </td>
+                            <td><input type="text" class="form-control venue-name" placeholder="Venue Name"></td>
+                            <td><input type="text" class="form-control venue-address" placeholder="Venue Address"></td>
+                            <td><input type="text" class="form-control venue-country" placeholder="Country"></td>
+                            <td>
+                                <select class="form-control venue-state">
+                                    <option value="">Please select</option>
+                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                    <option value="Assam">Assam</option>
+                                    <option value="Bihar">Bihar</option>
+                                    <option value="Chhattisgarh">Chhattisgarh</option>
+                                    <option value="Goa">Goa</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Haryana">Haryana</option>
+                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                    <option value="Jharkhand">Jharkhand</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Kerala">Kerala</option>
+                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Manipur">Manipur</option>
+                                    <option value="Meghalaya">Meghalaya</option>
+                                    <option value="Mizoram">Mizoram</option>
+                                    <option value="Nagaland">Nagaland</option>
+                                    <option value="Odisha">Odisha</option>
+                                    <option value="Punjab">Punjab</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                    <option value="Sikkim">Sikkim</option>
+                                    <option value="Tamil Nadu">Tamil Nadu</option>
+                                    <option value="Telangana">Telangana</option>
+                                    <option value="Tripura">Tripura</option>
+                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                    <option value="Uttarakhand">Uttarakhand</option>
+                                    <option value="West Bengal">West Bengal</option>
+                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                    <option value="Chandigarh">Chandigarh</option>
+                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                    <option value="Lakshadweep">Lakshadweep</option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Puducherry">Puducherry</option>
+                                    <option value="Ladakh">Ladakh</option>
+                                    <option value="Jammu & Kashmir">Jammu & Kashmir</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control venue-city" placeholder="City"></td>
+                            <td><input type="text" class="form-control venue-postcode" placeholder="Postcode"></td>
+                        </tr>`;
+                    $('#venue-table-body').prepend(newRow);
+                } else if (type === 'individual') {
+                    newRow = `
+                        <tr>
+                            <td>
+                                <button class="btn btn-sm btn-primary save-btn-individual me-2"><i class="fa fa-save"></i></button>
+                                <button class="btn btn-sm btn-danger delete-row2"><i class="fa fa-trash"></i></button>
+                            </td>
+                            <td><input type="text" class="form-control individual-name" placeholder="Name"></td>
+                            <td><input type="text" class="form-control individual-mobile" placeholder="Mobile No"></td>
+                            <td><input type="text" class="form-control individual-social" placeholder="Social No"></td>
+                            <td><input type="email" class="form-control individual-email" placeholder="Email"></td>
+                            <td>
+                                <select class="form-control individual-company">
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control individual-address" placeholder="Address"></td>
+                            <td><input type="text" class="form-control individual-country" placeholder="Country"></td>
+                            <td>
+                                <select class="form-control individual-state">
+                                    <option value="">Please select</option>
+                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                    <option value="Assam">Assam</option>
+                                    <option value="Bihar">Bihar</option>
+                                    <option value="Chhattisgarh">Chhattisgarh</option>
+                                    <option value="Goa">Goa</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Haryana">Haryana</option>
+                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                    <option value="Jharkhand">Jharkhand</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Kerala">Kerala</option>
+                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Manipur">Manipur</option>
+                                    <option value="Meghalaya">Meghalaya</option>
+                                    <option value="Mizoram">Mizoram</option>
+                                    <option value="Nagaland">Nagaland</option>
+                                    <option value="Odisha">Odisha</option>
+                                    <option value="Punjab">Punjab</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                    <option value="Sikkim">Sikkim</option>
+                                    <option value="Tamil Nadu">Tamil Nadu</option>
+                                    <option value="Telangana">Telangana</option>
+                                    <option value="Tripura">Tripura</option>
+                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                    <option value="Uttarakhand">Uttarakhand</option>
+                                    <option value="West Bengal">West Bengal</option>
+                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                    <option value="Chandigarh">Chandigarh</option>
+                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                    <option value="Lakshadweep">Lakshadweep</option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Puducherry">Puducherry</option>
+                                    <option value="Ladakh">Ladakh</option>
+                                    <option value="Jammu & Kashmir">Jammu & Kashmir</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control individual-city" placeholder="City"></td>
+                            <td><input type="text" class="form-control individual-postcode" placeholder="Postcode"></td>
+                        </tr>`;
+                    $('#individual-table-body').prepend(newRow);
+
+                    fetchCompanyNames();
+                }
+            });
+
+            // Save Company, Venue or Individual Row
+            $(document).on('click', '.save-btn-company, .save-btn-venue, .save-btn-individual', function () {
+                let data = {};
+                const row = $(this).closest('tr');  // Find the closest table row
+
+                if ($(this).hasClass('save-btn-company')) {
+                    data = {
+                        type: 'company',
+                        company_name: row.find('.company-name').val(),
+                        gst_no: row.find('.gst-no').val(),
+                        pan_no: row.find('.pan-no').val(),
+                        company_email: row.find('.company-email').val(),
+                        office_address: row.find('.office-address').val(),
+                        billing_address: row.find('.billing-address').val(),
+                        country: row.find('.country').val(),
+                        state: row.find('.state').val(),
+                        city: row.find('.city').val(),
+                        post_code: row.find('.post-code').val(),
+                    };
+                } else if ($(this).hasClass('save-btn-venue')) {
+                    data = {
+                        type: 'venue',
+                        venue_name: row.find('.venue-name').val(),
+                        venue_address: row.find('.venue-address').val(),
+                        venue_country: row.find('.venue-country').val(),
+                        venue_state: row.find('.venue-state').val(),
+                        venue_city: row.find('.venue-city').val(),
+                        venue_postcode: row.find('.venue-postcode').val(),
+                    };
+                } else if ($(this).hasClass('save-btn-individual')) {
+                    data = {
+                        type: 'individual',
+                        individual_name: row.find('.individual-name').val(),
+                        individual_mobile: row.find('.individual-mobile').val(),
+                        individual_social: row.find('.individual-social').val(),
+                        individual_email: row.find('.individual-email').val(),
+                        individual_company: row.find('.individual-company').val(),
+                        individual_address: row.find('.individual-address').val(),
+                        individual_country: row.find('.individual-country').val(),
+                        individual_state: row.find('.individual-state').val(),
+                        individual_city: row.find('.individual-city').val(),
+                        individual_postcode: row.find('.individual-postcode').val(),
+                    };
+                }
+
+                $.ajax({
+                    url: '/add_row/',
+                    type: 'POST',
+                    data: data,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}' // Add this line to include CSRF token
+                    },
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            alert('Data saved successfully!');
+                            location.reload();
+                            // Optionally, you can remove the save button or make the row read-only after saving
+                            row.find('.save-btn-company, .save-btn-venue, .save-btn-individual').remove();
+                            // You could also disable the input fields here if needed
+                        } else {
+                            alert('Failed to save data: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error: ' + error);
+                    }
+                });
+            });
+
+            // Fetch data on page load
+            fetchCompanyData();
+            fetchVenueData();
+            fetchIndividualData();
+
+            function fetchCompanyData() {
+                $.ajax({
+                    url: '{% url "fetch_company_data" %}',
+                    type: 'GET',
+                    success: function (data) {
+                        $('#company-table-body').empty();
+                        $.each(data, function (index, item) {
+                            $('#company-table-body').append(
+                                `<tr data-id="${item.id}">
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-btn me-2"><i class="fa fa-pencil"></i></button>
+                            <button class="btn btn-sm btn-success save-btn me-2" style="display:none;"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-sm btn-secondary cancel-company-btn me-2" style="display:none;"><i class="fa fa-times"></i></button>
+                            <button class="btn btn-sm btn-danger delete-btn me-2"><i class="fa fa-trash"></i></button>
+                        </td>
+                        <td class="company-name-cell"><span class="company-name-text">${item.company_name}</span>
+                            <input type="text" class="form-control company-name" value="${item.company_name}" style="display:none;">
+                        </td>
+                        <td class="gst-no-cell"><span class="gst-no-text">${item.gst_no}</span>
+                            <input type="text" class="form-control gst-no" value="${item.gst_no}" style="display:none;">
+                        </td>
+                        <td class="pan-no-cell"><span class="pan-no-text">${item.pan_no}</span>
+                            <input type="text" class="form-control pan-no" value="${item.pan_no}" style="display:none;">
+                        </td>
+                        <td class="company-email-cell"><span class="company-email-text">${item.company_email}</span>
+                            <input type="text" class="form-control company-email" value="${item.company_email}" style="display:none;">
+                        </td>
+                        <td class="office-address-cell"><span class="office-address-text">${item.office_address}</span>
+                            <input type="text" class="form-control office-address" value="${item.office_address}" style="display:none;">
+                        </td>
+                        <td class="billing-address-cell"><span class="billing-address-text">${item.billing_address}</span>
+                            <input type="text" class="form-control billing-address" value="${item.billing_address}" style="display:none;">
+                        </td>
+                        <td class="country-cell"><span class="country-text">${item.country}</span>
+                            <input type="text" class="form-control country" value="${item.country}" style="display:none;">
+                        </td>
+                        <td class="state-cell"><span class="state-text">${item.state}</span>
+                            <input type="text" class="form-control state" value="${item.state}" style="display:none;">
+                        </td>
+                        <td class="city-cell"><span class="city-text">${item.city}</span>
+                            <input type="text" class="form-control city" value="${item.city}" style="display:none;">
+                        </td>
+                        <td class="post-code-cell"><span class="post-code-text">${item.post_code}</span>
+                            <input type="text" class="form-control post-code" value="${item.post_code}" style="display:none;">
+                        </td>
+                    </tr>`
+                            );
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                    }
+                });
+            }
+
+            // Function to fetch and populate venue data
+            function fetchVenueData() {
+                $.ajax({
+                    url: '{% url "fetch_venue_data" %}',
+                    type: 'GET',
+                    success: function (data) {
+                        $('#venue-table-body').empty();
+                        $.each(data, function (index, item) {
+                            $('#venue-table-body').append(
+                                `<tr data-id="${item.id}">
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-venue-btn me-2"><i class="fa fa-pencil"></i></button>
+                            <button class="btn btn-sm btn-success save-venue-btn me-2" style="display:none;"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-sm btn-secondary cancel-venue-btn me-2" style="display:none;"><i class="fa fa-times"></i></button>
+                            <button class="btn btn-sm btn-danger delete-btn me-2"><i class="fa fa-trash"></i></button>
+                        </td>
+                        <td class="venue-name-cell"><span class="venue-name-text">${item.venue_name}</span>
+                            <input type="text" class="form-control venue-name" value="${item.venue_name}" style="display:none;">
+                        </td>
+                        <td class="venue-address-cell"><span class="venue-address-text">${item.venue_address}</span>
+                            <input type="text" class="form-control venue-address" value="${item.venue_address}" style="display:none;">
+                        </td>
+                        <td class="country-cell"><span class="country-text">${item.country}</span>
+                            <input type="text" class="form-control country" value="${item.country}" style="display:none;">
+                        </td>
+                        <td class="state-cell"><span class="state-text">${item.state}</span>
+                            <input type="text" class="form-control state" value="${item.state}" style="display:none;">
+                        </td>
+                        <td class="city-cell"><span class="city-text">${item.city}</span>
+                            <input type="text" class="form-control city" value="${item.city}" style="display:none;">
+                        </td>
+                        <td class="post-code-cell"><span class="post-code-text">${item.post_code}</span>
+                            <input type="text" class="form-control post-code" value="${item.post_code}" style="display:none;">
+                        </td>
+                    </tr>`
+                            );
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                    }
+                });
+            }
+
+            // Function to fetch and populate venue data
+            function fetchCompanyNames() {
+                $.ajax({
+                    url: '{% url "fetch_company_names" %}',
+                    success: function (data) {
+                        const dropdown = $('.individual-company'); // Select the dropdown element
+
+                        // Clear existing options
+                        dropdown.empty();
+
+                        // Populate the dropdown with new options
+                        $.each(data, function (index, item) {
+                            dropdown.append(`<option value="${item.company_name}">${item.company_name}</option>`);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching company names:', error);
+                    }
+                });
+            }
+
+            // Function to fetch and populate individual data
+            function fetchIndividualData() {
+                $.ajax({
+                    url: '{% url "fetch_individual_data" %}',
+                    type: 'GET',
+                    success: function (data) {
+                        $('#individual-table-body').empty();
+                        $.each(data, function (index, item) {
+                            $('#individual-table-body').append(
+                                `<tr data-id="${item.id}">
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-individual-btn me-2"><i class="fa fa-pencil"></i></button>
+                            <button class="btn btn-sm btn-success save-individual-btn me-2" style="display:none;"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-sm btn-secondary cancel-individual-btn me-2" style="display:none;"><i class="fa fa-times"></i></button>
+                            <button class="btn btn-sm btn-danger delete-btn me-2"><i class="fa fa-trash"></i></button>
+                        </td>
+                        <td class="individual-name-cell"><span class="individual-name-text">${item.individual_name}</span>
+                            <input type="text" class="form-control individual-name" value="${item.individual_name}" style="display:none;">
+                        </td>
+                        <td class="mobile-no-cell"><span class="mobile-no-text">${item.mobile_no}</span>
+                            <input type="text" class="form-control mobile-no" value="${item.mobile_no}" style="display:none;">
+                        </td>
+                        <td class="social-no-cell"><span class="social-no-text">${item.social_no}</span>
+                            <input type="text" class="form-control social-no" value="${item.social_no}" style="display:none;">
+                        </td>
+                        <td class="individual-email-cell"><span class="individual-email-text">${item.individual_email}</span>
+                            <input type="text" class="form-control individual-email" value="${item.individual_email}" style="display:none;">
+                        </td>
+                        <td class="company-cell"><span class="company-text">${item.company}</span>
+                            <input type="text" class="form-control company" value="${item.company}" style="display:none;">
+                        </td>
+                        <td class="individual-address-cell"><span class="individual-address-text">${item.individual_address}</span>
+                            <input type="text" class="form-control individual-address" value="${item.individual_address}" style="display:none;">
+                        </td>
+                        <td class="country-cell"><span class="country-text">${item.country}</span>
+                            <input type="text" class="form-control country" value="${item.country}" style="display:none;">
+                        </td>
+                        <td class="state-cell"><span class="state-text">${item.state}</span>
+                            <input type="text" class="form-control state" value="${item.state}" style="display:none;">
+                        </td>
+                        <td class="city-cell"><span class="city-text">${item.city}</span>
+                            <input type="text" class="form-control city" value="${item.city}" style="display:none;">
+                        </td>
+                        <td class="post-code-cell"><span class="post-code-text">${item.post_code}</span>
+                            <input type="text" class="form-control post-code" value="${item.post_code}" style="display:none;">
+                        </td>
+                    </tr>`
+                            );
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                    }
+                });
+            }
+
+            $(document).on('click', '.edit-btn', function () {
+                const row = $(this).closest('tr');
+                row.find('input').show();
+                row.find('span').hide();
+                row.find('.edit-btn, .delete-btn').hide();
+                row.find('.save-btn, .cancel-company-btn').show();
+            });
+
+            $(document).on('click', '.save-btn', function () {
+                const row = $(this).closest('tr');
+                const id = row.data('id');
+                const data = {
+                    company_name: row.find('.company-name').val(),
+                    gst_no: row.find('.gst-no').val(),
+                    pan_no: row.find('.pan-no').val(),
+                    company_email: row.find('.company-email').val(),
+                    office_address: row.find('.office-address').val(),
+                    billing_address: row.find('.billing-address').val(),
+                    country: row.find('.country').val(),
+                    state: row.find('.state').val(),
+                    city: row.find('.city').val(),
+                    post_code: row.find('.post-code').val(),
+                };
+
+                $.ajax({
+                    url: '{% url "update_company_data" %}',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        ...data,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        row.find('input').hide();
+                        row.find('span').show().each(function () {
+                            const span = $(this);
+                            const input = span.siblings('input');
+                            span.text(input.val());
+                        });
+                        row.find('.edit-btn, .delete-btn').show();
+                        row.find('.save-btn, .cancel-company-btn').hide();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error updating data:', error);
+                    }
+                });
+            });
+
+            $(document).on('click', '.cancel-company-btn, .cancel-venue-btn', function () {
+                const row = $(this).closest('tr');
+                row.find('input').hide();
+                row.find('span').show();
+                row.find('.edit-btn, .delete-btn').show();
+                row.find('.save-btn, .cancel-company-btn').hide();
+            });
+
+            // Handle edit button click
+            $(document).on('click', '.edit-venue-btn', function () {
+                const row = $(this).closest('tr');
+                row.find('input').show();
+                row.find('span').hide();
+                row.find('.edit-venue-btn, .delete-btn').hide();
+                row.find('.save-venue-btn, .cancel-venue-btn').show();
+            });
+
+            // Handle save button click
+            $(document).on('click', '.save-venue-btn', function () {
+                const row = $(this).closest('tr');
+                const id = row.data('id');
+                const data = {
+                    venue_name: row.find('.venue-name').val(),
+                    venue_address: row.find('.venue-address').val(),
+                    country: row.find('.country').val(),
+                    state: row.find('.state').val(),
+                    city: row.find('.city').val(),
+                    post_code: row.find('.post-code').val(),
+                };
+
+                $.ajax({
+                    url: '{% url "update_venue_data" %}',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        ...data,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        row.find('input').hide();
+                        row.find('span').show().each(function () {
+                            const span = $(this);
+                            const input = span.siblings('input');
+                            span.text(input.val());
+                        });
+                        row.find('.edit-venue-btn, .delete-btn').show();
+                        row.find('.save-venue-btn, .cancel-venue-btn').hide();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error updating data:', error);
+                    }
+                });
+            });
+
+            // Handle cancel button click
+            $(document).on('click', '.cancel-venue-btn', function () {
+                const row = $(this).closest('tr');
+                row.find('input').hide();
+                row.find('span').show();
+                row.find('.edit-venue-btn, .delete-btn').show();
+                row.find('.save-venue-btn, .cancel-venue-btn').hide();
+            });
+
+            // Handle edit button click
+            $(document).on('click', '.edit-individual-btn', function () {
+                const row = $(this).closest('tr');
+                row.find('input').show();
+                row.find('span').hide();
+                row.find('.edit-individual-btn, .delete-btn').hide();
+                row.find('.save-individual-btn, .cancel-individual-btn').show();
+            });
+
+            // Handle save button click
+            $(document).on('click', '.save-individual-btn', function () {
+                const row = $(this).closest('tr');
+                const id = row.data('id');
+                const data = {
+                    individual_name: row.find('.individual-name').val(),
+                    mobile_no: row.find('.mobile-no').val(),
+                    social_no: row.find('.social-no').val(),
+                    individual_email: row.find('.individual-email').val(),
+                    company: row.find('.company').val(),
+                    individual_address: row.find('.individual-address').val(),
+                    country: row.find('.country').val(),
+                    state: row.find('.state').val(),
+                    city: row.find('.city').val(),
+                    post_code: row.find('.post-code').val(),
+                };
+
+                $.ajax({
+                    url: '{% url "update_individual_data" %}',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        ...data,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        row.find('input').hide();
+                        row.find('span').show().each(function () {
+                            const span = $(this);
+                            const input = span.siblings('input');
+                            span.text(input.val());
+                        });
+                        row.find('.edit-individual-btn, .delete-btn').show();
+                        row.find('.save-individual-btn, .cancel-individual-btn').hide();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error updating data:', error);
+                    }
+                });
+            });
+
+            // Handle cancel button click
+            $(document).on('click', '.cancel-individual-btn', function () {
+                const row = $(this).closest('tr');
+                row.find('input').hide();
+                row.find('span').show();
+                row.find('.edit-individual-btn, .delete-btn').show();
+                row.find('.save-individual-btn, .cancel-individual-btn').hide();
+            });
+
+            // Function to delete an item (company, venue, or individual)
+            $(document).on('click', '.delete-btn', function () {
+                const row = $(this).closest('tr');
+                const id = row.data('id');
+                console.log('click row ID:', id)
+                //const type = $(this).data('type'); /console.log('Clicked row TYPE:', type)
+                if (confirm(`Are you sure you want to delete this row?`)) {
+                    $.ajax({
+                        url: '{% url "delete_data" %}',
+                        type: 'POST',
+                        data: {
+                            'id': id,
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'
+                        },
+                        success: function (response) {
+                            if (response.status === 'success') {
+                                row.remove(); // Remove the row from the table
+                            } else {
+                                alert('Error: ' + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error deleting data:', error);
+                            alert('An error occurred while deleting the data.');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
     </body>
-
 {% endblock %}
