@@ -4099,3 +4099,268 @@ def fetch_all_subcategories(request):
 
     return JsonResponse(subcategory_list, safe=False)
 
+def add_row(request):
+    username = request.session.get('username')
+    if request.method == 'POST':
+        row_type = request.POST.get('type')
+        cursor = connection.cursor()
+
+        try:
+            with transaction.atomic():
+                created_by = request.session.get('user_id')
+                created_date = datetime.now()
+
+                if row_type == 'company':
+                    company_name = request.POST.get('company_name')
+                    gst_no = request.POST.get('gst_no')
+                    pan_no = request.POST.get('pan_no')
+                    company_email = request.POST.get('company_email')
+                    office_address = request.POST.get('office_address')
+                    billing_address = request.POST.get('billing_address')
+                    country = request.POST.get('country')
+                    state = request.POST.get('state')
+                    city = request.POST.get('city')
+                    post_code = request.POST.get('post_code')
+
+                    if not all([company_name, gst_no, pan_no, company_email, office_address]):
+                        return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+
+                    query = "SELECT add_company(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    cursor.execute(query, (
+                        row_type, company_name, gst_no, pan_no, company_email, office_address, billing_address, country,
+                        state, city, post_code, created_by, created_date))
+
+                elif row_type == 'venue':
+                    venue_name = request.POST.get('venue_name')
+                    venue_address = request.POST.get('venue_address')
+                    venue_country = request.POST.get('venue_country')
+                    venue_state = request.POST.get('venue_state')
+                    venue_city = request.POST.get('venue_city')
+                    venue_postcode = request.POST.get('venue_postcode')
+
+                    if not all([venue_name, venue_address]):
+                        return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+
+                    query = "SELECT add_venue(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    cursor.execute(query, (
+                        row_type, venue_name, venue_address, venue_country, venue_state, venue_city, venue_postcode,
+                        created_by, created_date))
+
+                elif row_type == 'individual':
+                    individual_name = request.POST.get('individual_name')
+                    individual_mobile = request.POST.get('individual_mobile')
+                    individual_social = request.POST.get('individual_social')
+                    individual_email = request.POST.get('individual_email')
+                    individual_company = request.POST.get('individual_company')
+                    individual_address = request.POST.get('individual_address')
+                    individual_country = request.POST.get('individual_country')
+                    individual_state = request.POST.get('individual_state')
+                    individual_city = request.POST.get('individual_city')
+                    individual_postcode = request.POST.get('individual_postcode')
+
+                    if not all([individual_name, individual_mobile, individual_email]):
+                        return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+
+                    query = "SELECT add_individual(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    cursor.execute(query, (
+                        row_type, individual_name, individual_mobile, individual_social, individual_email,
+                        individual_company, individual_address, individual_country, individual_state, individual_city,
+                        individual_postcode, created_by, created_date))
+
+                else:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid type'})
+
+            return JsonResponse(
+                {'status': 'success', 'message': f'{row_type.capitalize()} added successfully', 'username': username})
+
+        except DatabaseError as e:
+            return JsonResponse({'status': 'error', 'message': f'Database error: {str(e)}'})
+
+        finally:
+            cursor.close()
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+def fetch_company_data(request):
+    if request.method == 'GET':
+        cursor = connection.cursor()
+        cursor.callproc('fetch_company_data')
+        rows = cursor.fetchall()
+        cursor.close()
+
+        data = []
+        for row in rows:
+            data.append({
+                'id': row[0],
+                'company_name': row[1],
+                'gst_no': row[2],
+                'pan_no': row[3],
+                'company_email': row[4],
+                'office_address': row[5],
+                'billing_address': row[6],
+                'country': row[7],
+                'state': row[8],
+                'city': row[9],
+                'post_code': row[10],
+            })
+
+        return JsonResponse(data, safe=False)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+def fetch_venue_data(request):
+    if request.method == 'GET':
+        cursor = connection.cursor()
+        cursor.callproc('fetch_venue_data')
+        rows = cursor.fetchall()
+        cursor.close()
+
+        data = []
+        for row in rows:
+            data.append({
+                'id': row[0],
+                'venue_name': row[1],
+                'venue_address': row[2],
+                'country': row[3],
+                'state': row[4],
+                'city': row[5],
+                'post_code': row[6],
+            })
+
+        return JsonResponse(data, safe=False)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+def fetch_company_names(request):
+    if request.method == 'GET':
+        try:
+            with connection.cursor() as cursor:
+                # Execute SQL to fetch company names
+                cursor.execute('SELECT id, company_name FROM public.connects WHERE type = %s', ['company'])
+                rows = cursor.fetchall()
+
+                # Convert fetched data to a list of dictionaries
+                companies = [{'id': row[0], 'company_name': row[1]} for row in rows]
+                print('Fetch the company_name:', companies)
+
+            return JsonResponse(companies, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+def fetch_individual_data(request):
+    if request.method == 'GET':
+        cursor = connection.cursor()
+        cursor.callproc('fetch_individual_data')
+        rows = cursor.fetchall()
+        cursor.close()
+
+        data = []
+        for row in rows:
+            data.append({
+                'id': row[0],
+                'individual_name': row[1],
+                'mobile_no': row[2],
+                'social_no': row[3],
+                'individual_email': row[4],
+                'company': row[5],
+                'individual_address': row[6],
+                'country': row[7],
+                'state': row[8],
+                'city': row[9],
+                'post_code': row[10],
+            })
+
+        return JsonResponse(data, safe=False)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@csrf_exempt
+def delete_data(request):
+    if request.method == 'POST':
+        item_id = request.POST.get('id')
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute('DELETE FROM public.connects WHERE id = %s', [item_id])
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+def update_company_data(request):
+    if request.method == 'POST':
+        data = request.POST
+        id = data.get('id')
+        company_name = data.get('company_name')
+        gst_no = data.get('gst_no')
+        pan_no = data.get('pan_no')
+        company_email = data.get('company_email')
+        office_address = data.get('office_address')
+        billing_address = data.get('billing_address')
+        country = data.get('country')
+        state = data.get('state')
+        city = data.get('city')
+        post_code = data.get('post_code')
+
+        with connection.cursor() as cursor:
+            cursor.callproc('update_company_data_func', [
+                id, company_name, gst_no, pan_no, company_email,
+                office_address, billing_address, country, state, city, post_code
+            ])
+
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+@csrf_exempt
+def update_individual_data(request):
+    if request.method == 'POST':
+        id = request.POST.get('id')
+        individual_name = request.POST.get('individual_name')
+        mobile_no = request.POST.get('mobile_no')
+        social_no = request.POST.get('social_no')
+        individual_email = request.POST.get('individual_email')
+        company = request.POST.get('company')
+        individual_address = request.POST.get('individual_address')
+        country = request.POST.get('country')
+        state = request.POST.get('state')
+        city = request.POST.get('city')
+        post_code = request.POST.get('post_code')
+
+        with connection.cursor() as cursor:
+            cursor.callproc('update_individual_data_func', [
+                id, individual_name, mobile_no, social_no, individual_email,
+                company, individual_address, country, state, city, post_code
+            ])
+
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+
+
+@csrf_exempt
+def update_venue_data(request):
+    if request.method == 'POST':
+        id = request.POST.get('id')
+        venue_name = request.POST.get('venue_name')
+        venue_address = request.POST.get('venue_address')
+        country = request.POST.get('country')
+        state = request.POST.get('state')
+        city = request.POST.get('city')
+        post_code = request.POST.get('post_code')
+
+        with connection.cursor() as cursor:
+            cursor.callproc('update_venue_data_func', [
+                id, venue_name, venue_address, country, state, city, post_code
+            ])
+
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

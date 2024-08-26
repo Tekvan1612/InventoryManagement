@@ -150,4 +150,14 @@ urlpatterns = [
                        name='get_equipment_details'),
                   path('get_serial_details/<int:equipment_id>/', views.get_serial_details, name='get_serial_details'),
                   path('get_stock_details/<int:equipment_id>/', views.get_stock_details, name='get_stock_details'),
+                  path('add_row/', views.add_row, name='add_row'),
+                  path('fetch_company_data/', views.fetch_company_data, name='fetch_company_data'),
+                  path('fetch_venue_data/', views.fetch_venue_data, name='fetch_venue_data'),
+                  path('fetch_individual_data/', views.fetch_individual_data, name='fetch_individual_data'),
+                  path('fetch_company_names/', views.fetch_company_names, name='fetch_company_names'),
+                  path('delete_data/', views.delete_data, name='delete_data'),
+                  path('update_company_data/', views.update_company_data, name='update_company_data'),
+                  path('update-venue-data/', views.update_venue_data, name='update_venue_data'),
+                  path('update-individual-data/', views.update_individual_data, name='update_individual_data'),
+
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
