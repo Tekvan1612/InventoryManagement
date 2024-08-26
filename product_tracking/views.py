@@ -3402,7 +3402,12 @@ def submit_equipment(request):
             volume = request.POST.get('volume')
             hsn_no = int(request.POST.get('hsn_no'))  # Cast to integer
             country_origin = request.POST.get('country_origin')
-            created_by = 1  # Assuming `created_by` is 1
+
+            # Retrieve `created_by` from session
+            created_by = request.session.get('user_id')  # Assuming user_id is stored in the session
+
+            if not created_by:
+                return JsonResponse({'status': 'error', 'message': 'User not authenticated. Please log in.'}, status=403)
 
             # Check if equipment name already exists
             with connection.cursor() as cursor:
@@ -3443,7 +3448,6 @@ def submit_equipment(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
-
 
 
 def fetch_equipment_list(request):
