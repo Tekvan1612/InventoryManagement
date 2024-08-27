@@ -3400,7 +3400,7 @@ def submit_equipment(request):
             dimension_l = request.POST.get('dimension_l')
             weight = request.POST.get('weight')
             volume = request.POST.get('volume')
-            hsn_no = int(request.POST.get('hsn_no'))  # Cast to integer
+            hsn_no = request.POST.get('hsn_no')  # Handle as a string, not an integer
             country_origin = request.POST.get('country_origin')
 
             # Retrieve `created_by` from session
@@ -3430,14 +3430,27 @@ def submit_equipment(request):
             while len(image_urls) < 3:
                 image_urls.append(None)
 
+            # Ensure numeric fields are properly cast
+            dimension_h = float(dimension_h) if dimension_h else None
+            dimension_w = float(dimension_w) if dimension_w else None
+            dimension_l = float(dimension_l) if dimension_l else None
+            weight = float(weight) if weight else None
+            volume = float(volume) if volume else None
+
             # Call the PostgreSQL function to insert equipment and attachments
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT insert_equipment_with_attachments(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    SELECT insert_equipment_with_attachments(
+                        %s::varchar, %s::varchar, %s::varchar, 
+                        %s::numeric, %s::numeric, %s::numeric, 
+                        %s::numeric, %s::numeric, %s::varchar, 
+                        %s::varchar, %s::int, %s::varchar, 
+                        %s::varchar, %s::varchar)
                 """, [
-                    equipment_name, equipment_SubCategory, category_type, dimension_h, dimension_w, dimension_l,
-                    weight, volume, hsn_no, country_origin, created_by,
-                    image_urls[0], image_urls[1], image_urls[2]
+                    equipment_name, equipment_SubCategory, category_type,
+                    dimension_h, dimension_w, dimension_l,
+                    weight, volume, hsn_no, country_origin,
+                    created_by, image_urls[0], image_urls[1], image_urls[2]
                 ])
                 equipment_list_id = cursor.fetchone()[0]
 
@@ -3448,6 +3461,7 @@ def submit_equipment(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
 
 
 def fetch_equipment_list(request):
