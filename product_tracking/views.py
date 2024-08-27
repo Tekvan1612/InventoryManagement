@@ -3420,15 +3420,20 @@ def submit_equipment(request):
                 return JsonResponse({'status': 'error', 'message': 'Equipment name already exists. Please choose a different name.'}, status=400)
 
             # Handle file uploads to Cloudinary
+            # Handle file uploads to Cloudinary
             image_urls = []
             for field_name in ['image1[]', 'image2[]', 'image3[]']:
                 for image in request.FILES.getlist(field_name):
                     if image:
                         result = cloudinary.uploader.upload(image)
                         image_urls.append(result['secure_url'])
+                        print(f"Uploaded {field_name} to Cloudinary: {result['secure_url']}")
 
             while len(image_urls) < 3:
                 image_urls.append(None)
+
+            # Log the image URLs to ensure they are captured correctly
+            print("Image URLs to be inserted:", image_urls)
 
             # Ensure numeric fields are properly cast
             dimension_h = float(dimension_h) if dimension_h else None
