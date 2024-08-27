@@ -49,12 +49,19 @@
 
 
 <script>
-		jQuery(document).ready(function(){
-			setTimeout(function(){
-				dzSettingsOptions.version = 'dark';
-				new dzSettings(dzSettingsOptions);
-			},100)
-		});
-	</script>
+    jQuery(document).ready(function(){
+        setTimeout(function(){
+            dzSettingsOptions.version = 'dark';
+            new dzSettings(dzSettingsOptions);
+        }, 100);
+
+        // Ensure the theme is applied after everything else
+        $(window).on('load', function() {
+            dzSettingsOptions.version = 'dark';
+            new dzSettings(dzSettingsOptions);
+        });
+    });
+</script>
+
 
 
