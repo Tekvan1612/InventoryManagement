@@ -1048,39 +1048,45 @@ $(document).on('click', '.edit-equipment-btn', function() {
     });
 });
 
-    $(document).on('click', '#saveEditStockChanges', function(e) {
-        e.preventDefault();
+$(document).on('click', '#saveEditStockChanges', function(e) {
+    e.preventDefault();
 
-        var formData = new FormData($('#stockEditDetailsForm')[0]);
-        var equipmentId = $('#equipmentIdInput').val();
-        var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+    var formData = new FormData($('#stockEditDetailsForm')[0]);
+    var equipmentId = $('#equipmentIdInput').val();
+    var csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
 
-        formData.append('equipmentId', equipmentId);
+    formData.append('equipmentId', equipmentId);
 
-        $.ajax({
-            url: '/insert_stock_details/',
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken
-            },
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if (response.success) {
-                    alert('Stock details updated successfully.');
-                    $('#categoryEditModal').modal('hide');
-                    location.reload();
-                } else {
-                    alert('Failed to update stock details. Please try again.');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error inserting stock details:', error);
-                alert('An error occurred while inserting stock details. Please try again.');
+    $.ajax({
+        url: '/insert_stock_details/',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                alert('Stock details updated successfully.');
+                $('#categoryEditModal').modal('hide');
+                location.reload();
+            } else {
+                alert('Failed to update stock details: ' + response.message);
             }
-        });
+        },
+        error: function(xhr, status, error) {
+            console.error('Error inserting stock details:', error);
+            try {
+                var response = JSON.parse(xhr.responseText);
+                alert('An error occurred: ' + response.error);
+            } catch (e) {
+                alert('An unknown error occurred. Please try again.');
+            }
+        }
     });
+});
+
 
     $("#generalInformationEditForm").submit(function(event) {
         event.preventDefault();

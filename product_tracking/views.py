@@ -3721,32 +3721,18 @@ def insert_stock_details(request):
             serial_numbers = []
             barcode_numbers = []
 
-            # Loop through POST data to find serial numbers and barcode numbers
             for key in request.POST:
                 if key.startswith('serialNumber'):
                     serial_numbers.append(request.POST[key])
                 if key.startswith('barcodeNumber'):
                     barcode_numbers.append(request.POST[key])
 
-            # Convert attachment to file path or save it if needed
             attachment_path = None
             if attachment:
                 attachment_path = f'media/uploads/{attachment.name}'
                 with open(attachment_path, 'wb+') as destination:
                     for chunk in attachment.chunks():
                         destination.write(chunk)
-
-            # Log the values for debugging
-            print(f"Equipment ID: {equipment_id}")
-            print(f"Vendor Name: {vendor_name}")
-            print(f"Purchase Date: {purchase_date}")
-            print(f"Unit Price: {unit_price}")
-            print(f"Rental Price: {rental_price}")
-            print(f"Reference No: {reference_no}")
-            print(f"Attachment Path: {attachment_path}")
-            print(f"Unit: {unit}")
-            print(f"Serial Numbers: {serial_numbers}")
-            print(f"Barcode Numbers: {barcode_numbers}")
 
             # Call the PostgreSQL function
             with connection.cursor() as cursor:
@@ -3762,11 +3748,10 @@ def insert_stock_details(request):
                 return JsonResponse({'success': False, 'message': result})
 
         except Exception as e:
-            # Log the error for debugging
-            print("Error:", str(e))
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
 
 def equipment_by_category(request):
     category_id = request.GET.get('category_id')
