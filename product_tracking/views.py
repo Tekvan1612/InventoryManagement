@@ -3618,7 +3618,7 @@ def update_equipment(request):
 
             # Extract form data
             equipment_name = request.POST.get('equipmentName')
-            sub_category_name = request.POST.get('subCategoryName')  # Changed to subCategoryName
+            sub_category_name = request.POST.get('subCategoryName')
             category_type = request.POST.get('categoryType')
             dimension_height = request.POST.get('dimension_h')
             dimension_width = request.POST.get('dimension_w')
@@ -3641,47 +3641,44 @@ def update_equipment(request):
             image2 = request.FILES.get('image2')
             image3 = request.FILES.get('image3')
 
-            # Fetch sub_category_id from sub_category table
+            # Save the attachments if provided
+            attachment_path = None
+            if attachment:
+                attachment_path = f'media/uploads/{attachment.name}'
+                with open(attachment_path, 'wb+') as destination:
+                    for chunk in attachment.chunks():
+                        destination.write(chunk)
+
+            # Handle image uploads (using Cloudinary or similar)
+            image_urls = [None, None, None]
+            if image1:
+                result = cloudinary.uploader.upload(image1)
+                image_urls[0] = result['secure_url']
+            if image2:
+                result = cloudinary.uploader.upload(image2)
+                image_urls[1] = result['secure_url']
+            if image3:
+                result = cloudinary.uploader.upload(image3)
+                image_urls[2] = result['secure_url']
+
+            # Call the combined PostgreSQL function to update all tables
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT id
-                    FROM public.sub_category
-                    WHERE name = %s
-                """, [sub_category_name])
-                result = cursor.fetchone()
-
-                if result:
-                    sub_category_id = result[0]
-                else:
-                    return JsonResponse({'success': False, 'error': 'Subcategory not found'})
-
-                # Update `equipment_list` table
-                cursor.execute("""
-                    SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, [equipment_name, sub_category_id, category_type, dimension_height, dimension_width,
-                      dimension_length, weight, volume, hsn_no, country_origin, equipment_id])
-
-                # Update `stock_details` table
-                cursor.execute("""
-                    SELECT update_stock_details_func(%s, %s, %s, %s, %s, %s, %s)
-                """, [vender_name, purchase_date, unit_price, rental_price, reference_no, quantity, equipment_id])
-
-                # Update `equipment_list_attachments` table if images are provided
-                if image1 or image2 or image3:
-                    image1_url = cloudinary.uploader.upload(image1)['secure_url'] if image1 else None
-                    image2_url = cloudinary.uploader.upload(image2)['secure_url'] if image2 else None
-                    image3_url = cloudinary.uploader.upload(image3)['secure_url'] if image3 else None
-
-                    cursor.execute("""
-                        SELECT update_equipment_list_attachments_func(%s, %s, %s, %s)
-                    """, [equipment_id, image1_url, image2_url, image3_url])
+                    SELECT update_all_equipment_details_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, [
+                    equipment_id, equipment_name, sub_category_name, category_type,
+                    dimension_height, dimension_width, dimension_length,
+                    weight, volume, hsn_no, country_origin, vender_name,
+                    purchase_date, unit_price, rental_price, reference_no,
+                    attachment_path, quantity, image_urls[0], image_urls[1], image_urls[2]
+                ])
 
             return JsonResponse({'success': True})
+
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
 
 
 @csrf_exempt
