@@ -19,6 +19,9 @@ from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
 from datetime import datetime
 from django.utils import timezone
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 logger = logging.getLogger(__name__)
 
