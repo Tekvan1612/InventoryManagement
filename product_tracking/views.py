@@ -3664,7 +3664,8 @@ def update_equipment(request):
             # Call the combined PostgreSQL function to update all tables
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT update_all_equipment_details_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    SELECT update_all_equipment_details_func(
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, [
                     equipment_id, equipment_name, sub_category_name, category_type,
                     dimension_height, dimension_width, dimension_length,
@@ -3679,6 +3680,7 @@ def update_equipment(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 
 @csrf_exempt
