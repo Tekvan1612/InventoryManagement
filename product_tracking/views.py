@@ -3628,7 +3628,7 @@ def update_equipment(request):
             hsn_no = request.POST.get('hsn_no')
             country_origin = request.POST.get('country_origin')
 
-            vender_name = request.POST.get('vendor_name')
+            vendor_name = request.POST.get('vendor_name')
             purchase_date = request.POST.get('purchase_date')
             unit_price = request.POST.get('unit_price')
             rental_price = request.POST.get('rental_price')
@@ -3644,15 +3644,20 @@ def update_equipment(request):
                     result = cloudinary.uploader.upload(image)
                     image_urls[i] = result['secure_url']
 
+            # Ensure the number of arguments matches the placeholders
+            params = [
+                equipment_id, equipment_name, sub_category_name, category_type,
+                dimension_height, dimension_width, dimension_length, weight,
+                volume, hsn_no, country_origin, vendor_name, purchase_date,
+                unit_price, rental_price, reference_no, quantity,
+                image_urls[0], image_urls[1], image_urls[2]
+            ]
+
             # Call the PostgreSQL function to update equipment and attachments
             with connection.cursor() as cursor:
                 cursor.execute("""
                     SELECT public.update_equipment_with_attachments(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, [
-                    equipment_id, equipment_name, sub_category_name, category_type, dimension_height, dimension_width,
-                    dimension_length, weight, volume, hsn_no, country_origin, vender_name, purchase_date, unit_price,
-                    rental_price, reference_no, quantity, image_urls[0], image_urls[1], image_urls[2]
-                ])
+                """, params)
 
             return JsonResponse({'success': True})
         except Exception as e:

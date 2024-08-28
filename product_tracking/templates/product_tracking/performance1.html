@@ -1089,33 +1089,36 @@ $(document).on('click', '#saveEditStockChanges', function(e) {
 
 
 
-    $("#generalInformationEditForm").submit(function(event) {
-        event.preventDefault();
+$("#generalInformationEditForm").submit(function(event) {
+    event.preventDefault();
 
-        var formData = new FormData(this);
-        var equipmentId = $("#equipmentIdInput").val();
+    var formData = new FormData(this);
+    var equipmentId = $("#equipmentIdInput").val();
 
-        formData.append("equipmentId", equipmentId);
+    formData.append("equipmentId", equipmentId);
 
-        $.ajax({
-            url: '/update_equipment/',
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function(response) {
-                if (response.success) {
-                    alert("Equipment updated successfully!");
-                    $('#categoryEditModal').modal('hide');
-                } else {
-                    alert("Error updating equipment: " + response.error);
-                }
-            },
-            error: function(xhr, status, error) {
-                alert("An error occurred: " + error);
+    $.ajax({
+        url: '/update_equipment/',
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(response) {
+            console.log("Server response: ", response);  // Added logging for debugging
+            if (response.success) {
+                alert("Equipment updated successfully!");
+                $('#categoryEditModal').modal('hide');
+            } else {
+                alert("Error updating equipment: " + response.error);
             }
-        });
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX error: ", xhr.responseText);  // Added logging for debugging
+            alert("An error occurred: " + error);
+        }
     });
+});
+
 
     $(window).on('resize', function() {
         adjustModalContent();
