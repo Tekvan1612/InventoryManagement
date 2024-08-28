@@ -3736,6 +3736,18 @@ def insert_stock_details(request):
                     for chunk in attachment.chunks():
                         destination.write(chunk)
 
+            # Log the values for debugging
+            print(f"Equipment ID: {equipment_id}")
+            print(f"Vendor Name: {vendor_name}")
+            print(f"Purchase Date: {purchase_date}")
+            print(f"Unit Price: {unit_price}")
+            print(f"Rental Price: {rental_price}")
+            print(f"Reference No: {reference_no}")
+            print(f"Attachment Path: {attachment_path}")
+            print(f"Unit: {unit}")
+            print(f"Serial Numbers: {serial_numbers}")
+            print(f"Barcode Numbers: {barcode_numbers}")
+
             # Call the PostgreSQL function
             with connection.cursor() as cursor:
                 cursor.callproc('insert_stock_details_func', [
@@ -3750,6 +3762,8 @@ def insert_stock_details(request):
                 return JsonResponse({'success': False, 'message': result})
 
         except Exception as e:
+            # Log the error for debugging
+            print("Error:", str(e))
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
