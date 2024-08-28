@@ -3745,12 +3745,13 @@ def insert_stock_details(request):
             if 'successfully' in result:
                 return JsonResponse({'success': True, 'message': result})
             else:
-                return JsonResponse({'success': False, 'message': result})
+                return JsonResponse({'success': False, 'message': 'Error in processing stock details'})
 
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+
 
 
 def equipment_by_category(request):
