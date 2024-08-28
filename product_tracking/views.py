@@ -3620,10 +3620,10 @@ def update_equipment(request):
 
             if 'equipmentName' in request.POST:
                 # Handle equipment details update
-                return update_equipment_details(request, equipment_id)
+                return update_equipment_details(request, int(equipment_id))  # Ensure equipment_id is an integer
             elif 'vendor_name' in request.POST:
                 # Handle stock details update
-                return update_stock_details(request, equipment_id)
+                return update_stock_details(request, int(equipment_id))  # Ensure equipment_id is an integer
             else:
                 return JsonResponse({'success': False, 'error': 'Unknown update type'})
 
@@ -3665,22 +3665,21 @@ def update_equipment_details(request, equipment_id):
             image_urls[2] = result['secure_url']
 
         with connection.cursor() as cursor:
-            # Fetch sub_category_id
-            cursor.execute("""
-                SELECT id FROM public.sub_category WHERE name = %s
-            """, [sub_category_name])
-            sub_category_id = cursor.fetchone()
-
-            if not sub_category_id:
-                return JsonResponse({'success': False, 'error': 'Subcategory not found'})
-
-            # Update `equipment_list` table
+            # Call the PostgreSQL function to update the equipment details
             cursor.execute("""
                 SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, [
-                equipment_id, equipment_name, sub_category_id[0], category_type,
-                dimension_height, dimension_width, dimension_length, weight,
-                volume, hsn_no, country_origin
+                equipment_id,  # Integer
+                equipment_name,  # VARCHAR
+                sub_category_name,  # VARCHAR
+                category_type,  # VARCHAR
+                dimension_height,  # VARCHAR
+                dimension_width,  # VARCHAR
+                dimension_length,  # VARCHAR
+                weight,  # VARCHAR
+                volume,  # VARCHAR
+                hsn_no,  # VARCHAR
+                country_origin  # VARCHAR
             ])
 
             # Update `equipment_list_attachments` table if images are provided
@@ -3688,7 +3687,7 @@ def update_equipment_details(request, equipment_id):
                 SELECT update_equipment_attachments_func(%s, %s, %s, %s)
             """, [equipment_id, image_urls[0], image_urls[1], image_urls[2]])
 
-        return JsonResponse({'success': True, 'message': 'Equipment details updated successfully'})
+        return JsonResponse({'success': True})
 
     except Exception as e:
         print("Error during equipment update:", str(e))
@@ -3705,16 +3704,17 @@ def update_stock_details(request, equipment_id):
         quantity = request.POST.get('quantity')
 
         with connection.cursor() as cursor:
-            # Update `stock_details` table
+            # Call the PostgreSQL function to update the stock details
             cursor.execute("""
                 SELECT update_stock_details_func(%s, %s, %s, %s, %s, %s, %s)
             """, [equipment_id, vendor_name, purchase_date, unit_price, rental_price, reference_no, quantity])
 
-        return JsonResponse({'success': True, 'message': 'Stock details updated successfully'})
+        return JsonResponse({'success': True})
 
     except Exception as e:
         print("Error during stock details update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 
 @csrf_exempt
