@@ -3614,71 +3614,108 @@ def fetch_equipment_details(request):
 def update_equipment(request):
     if request.method == 'POST':
         try:
-            # Retrieve form data
-            equipment_id = int(request.POST.get('equipmentId'))
-            equipment_name = request.POST.get('equipmentName')
-            sub_category_name = request.POST.get('subCategoryName')
-            category_type = request.POST.get('categoryType')
-            dimension_height = request.POST.get('dimension_h') or None
-            dimension_width = request.POST.get('dimension_w') or None
-            dimension_length = request.POST.get('dimension_l') or None
-            weight = request.POST.get('weight') or None
-            volume = request.POST.get('volume') or None
-            hsn_no = request.POST.get('hsn_no') or None
-            country_origin = request.POST.get('country_origin') or None
+            equipment_id = request.POST.get('equipmentId')
+            if not equipment_id:
+                return JsonResponse({'success': False, 'error': 'Equipment ID is required'})
 
-            vendor_name = request.POST.get('vendor_name')
-            purchase_date = request.POST.get('purchase_date')
-            unit_price = float(request.POST.get('unit_price')) if request.POST.get('unit_price') else None
-            rental_price = float(request.POST.get('rental_price')) if request.POST.get('rental_price') else None
-            reference_no = request.POST.get('reference_no')
-            quantity = int(request.POST.get('quantity')) if request.POST.get('quantity') else None
-
-            # Handle file uploads
-            attachment = request.FILES.get('attachment')
-            image1 = request.FILES.get('image1')
-            image2 = request.FILES.get('image2')
-            image3 = request.FILES.get('image3')
-
-            # Handle file path for attachment
-            attachment_path = None
-            if attachment:
-                attachment_path = f'media/uploads/{attachment.name}'
-                with open(attachment_path, 'wb+') as destination:
-                    for chunk in attachment.chunks():
-                        destination.write(chunk)
-
-            # Handle image uploads (using Cloudinary or similar)
-            image_urls = [None, None, None]
-            if image1:
-                result = cloudinary.uploader.upload(image1)
-                image_urls[0] = result['secure_url']
-            if image2:
-                result = cloudinary.uploader.upload(image2)
-                image_urls[1] = result['secure_url']
-            if image3:
-                result = cloudinary.uploader.upload(image3)
-                image_urls[2] = result['secure_url']
-
-            # Call the combined PostgreSQL function to update all tables
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT update_all_equipment_details_func(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, [
-                    equipment_id, equipment_name, sub_category_name, category_type,
-                    dimension_height, dimension_width, dimension_length,
-                    weight, volume, hsn_no, country_origin, vendor_name,
-                    purchase_date, unit_price, rental_price, reference_no,
-                    attachment_path, quantity, image_urls[0], image_urls[1], image_urls[2]
-                ])
-
-            return JsonResponse({'success': True})
+            if 'equipmentName' in request.POST:
+                # Handle equipment details update
+                return update_equipment_details(request, equipment_id)
+            elif 'vendor_name' in request.POST:
+                # Handle stock details update
+                return update_stock_details(request, equipment_id)
+            else:
+                return JsonResponse({'success': False, 'error': 'Unknown update type'})
 
         except Exception as e:
+            print("Error during equipment update:", str(e))
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def update_equipment_details(request, equipment_id):
+    try:
+        # Extract form data
+        equipment_name = request.POST.get('equipmentName')
+        sub_category_name = request.POST.get('subCategoryName')
+        category_type = request.POST.get('categoryType')
+        dimension_height = request.POST.get('dimension_h')
+        dimension_width = request.POST.get('dimension_w')
+        dimension_length = request.POST.get('dimension_l')
+        weight = request.POST.get('weight')
+        volume = request.POST.get('volume')
+        hsn_no = request.POST.get('hsn_no')
+        country_origin = request.POST.get('country_origin')
+
+        # Handle file uploads
+        image1 = request.FILES.get('image1')
+        image2 = request.FILES.get('image2')
+        image3 = request.FILES.get('image3')
+
+        # Prepare image URLs
+        image_urls = [None, None, None]
+        if image1:
+            result = cloudinary.uploader.upload(image1)
+            image_urls[0] = result['secure_url']
+        if image2:
+            result = cloudinary.uploader.upload(image2)
+            image_urls[1] = result['secure_url']
+        if image3:
+            result = cloudinary.uploader.upload(image3)
+            image_urls[2] = result['secure_url']
+
+        with connection.cursor() as cursor:
+            # Fetch sub_category_id
+            cursor.execute("""
+                SELECT id FROM public.sub_category WHERE name = %s
+            """, [sub_category_name])
+            sub_category_id = cursor.fetchone()
+
+            if not sub_category_id:
+                return JsonResponse({'success': False, 'error': 'Subcategory not found'})
+
+            # Update `equipment_list` table
+            cursor.execute("""
+                SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, [
+                equipment_id, equipment_name, sub_category_id[0], category_type,
+                dimension_height, dimension_width, dimension_length, weight,
+                volume, hsn_no, country_origin
+            ])
+
+            # Update `equipment_list_attachments` table if images are provided
+            cursor.execute("""
+                SELECT update_equipment_attachments_func(%s, %s, %s, %s)
+            """, [equipment_id, image_urls[0], image_urls[1], image_urls[2]])
+
+        return JsonResponse({'success': True, 'message': 'Equipment details updated successfully'})
+
+    except Exception as e:
+        print("Error during equipment update:", str(e))
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def update_stock_details(request, equipment_id):
+    try:
+        # Extract stock details data
+        vendor_name = request.POST.get('vendor_name')
+        purchase_date = request.POST.get('purchase_date')
+        unit_price = request.POST.get('unit_price')
+        rental_price = request.POST.get('rental_price')
+        reference_no = request.POST.get('reference_no')
+        quantity = request.POST.get('quantity')
+
+        with connection.cursor() as cursor:
+            # Update `stock_details` table
+            cursor.execute("""
+                SELECT update_stock_details_func(%s, %s, %s, %s, %s, %s, %s)
+            """, [equipment_id, vendor_name, purchase_date, unit_price, rental_price, reference_no, quantity])
+
+        return JsonResponse({'success': True, 'message': 'Stock details updated successfully'})
+
+    except Exception as e:
+        print("Error during stock details update:", str(e))
+        return JsonResponse({'success': False, 'error': str(e)})
+
 
 @csrf_exempt
 def insert_stock_details(request):

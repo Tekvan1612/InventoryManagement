@@ -1104,20 +1104,20 @@ $("#generalInformationEditForm").submit(function(event) {
         contentType: false,
         processData: false,
         success: function(response) {
-            console.log("Server response: ", response);  // Added logging for debugging
             if (response.success) {
                 alert("Equipment updated successfully!");
                 $('#categoryEditModal').modal('hide');
+                location.reload(); // Reload page or update content dynamically
             } else {
                 alert("Error updating equipment: " + response.error);
             }
         },
         error: function(xhr, status, error) {
-            console.error("AJAX error: ", xhr.responseText);  // Added logging for debugging
             alert("An error occurred: " + error);
         }
     });
 });
+
 
 
     $(window).on('resize', function() {
