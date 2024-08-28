@@ -3614,26 +3614,25 @@ def fetch_equipment_details(request):
 def update_equipment(request):
     if request.method == 'POST':
         try:
-            equipment_id = request.POST.get('equipmentId')
-
-            # Extract form data
+            # Retrieve form data
+            equipment_id = int(request.POST.get('equipmentId'))
             equipment_name = request.POST.get('equipmentName')
             sub_category_name = request.POST.get('subCategoryName')
             category_type = request.POST.get('categoryType')
-            dimension_height = request.POST.get('dimension_h')
-            dimension_width = request.POST.get('dimension_w')
-            dimension_length = request.POST.get('dimension_l')
-            weight = request.POST.get('weight')
-            volume = request.POST.get('volume')
-            hsn_no = request.POST.get('hsn_no')
-            country_origin = request.POST.get('country_origin')
+            dimension_height = request.POST.get('dimension_h') or None
+            dimension_width = request.POST.get('dimension_w') or None
+            dimension_length = request.POST.get('dimension_l') or None
+            weight = request.POST.get('weight') or None
+            volume = request.POST.get('volume') or None
+            hsn_no = request.POST.get('hsn_no') or None
+            country_origin = request.POST.get('country_origin') or None
 
-            vender_name = request.POST.get('vendor_name')
+            vendor_name = request.POST.get('vendor_name')
             purchase_date = request.POST.get('purchase_date')
-            unit_price = request.POST.get('unit_price')
-            rental_price = request.POST.get('rental_price')
+            unit_price = float(request.POST.get('unit_price')) if request.POST.get('unit_price') else None
+            rental_price = float(request.POST.get('rental_price')) if request.POST.get('rental_price') else None
             reference_no = request.POST.get('reference_no')
-            quantity = request.POST.get('quantity')
+            quantity = int(request.POST.get('quantity')) if request.POST.get('quantity') else None
 
             # Handle file uploads
             attachment = request.FILES.get('attachment')
@@ -3641,7 +3640,7 @@ def update_equipment(request):
             image2 = request.FILES.get('image2')
             image3 = request.FILES.get('image3')
 
-            # Save the attachments if provided
+            # Handle file path for attachment
             attachment_path = None
             if attachment:
                 attachment_path = f'media/uploads/{attachment.name}'
@@ -3669,7 +3668,7 @@ def update_equipment(request):
                 """, [
                     equipment_id, equipment_name, sub_category_name, category_type,
                     dimension_height, dimension_width, dimension_length,
-                    weight, volume, hsn_no, country_origin, vender_name,
+                    weight, volume, hsn_no, country_origin, vendor_name,
                     purchase_date, unit_price, rental_price, reference_no,
                     attachment_path, quantity, image_urls[0], image_urls[1], image_urls[2]
                 ])
@@ -3680,8 +3679,6 @@ def update_equipment(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-
 
 @csrf_exempt
 def insert_stock_details(request):
@@ -3730,7 +3727,6 @@ def insert_stock_details(request):
             return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
-
 
 
 def equipment_by_category(request):
@@ -3820,7 +3816,6 @@ def get_equipment_details(request, equipment_id):
     except Exception as e:
         print(f"Error: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
-
 
 
 def get_serial_details(request, equipment_id):
