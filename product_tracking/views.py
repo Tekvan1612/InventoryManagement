@@ -3618,7 +3618,7 @@ def update_equipment(request):
 
             # Extract form data
             equipment_name = request.POST.get('equipmentName')
-            sub_category_name = request.POST.get('subCategoryName')  # Changed to subCategoryName
+            sub_category_name = request.POST.get('subCategoryName')
             category_type = request.POST.get('categoryType')
             dimension_height = request.POST.get('dimension_h')
             dimension_width = request.POST.get('dimension_w')
@@ -3627,7 +3627,6 @@ def update_equipment(request):
             volume = request.POST.get('volume')
             hsn_no = request.POST.get('hsn_no')
             country_origin = request.POST.get('country_origin')
-            print('Fetch the DATA:', equipment_name, sub_category_name, category_type)
 
             vender_name = request.POST.get('vendor_name')
             purchase_date = request.POST.get('purchase_date')
@@ -3635,67 +3634,25 @@ def update_equipment(request):
             rental_price = request.POST.get('rental_price')
             reference_no = request.POST.get('reference_no')
             quantity = request.POST.get('quantity')
-            print('Fetch the DATA of stock_details:', vender_name, purchase_date, unit_price, rental_price,
-                  reference_no, quantity)
 
-            # Handle file uploads
-            attachment = request.FILES.get('attachment')
-            image1 = request.FILES.get('image1')
-            image2 = request.FILES.get('image2')
-            image3 = request.FILES.get('image3')
+            # Handle file uploads and upload to Cloudinary
+            image_urls = [None, None, None]
+            images = [request.FILES.get('image1'), request.FILES.get('image2'), request.FILES.get('image3')]
 
-            # Fetch sub_category_id from sub_category table
+            for i, image in enumerate(images):
+                if image:
+                    result = cloudinary.uploader.upload(image)
+                    image_urls[i] = result['secure_url']
+
+            # Call the PostgreSQL function to update equipment and attachments
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT id
-                    FROM public.sub_category
-                    WHERE name = %s
-                """, [sub_category_name])
-                result = cursor.fetchone()
-
-                if result:
-                    sub_category_id = result[0]
-                else:
-                    return JsonResponse({'success': False, 'error': 'Subcategory not found'})
-
-                # Update `equipment_list` table
-                cursor.execute("""
-                    UPDATE public.equipment_list
-                    SET equipment_name = %s,
-                        sub_category_id = %s,
-                        category_type = %s,
-                        dimension_height = %s,
-                        dimension_width = %s,
-                        dimension_length = %s,
-                        weight = %s,
-                        volume = %s,
-                        hsn_no = %s,
-                        country_origin = %s
-                    WHERE id = %s
-                """, [equipment_name, sub_category_id, category_type, dimension_height, dimension_width,
-                      dimension_length, weight, volume, hsn_no, country_origin, equipment_id])
-
-                # Update `stock_details` table
-                cursor.execute("""
-                    UPDATE public.stock_details
-                    SET vender_name = %s,
-                        purchase_date = %s,
-                        unit_price = %s,
-                        rental_price = %s,
-                        reference_no = %s,
-                        unit = %s
-                    WHERE equipment_id = %s
-                """, [vender_name, purchase_date, unit_price, rental_price, reference_no, quantity, equipment_id])
-
-                # Update `equipment_list_attachments` table
-                if image1 or image2 or image3:
-                    cursor.execute("""
-                        UPDATE public.equipment_list_attachments
-                        SET image_1 = %s,
-                            image_2 = %s,
-                            image_3 = %s
-                        WHERE equipment_list_id = %s
-                    """, [image1, image2, image3, equipment_id])
+                    SELECT public.update_equipment_with_attachments(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, [
+                    equipment_id, equipment_name, sub_category_name, category_type, dimension_height, dimension_width,
+                    dimension_length, weight, volume, hsn_no, country_origin, vender_name, purchase_date, unit_price,
+                    rental_price, reference_no, quantity, image_urls[0], image_urls[1], image_urls[2]
+                ])
 
             return JsonResponse({'success': True})
         except Exception as e:
