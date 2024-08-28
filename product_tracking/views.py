@@ -3620,10 +3620,10 @@ def update_equipment(request):
 
             if 'equipmentName' in request.POST:
                 # Handle equipment details update
-                return update_equipment_details(request, int(equipment_id))  # Ensure equipment_id is an integer
+                return update_equipment_details(request, int(equipment_id))
             elif 'vendor_name' in request.POST:
                 # Handle stock details update
-                return update_stock_details(request, int(equipment_id))  # Ensure equipment_id is an integer
+                return update_stock_details(request, int(equipment_id))
             else:
                 return JsonResponse({'success': False, 'error': 'Unknown update type'})
 
@@ -3669,20 +3669,20 @@ def update_equipment_details(request, equipment_id):
             cursor.execute("""
                 SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, [
-                equipment_id,  # Integer
-                equipment_name,  # VARCHAR
-                sub_category_name,  # VARCHAR
-                category_type,  # VARCHAR
-                dimension_height,  # VARCHAR
-                dimension_width,  # VARCHAR
-                dimension_length,  # VARCHAR
-                weight,  # VARCHAR
-                volume,  # VARCHAR
-                hsn_no,  # VARCHAR
-                country_origin  # VARCHAR
+                equipment_id,
+                equipment_name,
+                sub_category_name,
+                category_type,
+                dimension_height,
+                dimension_width,
+                dimension_length,
+                weight,
+                volume,
+                hsn_no,
+                country_origin
             ])
 
-            # Update `equipment_list_attachments` table if images are provided
+            # Update `equipment_list_attachments` table with image URLs
             cursor.execute("""
                 SELECT update_equipment_attachments_func(%s, %s, %s, %s)
             """, [equipment_id, image_urls[0], image_urls[1], image_urls[2]])
@@ -3692,6 +3692,7 @@ def update_equipment_details(request, equipment_id):
     except Exception as e:
         print("Error during equipment update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 def update_stock_details(request, equipment_id):
     try:
