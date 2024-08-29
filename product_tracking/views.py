@@ -3665,77 +3665,68 @@ def update_equipment_details(request, equipment_id):
 
             sub_category_id = sub_category_id[0]  # Get the integer ID
 
-            # Fetch the current image URLs from the database to retain unchanged images
-            cursor.execute("""
-                SELECT image_1, image_2, image_3 FROM public.equipment_list_attachments WHERE equipment_list_id = %s
-            """, [equipment_id])
-            current_images = cursor.fetchone()
-
-            image1_url, image2_url, image3_url = current_images
-
             # Handle file uploads
-            image1_list = request.FILES.getlist('image1[]')
-            image2_list = request.FILES.getlist('image2[]')
-            image3_list = request.FILES.getlist('image3[]')
+            image1 = request.FILES.get('image1')
+            image2 = request.FILES.get('image2')
+            image3 = request.FILES.get('image3')
+            print("Files received:", request.FILES)
 
-            # Update image URLs if new images are uploaded
-            if image1_list:
+            # Prepare image URLs
+            image_urls = [None, None, None]
+            if image1:
                 try:
-                    result = cloudinary.uploader.upload(image1_list[0])
-                    image1_url = result.get('secure_url')
-                    print("Uploaded Image 1 URL:", image1_url)
+                    result = cloudinary.uploader.upload(image1)
+                    image_urls[0] = result.get('secure_url')
+                    print("Uploaded Image 1 URL:", image_urls[0])
                 except Exception as e:
                     print("Error uploading Image 1:", str(e))
 
-            if image2_list:
+            if image2:
                 try:
-                    result = cloudinary.uploader.upload(image2_list[0])
-                    image2_url = result.get('secure_url')
-                    print("Uploaded Image 2 URL:", image2_url)
+                    result = cloudinary.uploader.upload(image2)
+                    image_urls[1] = result.get('secure_url')
+                    print("Uploaded Image 2 URL:", image_urls[1])
                 except Exception as e:
                     print("Error uploading Image 2:", str(e))
 
-            if image3_list:
+            if image3:
                 try:
-                    result = cloudinary.uploader.upload(image3_list[0])
-                    image3_url = result.get('secure_url')
-                    print("Uploaded Image 3 URL:", image3_url)
+                    result = cloudinary.uploader.upload(image3)
+                    image_urls[2] = result.get('secure_url')
+                    print("Uploaded Image 3 URL:", image_urls[2])
                 except Exception as e:
                     print("Error uploading Image 3:", str(e))
 
-            print("Final Image URLs after update:", [image1_url, image2_url, image3_url])
+            print("Final Image URLs:", image_urls)
 
-            with connection.cursor() as cursor:
-                # Update `equipment_list` table
-                cursor.execute("""
-                    SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, [
-                    equipment_id,
-                    equipment_name,
-                    sub_category_id,
-                    category_type,
-                    dimension_height,
-                    dimension_width,
-                    dimension_length,
-                    weight,
-                    volume,
-                    hsn_no,
-                    country_origin
-                ])
+            # Update the equipment_list using the PostgreSQL function
+            cursor.execute("""
+                SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, [
+                equipment_id,
+                equipment_name,
+                sub_category_name,
+                category_type,
+                dimension_height,
+                dimension_width,
+                dimension_length,
+                weight,
+                volume,
+                hsn_no,
+                country_origin
+            ])
 
-                # Update `equipment_list_attachments` table with the updated image URLs
-                cursor.execute("""
-                    SELECT update_equipment_attachments_func(%s, %s, %s, %s)
-                """, [equipment_id, image1_url, image2_url, image3_url])
-
-                # Debugging: Confirm the SQL execution
-                print(f"Executed attachment update with URLs: {[image1_url, image2_url, image3_url]}")
+            # Update `equipment_list_attachments` table if images are provided
+            cursor.execute("""
+                SELECT update_equipment_attachments_func(%s, %s, %s, %s)
+            """, [equipment_id, image_urls[0], image_urls[1], image_urls[2]])
 
         return JsonResponse({'success': True})
 
     except Exception as e:
         print("Error during equipment update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 
 def update_stock_details(request, equipment_id):
