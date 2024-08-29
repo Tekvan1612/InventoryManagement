@@ -3853,46 +3853,58 @@ def equipment_by_category(request):
         print(f"Error: {e}")
         return JsonResponse({'error': 'Internal Server Error'}, status=500)
 
+
 def get_equipment_details(request, equipment_id):
     try:
         with connection.cursor() as cursor:
+            # Fetch general equipment details including category_type (renamed to category_name)
             cursor.execute("""
-                SELECT e.equipment_name, e.category_type, s.name, sd.unit, e.weight, e.dimension_length, 
-                       e.dimension_height, e.dimension_width, sd.unit_price, sd.rental_price, 
-                       ea.image_1, ea.image_2, ea.image_3
+                SELECT e.equipment_name, s.name, e.category_type, e.weight,
+                       e.dimension_length, e.dimension_width, e.dimension_height,
+                       e.volume, e.hsn_no, e.country_origin, 
+                       COALESCE(sd.unit_price, 0) as unit_price, COALESCE(sd.rental_price, 0) as rental_price
                 FROM equipment_list e
-                LEFT JOIN sub_category s ON e.sub_category_id = s.id
-                LEFT JOIN equipment_list_attachments ea ON e.id = ea.equipment_list_id
+                JOIN sub_category s ON e.sub_category_id = s.id
                 LEFT JOIN stock_details sd ON e.id = sd.equipment_id
                 WHERE e.id = %s
+                LIMIT 1
             """, [equipment_id])
+            equipment = cursor.fetchone()
 
-            equipment_details = cursor.fetchone()
+            print("Fetched Equipment Details:", equipment)  # Debugging print
 
-        if not equipment_details:
-            return JsonResponse({'error': 'Equipment not found'}, status=404)
+            if not equipment:
+                return JsonResponse({'error': 'Equipment not found'}, status=404)
 
-        if len(equipment_details) < 13:  # Check if all expected columns are present
-            print(f"Debug: Fetched columns: {equipment_details}")
-            return JsonResponse({'error': 'Incomplete data returned from the query'}, status=500)
+            # Fetch total stock quantity (sum of units)
+            cursor.execute("""
+                SELECT COUNT(s.serial_no) FROM stock_details s WHERE s.equipment_id = %s
+            """, [equipment_id])
+            total_units = cursor.fetchone()[0]
 
-        data = {
-            'equipment_name': equipment_details[0],
-            'category_type': equipment_details[1],
-            'sub_category_name': equipment_details[2],
-            'unit': equipment_details[3],
-            'weight': equipment_details[4],
-            'dimension_length': equipment_details[5],
-            'dimension_height': equipment_details[6],
-            'dimension_width': equipment_details[7],
-            'unit_price': equipment_details[8],
-            'rental_price': equipment_details[9],
-            'image_urls': [equipment_details[10], equipment_details[11], equipment_details[12]]
-        }
+            print("Total Units:", total_units)  # Debugging print
 
-        return JsonResponse(data)
+            equipment_details = {
+                'equipment_name': equipment[0],
+                'sub_category_name': equipment[1],
+                'category_name': equipment[2],  # Use category_type as category_name
+                'weight': equipment[3],
+                'dimension_length': equipment[4],
+                'dimension_width': equipment[5],
+                'dimension_height': equipment[6],
+                'volume': equipment[7],
+                'hsn_no': equipment[8],
+                'country_origin': equipment[9],
+                'unit_price': equipment[10],  # Unit price
+                'rental_price': equipment[11],  # Rental price
+                'stock_qty': total_units if total_units else 0,  # Default to 0 if no stock
+            }
+
+            print("Final Equipment Details:", equipment_details)  # Debugging print
+
+        return JsonResponse(equipment_details)
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print("Error:", str(e))  # Debugging print
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -3914,6 +3926,8 @@ def get_serial_details(request, equipment_id):
 def get_stock_details(request, equipment_id):
     try:
         with connection.cursor() as cursor:
+            # Fetch stock summary
+            logger.debug("Executing stock summary query for equipment_id: %s", equipment_id)
             cursor.execute("""
                 SELECT s.vender_name, s.purchase_date, s.reference_no, COUNT(DISTINCT s.barcode_no) AS unique_barcode_count
                 FROM stock_details s
@@ -3923,6 +3937,7 @@ def get_stock_details(request, equipment_id):
             stock_summary = cursor.fetchall()
 
             if not stock_summary:
+                logger.debug("No stock details found for equipment_id: %s", equipment_id)
                 return JsonResponse({'message': 'No stock details available for this equipment.'}, status=404)
 
             stock_summary_list = [
@@ -3935,8 +3950,28 @@ def get_stock_details(request, equipment_id):
                 for row in stock_summary
             ]
 
-        return JsonResponse({'stock_summary': stock_summary_list})
+            # Fetch detailed stock information
+            logger.debug("Executing stock details query for equipment_id: %s", equipment_id)
+            cursor.execute("""
+                SELECT s.reference_no, s.barcode_no, s.serial_no
+                FROM stock_details s
+                WHERE s.equipment_id = %s
+            """, [equipment_id])
+            stock_details = cursor.fetchall()
+
+            stock_details_list = [
+                {
+                    'reference_no': row[0],
+                    'barcode_no': row[1],
+                    'serial_no': row[2],
+                }
+                for row in stock_details
+            ]
+
+        logger.debug("Returning stock summary and details for equipment_id: %s", equipment_id)
+        return JsonResponse({'stock_summary': stock_summary_list, 'stock_details': stock_details_list})
     except Exception as e:
+        logger.error("Error fetching stock details for equipment_id: %s, error: %s", equipment_id, str(e))
         return JsonResponse({'error': str(e)}, status=500)
 
 def get_categories(request):

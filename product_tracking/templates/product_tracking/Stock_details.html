@@ -295,13 +295,13 @@
                 displayEquipmentList(filteredEquipmentList);
             });
 
-         function fetchSerialDetails(equipmentId) {
-        $.ajax({
-            url: `/get_serial_details/${equipmentId}/`,
-            method: "GET",
-            dataType: "json",
-            success: function (data) {
-                let serialDetailsHtml = `
+            function fetchSerialDetails(equipmentId) {
+                $.ajax({
+                    url: `/get_serial_details/${equipmentId}/`,
+                    method: "GET",
+                    dataType: "json",
+                    success: function (data) {
+                        let serialDetailsHtml = `
                 <table class="table header-border table-hover verticle-middle">
                     <thead>
                         <tr>
@@ -311,29 +311,29 @@
                     </thead>
                     <tbody>`;
 
-                if (data.serial_details && data.serial_details.length > 0) {
-                    $.each(data.serial_details, function (index, detail) {
-                        serialDetailsHtml += `
+                        if (data.serial_details && data.serial_details.length > 0) {
+                            $.each(data.serial_details, function (index, detail) {
+                                serialDetailsHtml += `
                         <tr>
                             <td>${detail.serial_no}</td>
                             <td>${detail.barcode_no}</td>
                         </tr>`;
-                    });
-                } else {
-                    serialDetailsHtml += `
+                            });
+                        } else {
+                            serialDetailsHtml += `
                     <tr>
                         <td colspan="2">No serial details available.</td>
                     </tr>`;
-                }
+                        }
 
-                serialDetailsHtml += '</tbody></table>';
-                $('#serial-details-info').html(serialDetailsHtml); // Ensure this ID matches the one in your HTML
-            },
-            error: function (xhr, status, error) {
-                console.error("Failed to load serial details:", error);
+                        serialDetailsHtml += '</tbody></table>';
+                        $('#serial-details-info').html(serialDetailsHtml); // Ensure this ID matches the one in your HTML
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Failed to load serial details:", error);
+                    }
+                });
             }
-        });
-    }
 
 
             // Fetch the initial equipment list
@@ -354,18 +354,20 @@
                     method: "GET",
                     dataType: "json",
                     success: function (data) {
+                        console.log("Received Data:", data);  // Debugging print
+
                         if (data.error) {
                             console.error("Error loading equipment details:", data.error);
                             return;
                         }
 
-                        // Update general tab details
+                        // Ensure the data contains the correct values
                         $('#equipment-name').text(data.equipment_name || 'N/A');
-                        $('#category-name').text(data.category_type || 'N/A');
+                        $('#category-name').text(data.category_name || 'N/A');
                         $('#subcategory-name').text(data.sub_category_name || 'N/A');
                         $('#warehouse').text(data.warehouse || 'N/A');
                         $('#available-qty').text(data.available_qty || 'N/A');
-                        $('#stock-qty').text(data.stock_qty || 'N/A');
+                        $('#stock-qty').text(data.stock_qty || 0);  // Display the stock quantity here
 
                         $('#weight').text(data.weight ? data.weight + ' kg' : 'N/A');
                         $('#length').text(data.dimension_length ? data.dimension_length + ' inch' : 'N/A');
@@ -374,36 +376,24 @@
 
                         $('#unit-price').text(data.unit_price ? `₹${data.unit_price}` : 'N/A');
                         $('#rental-price').text(data.rental_price ? `₹${data.rental_price}` : 'N/A');
-
-                        // Display images
-                        let imagesHtml = '';
-                        if (data.image_urls && data.image_urls.length > 0) {
-                            $.each(data.image_urls, function (index, url) {
-                                if (url) {
-                                    imagesHtml += `<img src="${url}" class="img-thumbnail" alt="Equipment Image" style="max-width: 200px; margin: 10px;">`;
-                                }
-                            });
-                        } else {
-                            imagesHtml = '<p>No images available.</p>';
-                        }
-                        $('#equipment-images').html(imagesHtml);
                     },
                     error: function (xhr, status, error) {
                         console.error("Failed to load equipment details:", xhr.responseText);
                     }
                 });
+
             });
 
             $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        const target = $(e.target).attr("href"); // Get the target tab pane
+                const target = $(e.target).attr("href"); // Get the target tab pane
 
-        if (target === '#serial') { // Adjust this selector to match the ID of your serial details tab pane
-            const equipmentId = $('#equipment-list .list-group-item.active').data('id'); // Get the active equipment ID
-            if (equipmentId) {
-                fetchSerialDetails(equipmentId);
-            }
-        }
-    });
+                if (target === '#serial') { // Adjust this selector to match the ID of your serial details tab pane
+                    const equipmentId = $('#equipment-list .list-group-item.active').data('id'); // Get the active equipment ID
+                    if (equipmentId) {
+                        fetchSerialDetails(equipmentId);
+                    }
+                }
+            });
 
 
             $('#equipment-list').on('click', 'a.list-group-item', function (e) {
@@ -460,7 +450,7 @@
                                 const referenceNo = $(this).data('reference-no');
                                 let stockDetailsHtml = `
                                     <div class="stock-details">
-                                        <h5>Stock Details for Reference No: ${referenceNo}</h5>
+                                        <h5 class="section-title">Stock Details for Reference No: ${referenceNo}</h5>
                                         <table class="table header-border table-hover verticle-middle">
                                             <thead>
                                                 <tr>
@@ -473,10 +463,10 @@
                                 $.each(data.stock_details, function (index, detail) {
                                     if (detail.reference_no === referenceNo) {
                                         stockDetailsHtml += `
-                                            <tr>
-                                                <td>${detail.barcode_no}</td>
-                                                <td>${detail.serial_no}</td>
-                                            </tr>`;
+                                                <tr>
+                                                    <td>${detail.barcode_no}</td>
+                                                    <td>${detail.serial_no}</td>
+                                                </tr>`;
                                     }
                                 });
 
@@ -597,14 +587,6 @@
             font-size: 1.2rem;
         }
 
-        .card {
-            transition: transform 0.3s ease;
-            border-radius: 8px;
-        }
-
-        .card:hover {
-            transform: scale(1.03);
-        }
 
         .table {
             margin-top: 10px;
