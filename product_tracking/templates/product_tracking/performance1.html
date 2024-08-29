@@ -4,9 +4,9 @@
 
 <style>
     .table-responsive {
-        max-height: 800px; /* Set the maximum height for the table */
-        overflow-y: auto; /* Enable vertical scrolling */
-    }
+    max-height: 800px;
+    overflow-y: auto;
+}
     .modal-dialog {
     max-width: 75%; /* Ensures the modal doesn't exceed screen width */
     margin: 1.75rem auto; /* Centers the modal with some margin on top and bottom */
@@ -59,6 +59,23 @@
     color: #495057;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #ffffff;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #ffffff;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+}
 
 .nav-tabs .nav-link.active {
     color: #fff !important;
@@ -68,9 +85,13 @@
 }
 
 .table thead th {
-    background-color: #170c0c;
+    background-color: #343a40; /* Dark background for table headers */
+    color: #ffffff; /* White text color for headers */
     border-bottom: 2px solid #dee2e6;
-    color: #ffffff;
+}
+.table tbody td {
+    color: #212529; /* Dark text for table data */
+    border-top: 1px solid #dee2e6;
 }
 
 .plus-icon {
@@ -80,6 +101,14 @@
     display: inline-block;
     width: 100%;
     font-size: 1.2rem;
+}
+.table .edit-btn,
+.table .save-btn,
+.table .cancel-btn,
+.table .delete-btn {
+    font-size: 1rem;
+    padding: 5px 10px;
+    cursor: pointer;
 }
 
 .editable-cell {
@@ -93,16 +122,38 @@
     gap: 10px;
 }
 .form-control {
-    max-width: 100%; /* Ensures that input fields do not exceed the container's width */
-    box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+    border: 1px solid #ced4da; /* Border color for inputs */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px;
+    font-size: 1rem;
+}
+.form-label {
+    font-weight: 600;
+    font-size: 0.875rem; /* Slightly smaller label size */
 }
 
 .custom-margin {
     margin-top: 10px; /* Keep the margin controlled */
 }
 
-.modal-body .row > [class*='col-'] {
-    padding: 5px; /* Reduces padding to prevent overflow */
+.modal-dialog {
+    max-width: 75%;
+    margin: 1.75rem auto;
+}
+
+.modal-content {
+    padding: 15px;
+}
+
+.modal-header {
+    background-color: #343a40;
+    color: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding-top: 10px;
 }
 .col-xl-4, .col-lg-4, .col-md-6, .col-xl-3 {
     padding-left: 5px;
@@ -1488,7 +1539,7 @@ $('#nextPage').on('click', function () {
                                     <div class="tab-pane fade show active" id="equipment" role="tabpanel"
                                          aria-labelledby="equipment-tab">
                                         <div class="table-responsive">
-                                            <table class="table table-striped table-hover table-bordered">
+                                            <table class="table table-bordered table-responsive-sm">
                                                 <thead>
                                                 <tr>
                                                     <th><span class="plus-icon" id="addEquipmentRow">+</span></th>
