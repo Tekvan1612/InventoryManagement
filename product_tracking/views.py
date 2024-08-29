@@ -3632,6 +3632,7 @@ def update_equipment(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @csrf_exempt
+@csrf_exempt
 def update_equipment_details(request, equipment_id):
     try:
         # Ensure Cloudinary is configured
@@ -3701,9 +3702,12 @@ def update_equipment_details(request, equipment_id):
 
             # Update the equipment_list using the PostgreSQL function
             cursor.execute("""
-                SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                SELECT update_equipment_list_func(
+                    %s::integer, %s::varchar, %s::varchar, %s::varchar, %s::varchar, 
+                    %s::varchar, %s::varchar, %s::varchar, %s::varchar, %s::varchar, %s::varchar
+                )
             """, [
-                equipment_id,
+                int(equipment_id),  # Cast to integer
                 equipment_name,
                 sub_category_name,
                 category_type,
@@ -3718,8 +3722,8 @@ def update_equipment_details(request, equipment_id):
 
             # Update `equipment_list_attachments` table if images are provided
             cursor.execute("""
-                SELECT update_equipment_attachments_func(%s, %s, %s, %s)
-            """, [equipment_id, image_urls[0], image_urls[1], image_urls[2]])
+                SELECT update_equipment_attachments_func(%s::integer, %s::varchar, %s::varchar, %s::varchar)
+            """, [int(equipment_id), image_urls[0], image_urls[1], image_urls[2]])
 
         return JsonResponse({'success': True})
 
