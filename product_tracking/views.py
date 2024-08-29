@@ -3632,7 +3632,6 @@ def update_equipment(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @csrf_exempt
-@csrf_exempt
 def update_equipment_details(request, equipment_id):
     try:
         # Ensure Cloudinary is configured
@@ -3666,14 +3665,20 @@ def update_equipment_details(request, equipment_id):
 
             sub_category_id = sub_category_id[0]  # Get the integer ID
 
-            # Handle file uploads
-            image1 = request.FILES.get('image1')
-            image2 = request.FILES.get('image2')
-            image3 = request.FILES.get('image3')
+            # Handle file uploads independently
+            image1 = request.FILES.get('image1[]')
+            image2 = request.FILES.get('image2[]')
+            image3 = request.FILES.get('image3[]')
             print("Files received:", request.FILES)
 
-            # Prepare image URLs
-            image_urls = [None, None, None]
+            # Fetch current attachments from the database
+            cursor.execute("""
+                SELECT image_1, image_2, image_3 FROM public.equipment_list_attachments WHERE equipment_list_id = %s
+            """, [equipment_id])
+            current_attachments = cursor.fetchone()
+
+            image_urls = list(current_attachments) if current_attachments else [None, None, None]
+
             if image1:
                 try:
                     result = cloudinary.uploader.upload(image1)
@@ -3700,14 +3705,11 @@ def update_equipment_details(request, equipment_id):
 
             print("Final Image URLs:", image_urls)
 
-            # Update the equipment_list using the PostgreSQL function
+            # Update the equipment_list table
             cursor.execute("""
-                SELECT update_equipment_list_func(
-                    %s::integer, %s::varchar, %s::varchar, %s::varchar, %s::varchar, 
-                    %s::varchar, %s::varchar, %s::varchar, %s::varchar, %s::varchar, %s::varchar
-                )
+                SELECT update_equipment_list_func(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, [
-                int(equipment_id),  # Cast to integer
+                equipment_id,
                 equipment_name,
                 sub_category_name,
                 category_type,
@@ -3720,17 +3722,18 @@ def update_equipment_details(request, equipment_id):
                 country_origin
             ])
 
-            # Update `equipment_list_attachments` table if images are provided
+            # Update `equipment_list_attachments` table
             cursor.execute("""
-                SELECT update_equipment_attachments_func(%s::integer, %s::varchar, %s::varchar, %s::varchar)
-            """, [int(equipment_id), image_urls[0], image_urls[1], image_urls[2]])
+                UPDATE public.equipment_list_attachments
+                SET image_1 = %s, image_2 = %s, image_3 = %s
+                WHERE equipment_list_id = %s
+            """, [image_urls[0], image_urls[1], image_urls[2], equipment_id])
 
         return JsonResponse({'success': True})
 
     except Exception as e:
         print("Error during equipment update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
-
 
 
 def update_stock_details(request, equipment_id):
