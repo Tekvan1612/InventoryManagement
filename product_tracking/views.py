@@ -3859,15 +3859,18 @@ def get_equipment_details(request, equipment_id):
         with connection.cursor() as cursor:
             # Fetch general equipment details including category_type (renamed to category_name)
             cursor.execute("""
-                SELECT e.equipment_name, s.name, e.category_type, e.weight,
+                SELECT e.equipment_name, s.name as sub_category_name, e.category_type as category_name, e.weight,
                        e.dimension_length, e.dimension_width, e.dimension_height,
-                       e.volume, e.hsn_no, e.country_origin, 
-                       COALESCE(sd.unit_price, 0) as unit_price, COALESCE(sd.rental_price, 0) as rental_price
+                       e.volume, e.hsn_no, e.country_origin, a.image_1, a.image_2, a.image_3,
+                       COALESCE(MAX(sd.unit_price), 0) as unit_price, COALESCE(MAX(sd.rental_price), 0) as rental_price
                 FROM equipment_list e
                 JOIN sub_category s ON e.sub_category_id = s.id
+                JOIN equipment_list_attachments a ON e.id = a.equipment_list_id
                 LEFT JOIN stock_details sd ON e.id = sd.equipment_id
                 WHERE e.id = %s
-                LIMIT 1
+                GROUP BY e.equipment_name, s.name, e.category_type, e.weight,
+                         e.dimension_length, e.dimension_width, e.dimension_height,
+                         e.volume, e.hsn_no, e.country_origin, a.image_1, a.image_2, a.image_3
             """, [equipment_id])
             equipment = cursor.fetchone()
 
@@ -3884,6 +3887,7 @@ def get_equipment_details(request, equipment_id):
 
             print("Total Units:", total_units)  # Debugging print
 
+            # Correctly reference the image URLs from the fetched data
             equipment_details = {
                 'equipment_name': equipment[0],
                 'sub_category_name': equipment[1],
@@ -3895,9 +3899,10 @@ def get_equipment_details(request, equipment_id):
                 'volume': equipment[7],
                 'hsn_no': equipment[8],
                 'country_origin': equipment[9],
-                'unit_price': equipment[10],  # Unit price
-                'rental_price': equipment[11],  # Rental price
+                'unit_price': equipment[13],  # Unit price
+                'rental_price': equipment[14],  # Rental price
                 'stock_qty': total_units if total_units else 0,  # Default to 0 if no stock
+                'image_urls': [equipment[10], equipment[11], equipment[12]]  # Corrected image references
             }
 
             print("Final Equipment Details:", equipment_details)  # Debugging print
@@ -3906,6 +3911,7 @@ def get_equipment_details(request, equipment_id):
     except Exception as e:
         print("Error:", str(e))  # Debugging print
         return JsonResponse({'error': str(e)}, status=500)
+
 
 
 def get_serial_details(request, equipment_id):

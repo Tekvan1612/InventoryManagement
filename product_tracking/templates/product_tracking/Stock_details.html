@@ -176,7 +176,7 @@
                                             </div>
                                             <div class="tab-pane fade" id="images" role="tabpanel"
                                                  aria-labelledby="images-tab">
-                                                <h5>Images</h5>
+                                                <h5 class="section-title">Images</h5>
                                                 <div id="equipment-images">
                                                     <!-- Equipment images will be dynamically inserted here -->
                                                 </div>
@@ -340,49 +340,62 @@
             fetchEquipmentListByCategory();
 
             $(document).on('click', '.list-group-item', function (e) {
-                e.preventDefault();
+    e.preventDefault();
 
-                const equipmentId = $(this).data('id');
+    const equipmentId = $(this).data('id');
 
-                // Update the active state for the list
-                $('#equipment-list .list-group-item').removeClass('active');
-                $(this).addClass('active');
+    // Update the active state for the list
+    $('#equipment-list .list-group-item').removeClass('active');
+    $(this).addClass('active');
 
-                // Fetch general equipment details
-                $.ajax({
-                    url: `/get_equipment_details/${equipmentId}/`,
-                    method: "GET",
-                    dataType: "json",
-                    success: function (data) {
-                        console.log("Received Data:", data);  // Debugging print
+    // Fetch general equipment details
+    $.ajax({
+        url: `/get_equipment_details/${equipmentId}/`,
+        method: "GET",
+        dataType: "json",
+        success: function (data) {
+            console.log("Received Data:", data);  // Debugging print
 
-                        if (data.error) {
-                            console.error("Error loading equipment details:", data.error);
-                            return;
-                        }
+            if (data.error) {
+                console.error("Error loading equipment details:", data.error);
+                return;
+            }
 
-                        // Ensure the data contains the correct values
-                        $('#equipment-name').text(data.equipment_name || 'N/A');
-                        $('#category-name').text(data.category_name || 'N/A');
-                        $('#subcategory-name').text(data.sub_category_name || 'N/A');
-                        $('#warehouse').text(data.warehouse || 'N/A');
-                        $('#available-qty').text(data.available_qty || 'N/A');
-                        $('#stock-qty').text(data.stock_qty || 0);  // Display the stock quantity here
+            // Ensure the data contains the correct values
+            $('#equipment-name').text(data.equipment_name || 'N/A');
+            $('#category-name').text(data.category_name || 'N/A');
+            $('#subcategory-name').text(data.sub_category_name || 'N/A');
+            $('#warehouse').text(data.warehouse || 'N/A');
+            $('#available-qty').text(data.available_qty || 'N/A');
+            $('#stock-qty').text(data.stock_qty || 0);  // Display the stock quantity here
 
-                        $('#weight').text(data.weight ? data.weight + ' kg' : 'N/A');
-                        $('#length').text(data.dimension_length ? data.dimension_length + ' inch' : 'N/A');
-                        $('#height').text(data.dimension_height ? data.dimension_height + ' inch' : 'N/A');
-                        $('#width').text(data.dimension_width ? data.dimension_width + ' inch' : 'N/A');
+            $('#weight').text(data.weight ? data.weight + ' kg' : 'N/A');
+            $('#length').text(data.dimension_length ? data.dimension_length + ' inch' : 'N/A');
+            $('#height').text(data.dimension_height ? data.dimension_height + ' inch' : 'N/A');
+            $('#width').text(data.dimension_width ? data.dimension_width + ' inch' : 'N/A');
 
-                        $('#unit-price').text(data.unit_price ? `₹${data.unit_price}` : 'N/A');
-                        $('#rental-price').text(data.rental_price ? `₹${data.rental_price}` : 'N/A');
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Failed to load equipment details:", xhr.responseText);
+            $('#unit-price').text(data.unit_price ? `₹${data.unit_price}` : 'N/A');
+            $('#rental-price').text(data.rental_price ? `₹${data.rental_price}` : 'N/A');
+
+            // Display images
+            let imagesHtml = '';
+            if (data.image_urls && data.image_urls.length > 0) {
+                $.each(data.image_urls, function (index, url) {
+                    if (url) {
+                        imagesHtml += `<img src="${url}" class="img-thumbnail" alt="Equipment Image" style="max-width: 200px; margin: 10px;">`;
                     }
                 });
+            } else {
+                imagesHtml = '<p>No images available.</p>';
+            }
+            $('#equipment-images').html(imagesHtml);
+        },
+        error: function (xhr, status, error) {
+            console.error("Failed to load equipment details:", xhr.responseText);
+        }
+    });
+});
 
-            });
 
             $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
                 const target = $(e.target).attr("href"); // Get the target tab pane
