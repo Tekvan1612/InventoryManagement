@@ -955,7 +955,7 @@ function loadEquipmentList() {
                                 <i class="fa fa-trash"></i>
                             </button>
                         </td>
-                        <td><img src="${equipment.image_url}" alt="Equipment Image" class="img-fluid" style="max-width: 50px; height: auto;"></td> <!-- Image Column -->
+
                         <td data-editable="true">${equipment.equipment_name}</td>
                         <td>${equipment.subcategory_name}</td>
                         <td>${equipment.created_by}</td> <!-- Display user name -->
@@ -1492,7 +1492,7 @@ $('#nextPage').on('click', function () {
                                                 <thead>
                                                 <tr>
                                                     <th><span class="plus-icon" id="addEquipmentRow">+</span></th>
-                                                    <th>Image</th>
+
                                                     <th>Name</th>
                                                     <th>Subcategory</th>
                                                     <th>Created By</th>
@@ -1599,29 +1599,29 @@ $('#nextPage').on('click', function () {
         </div>
 
         <!-- Attachments Section -->
-        <div id="attachments" class="col-xl-12 mb-3 custom-margin" style="margin-top: 18px;">
-
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label for="image1">Image 1:</label>
-                    <div class="input-group">
-                        <input type="file" id="image1" name="image1[]" accept=".jpg, .jpeg, .png">
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="image2">Image 2:</label>
-                    <div class="input-group">
-                        <input type="file" id="image2" name="image2[]" accept=".jpg, .jpeg, .png">
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="image3">Image 3:</label>
-                    <div class="input-group">
-                        <input type="file" id="image3" name="image3[]" accept=".jpg, .jpeg, .png">
-                    </div>
-                </div>
+     <div id="attachments" class="col-xl-12 mb-3 custom-margin" style="margin-top: 18px;">
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label for="image1">Image 1:</label>
+            <div class="input-group">
+                <input type="file" id="image1" name="image1" accept=".jpg, .jpeg, .png">
             </div>
         </div>
+        <div class="col-md-4 mb-3">
+            <label for="image2">Image 2:</label>
+            <div class="input-group">
+                <input type="file" id="image2" name="image2" accept=".jpg, .jpeg, .png">
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="image3">Image 3:</label>
+            <div class="input-group">
+                <input type="file" id="image3" name="image3" accept=".jpg, .jpeg, .png">
+            </div>
+        </div>
+    </div>
+</div>
+
     </div>
 
     <!-- Buttons Section -->
