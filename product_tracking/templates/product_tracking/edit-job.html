@@ -492,7 +492,8 @@ select {
             }
         }
     </style>
-    <script>
+
+<script>
         function validateStep(currentStep, nextStep) {
             const currentStepInputs = document.querySelectorAll(`#step-${currentStep} input[required], #step-${currentStep} select[required]`);
 
@@ -526,15 +527,11 @@ select {
             showStep(1);
         }
 
-
         $(document).ready(function () {
-
             fetchClientName();
             fetchVenueAddress();
             fetchVenueName();
             fetchMasterCategories();
-
-
 
         // General Details Section
             // Call this function on page load with the initial status value
@@ -570,6 +567,7 @@ select {
                             $('#crewQuantity').val(data.crew_type);
                             $('#venueAddressDropdown').val(data.venue_name);
                             $('#venueAddressInput').val(data.venue_address);
+                            $('#editInputNotes').val(data.notes);
                             $('#prepDate').val(data.setup_date);
                             $('#outDate').val(data.rehearsal_date);
                             $('#showStart').val(data.event_date);
@@ -580,7 +578,7 @@ select {
                             $('#discounted_amount').val(data.amount_after_discount);
                             $('#total_amount_cal').val(data.total_amount);
                             console.log('Fetch the details:', data.status);
-
+                            console.log('Fetch the notes details:', data.notes)
                             // Handle employee_name, assuming it's a comma-separated string
                             console.log('Original employee data:', data.employee);
                             const employeeName = data.employee ? data.employee.split(',').map(name => name.trim()) : [];
@@ -849,6 +847,7 @@ select {
                     employee_name: employeeNameString, // Use the comma-separated string
                     venue_name: $('#venueAddressDropdown').val(),
                     venue_address: $('#venueAddressInput').val(),
+                    input_notes: $('#editInputNotes').val(),
                     setup_date: $('#prepDate').val(),
                     rehearsal_date: $('#outDate').val(),
                     event_date: $('#showStart').val(),
@@ -868,9 +867,7 @@ select {
                     success: function(response) {
                         if (response.success) {
                             console.log('Details updated successfully');
-                            alert('General Details Updated Successfully.')
-                            location.reload();
-                            // Optionally, you can add code here to give feedback to the user
+
                         } else {
                             console.log('Error updating details');
                         }
@@ -880,6 +877,13 @@ select {
                     }
                 });
             }
+
+            $('#step-1').on('input', 'input', function() {
+                // Check if the input field is NOT the venueAddressDropdown
+                if ($(this).attr('id') !== 'venueAddressDropdown') {
+                    updateTempDetails();
+                }
+            });
 
             // Initialize Select2
             $('#employeeName').select2({
@@ -893,8 +897,11 @@ select {
                 var status = $(this).val();
 
                 if (status === 'Quotation') {
-                    $('#discount, #total_amount').on('input', function() {
-                        updateTempDetails();
+                    $('#step-1').on('input', 'input', function() {
+                        // Check if the input field is NOT the venueAddressDropdown
+                        if ($(this).attr('id') !== 'venueAddressDropdown') {
+                            updateTempDetails();
+                        }
                     });
                 } else if (status === 'Perfoma') {
                     $('#total_amount').on('input', function() {
@@ -911,19 +918,22 @@ select {
             });
 
 
-        // Equipment Details Section
-            // AJAX call to calculate the total amount
-            $.ajax({
-                url: `/calculate-total-amount/${jobId}/`, // Django URL pattern
-                type: 'GET',
-                success: function(response) {
-                    // Step 5: Update the total amount in the input field
-                    $('#total_amount').val(response.total_amount);
-                },
-                error: function(error) {
-                    console.error('Error fetching total amount:', error);
-                }
-            });
+            // Equipment Details Section
+
+            // Function to calculate the total amount
+            function calculateTotalAmount(jobId) {
+                $.ajax({
+                    url: `/calculate-total-amount/${jobId}/`, // Django URL pattern
+                    type: 'GET',
+                    success: function(response) {
+                        // Update the total amount in the input field
+                        $('#total_amount').val(response.total_amount);
+                    },
+                    error: function(error) {
+                        console.error('Error fetching total amount:', error);
+                    }
+                });
+            }
 
             // Function to calculate discount and total amounts
             function calculateAmounts() {
@@ -957,40 +967,78 @@ select {
             let timeoutId;
 
             $('#searchCategory').on('input', function () {
-                var query = $(this).val();
-                var dropdown = $('#equipmentDropdown');
+    var query = $(this).val();
+    var dropdown = $('#equipmentDropdown');
 
-                if (query.length > 1) {
-                    $.ajax({
-                        url: '/search-equipment/',
-                        data: {'query': query},
-                        success: function (data) {
-                            dropdown.empty(); // Clear previous results
-                            if (data.length > 0) {
-                                var table = '<table class="table table-bordered"><thead><tr><th>Equipment</th><th>Available</th><th>Quantity</th></tr></thead><tbody>';
-                                data.forEach(function (item) {
-                                    var disabledClass = item.available_quantity === 0 ? 'disabled-option' : '';
-                                    table += `
-                            <tr class="${disabledClass}">
-                                <td>${item.equipment_name}</td>
-                                <td style="text-align: center;">${item.available_quantity}</td>
-                                <td>
-                                    <input type="number" class="form-control quantity-input-dropdown" data-equipment-name="${item.equipment_name}" data-available-quantity="${item.available_quantity}" min="1" max="${item.available_quantity}" placeholder="Enter quantity" style="width: 73px;">
-                                </td>
-                            </tr>`;
-                                });
-                                table += '</tbody></table>';
-                                dropdown.html(table); // Use html() instead of append()
-                                dropdown.show();
-                            } else {
-                                dropdown.hide();
-                            }
+    if (query.length > 1) {
+        $.ajax({
+            url: '/search-equipment/',
+            data: { 'query': query },
+            success: function (data) {
+                dropdown.empty(); // Clear previous results
+                if (data.length > 0) {
+                    var table = '<table class="table table-bordered"><thead><tr><th>Equipment</th><th>Available</th><th>Quantity</th></tr></thead><tbody>';
+                    data.forEach(function (item) {
+                        var disabledClass = item.available_quantity === 0 ? 'disabled-option' : '';
+                        table += `
+                    <tr class="${disabledClass}">
+                        <td>${item.equipment_name}</td>
+                        <td style="text-align: center;">${item.available_quantity}</td>
+                        <td>
+                            <input type="number" class="form-control quantity-input-selected" data-equipment-name="${item.equipment_name}" data-available-quantity="${item.available_quantity}" min="1" max="${item.available_quantity}" placeholder="Enter quantity" style="width: 73px;">
+                        </td>
+                    </tr>`;
+                    });
+                    table += '</tbody></table>';
+                    dropdown.html(table); // Use html() instead of append()
+                    dropdown.show();
+
+                    // Attach event listener to the quantity input fields
+                    $('.quantity-input-selected').on('input', function () {
+                        var input = $(this);
+                        var equipmentName = input.data('equipment-name');
+                        var quantity = input.val();
+
+                        if (quantity && !isNaN(quantity) && parseInt(quantity, 10) > 0) {
+                            var equipmentDetails = [{
+                                temp_id: jobId, // Use jobId directly here
+                                equipment_name: equipmentName,
+                                quantity: parseInt(quantity, 10), // Ensure the quantity is sent as an integer
+                            }];
+
+                            // Trigger the insertEquipmentDetails function directly
+                            $.ajax({
+                                url: '/insert-equipment-details/',
+                                type: 'POST',
+                                data: JSON.stringify({ equipmentDetails: equipmentDetails }),
+                                contentType: 'application/json',
+                                success: function (response) {
+                                    if (response.status === 'success') {
+                                        alert('Equipment details inserted successfully');
+                                        calculateTotalAmount(jobId);
+                                    } else {
+                                        alert('Error inserting equipment details: ' + response.error);
+                                    }
+                                },
+                                error: function (error) {
+                                    alert('Error inserting equipment details');
+                                    console.log(error);
+                                }
+                            });
+                        } else {
+                            console.error('Invalid or missing quantity for equipment:', equipmentName);
                         }
                     });
+
                 } else {
                     dropdown.hide();
                 }
-            });
+            }
+        });
+    } else {
+        dropdown.hide();
+    }
+});
 
             // Event handler for quantity input change within the dropdown table
             $(document).on('input', '#equipmentDropdown .quantity-input-dropdown', function () {
@@ -1257,18 +1305,6 @@ select {
                 }
             });
 
-            $('#selectedEquipmentTable').on('input', '.quantity-input-selected', function () {
-                const lastRow = $('#selectedEquipmentTable tbody tr:last-child');
-
-                // Check if the change occurred in the last input field of the last row
-                if ($(this).closest('tr').is(lastRow)) {
-                    if (jobId) {
-                        insertEquipmentDetails(jobId); // Pass jobId directly to the function
-                    } else {
-                        alert('Job ID is not available. Please insert temp data first.');
-                    }
-                }
-            });
 
             $(document).on('input', '.quantity-input', function () {
                 var $inputField = $(this);
@@ -1303,6 +1339,7 @@ select {
                         }
                         console.log('Quantity updated successfully:', response);
 
+                        calculateTotalAmount(jobId);
                     },
                     error: function(xhr, status, error) {
                         console.error('Error updating quantity:', error);
@@ -1311,45 +1348,9 @@ select {
                 });
             });
 
-            // Function to insert equipment details
-            function insertEquipmentDetails(jobId) {
-                const equipmentDetails = [];
-                $('#selectedEquipmentTable tbody tr').each(function () {
-                    const row = $(this);
-                    const quantity = row.find('.quantity-input-selected').val(); // Make sure to retrieve the quantity value correctly
 
-                    // Check if quantity is available and is a valid number
-                    if (quantity && !isNaN(quantity)) {
-                        equipmentDetails.push({
-                            temp_id: jobId, // Use jobId directly here
-                            equipment_name: row.find('.equipment-name').text(),
-                            quantity: parseInt(quantity, 10), // Ensure the quantity is sent as a number
-                        });
-                    } else {
-                        console.error('Invalid or missing quantity for equipment:', row.find('.equipment-name').text());
-                    }
-                });
 
-                $.ajax({
-                    url: '/insert-equipment-details/',
-                    type: 'POST',
-                    data: JSON.stringify({ equipmentDetails: equipmentDetails }),
-                    contentType: 'application/json',
-                    success: function (response) {
-                        if (response.status === 'success') {
-                            alert('Equipment details inserted successfully');
-                        } else {
-                            alert('Error inserting equipment details: ' + response.error);
-                        }
-                    },
-                    error: function (error) {
-                        alert('Error inserting equipment details');
-                        console.log(error);
-                    }
-                });
-            }
-
-    // Sub Vendor Section
+            // Sub Vendor Section
             // Function to add a new row when the button is clicked
             $('#add-sub-vendor-row-btn').click(function (event) {
                 event.preventDefault();
@@ -1522,69 +1523,69 @@ select {
             });
 
 
-// Crew Allocation Section
-fetchCrewAllocation(jobId);
+            // Crew Allocation Section
+            fetchCrewAllocation(jobId);
 
-function fetchCrewAllocation(jobId) {
-    fetch(`/fetch_crew_allocation/?jobId=${jobId}`)
-        .then(response => response.json())
-        .then(result => {
-            if (result.data) {
-                populateCrewAllocationTable(result.data);
-            } else {
-                console.error('Error fetching crew allocation:', result.error);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-function populateCrewAllocationTable(data) {
-    var tableBody = document.getElementById('crew-allocation-table-body');
-    tableBody.innerHTML = ''; // Clear any existing rows
-
-    data.forEach(item => {
-        var newRowHtml = `
-            <tr data-id="${item.id}">
-                <td>${item.crew_type}</td>
-                <td>${item.employee_name}</td>
-                <td>
-                    <button class="btn btn-secondary deleteButton" data-id="${item.id}"><i class="fa fa-times"></i></button>
-                </td>
-            </tr>
-        `;
-        tableBody.insertAdjacentHTML('beforeend', newRowHtml);
-    });
-
-    // Add event listener for delete buttons
-    document.querySelectorAll('.deleteButton').forEach(button => {
-        button.addEventListener('click', function() {
-            var rowId = this.getAttribute('data-id');
-            var row = this.closest('tr');
-
-            // Optional: Add confirmation before deleting
-            if (confirm('Are you sure you want to delete this row?')) {
-                // Remove the row from the table
-                row.remove();
-
-                // Send a DELETE request to the server to delete the record
-                fetch(`/delete_crew_allocation/${rowId}/`, { method: 'DELETE' })
+            function fetchCrewAllocation(jobId) {
+                fetch(`/fetch_crew_allocation/?jobId=${jobId}`)
                     .then(response => response.json())
                     .then(result => {
-                        if (result.success) {
-                            console.log('Row deleted successfully.');
+                        if (result.data) {
+                            populateCrewAllocationTable(result.data);
                         } else {
-                            console.error('Error deleting row:', result.error);
+                            console.error('Error fetching crew allocation:', result.error);
                         }
                     })
                     .catch(error => console.error('Error:', error));
             }
-        });
-    });
-}
+
+            function populateCrewAllocationTable(data) {
+                var tableBody = document.getElementById('crew-allocation-table-body');
+                tableBody.innerHTML = ''; // Clear any existing rows
+
+                data.forEach(item => {
+                    var newRowHtml = `
+                        <tr data-id="${item.id}">
+                            <td>${item.crew_type}</td>
+                            <td>${item.employee_name}</td>
+                            <td>
+                                <button class="btn btn-secondary deleteButton" data-id="${item.id}"><i class="fa fa-times"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.insertAdjacentHTML('beforeend', newRowHtml);
+                });
+
+                // Add event listener for delete buttons
+                document.querySelectorAll('.deleteButton').forEach(button => {
+                    button.addEventListener('click', function() {
+                        var rowId = this.getAttribute('data-id');
+                        var row = this.closest('tr');
+
+                        // Optional: Add confirmation before deleting
+                        if (confirm('Are you sure you want to delete this row?')) {
+                            // Remove the row from the table
+                            row.remove();
+
+                            // Send a DELETE request to the server to delete the record
+                            fetch(`/delete_crew_allocation/${rowId}/`, { method: 'DELETE' })
+                                .then(response => response.json())
+                                .then(result => {
+                                    if (result.success) {
+                                        console.log('Row deleted successfully.');
+                                    } else {
+                                        console.error('Error deleting row:', result.error);
+                                    }
+                                })
+                                .catch(error => console.error('Error:', error));
+                        }
+                    });
+                });
+            }
 
 
-$('#employeeNameDropdown').on('input', function() {
-                    let query = $(this).val();
+            $('#employeeNameDropdown').on('input', function() {
+                let query = $(this).val();
                     if (query.length > 0) { // Start searching after at least 1 characters
                         $.ajax({
                             url: '/search-employee/',  // Adjust the URL to your Django view
@@ -1612,284 +1613,286 @@ $('#employeeNameDropdown').on('input', function() {
                     } else {
                         $('#employeeNameDropdown').siblings('.employee-dropdown-menu').hide(); // Hide the dropdown if input is too short
                     }
-                });
-
-
-// Transporation Allocation Section
-
-fetchTransportationDetails(jobId);
-
-$(document).on('click', '.cancelRow', function() {
-    $(this).closest('.transportation-row').remove();
-});
-
-
-function fetchTransportationDetails(jobId) {
-    fetch(`/get_transportation_allocation/?jobId=${jobId}`)
-        .then(response => response.json())
-        .then(data => {
-            populateFields(data);
-        })
-        .catch(error => console.error('Error fetching transportation details:', error));
-}
-
-function populateFields(data) {
-    var onVehicleFields = document.getElementById('onVehicleFields');
-    var outsideVehicleFields = document.getElementById('outsideVehicleFields');
-
-    onVehicleFields.innerHTML = '';
-    outsideVehicleFields.innerHTML = '';
-
-    let onVehicleChecked = false;
-    let outsideVehicleChecked = false;
-
-    data.forEach(item => {
-        if (item.driver_name || item.vehicle_number) {
-            onVehicleChecked = true;
-            var newRowHtml = `
-                <div class="row transportation-row on-vehicle-row" data-id="${item.id}">
-                    <div class="col-xl-4 mb-3">
-                        <label class="form-label">Driver Name</label>
-                        <input type="text" class="form-control" placeholder="Enter Driver Name" name="driver_name" value="${item.driver_name || ''}">
-                    </div>
-                    <div class="col-xl-3 mb-3">
-                        <label class="form-label">Contact Number</label>
-                        <input type="number" class="form-control" placeholder="Enter Contact Number" name="contact_number" value="${item.contact_number || ''}">
-                    </div>
-                    <div class="col-xl-3 mb-3">
-                        <label class="form-label">Vehicle Number</label>
-                        <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="vehicle_number" value="${item.vehicle_number || ''}">
-                    </div>
-                    <div class="col-xl-2 mb-3" style="margin-top: 36px;">
-                        <button type="button" class="btn btn-success updateRow"><i class="fa fa-save"></i></button>
-                        <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
-                    </div>
-                </div>
-            `;
-            onVehicleFields.insertAdjacentHTML('beforeend', newRowHtml);
-        }
-
-        if (item.outside_driver_name || item.outside_vehicle_number) {
-            outsideVehicleChecked = true;
-            var newOutSideRowHtml = `
-                <div class="row transportation-row outside-vehicle-row" data-id="${item.id}">
-                    <div class="col-xl-4 mb-3">
-                        <label class="form-label">Outside Driver Name</label>
-                        <input type="text" class="form-control" placeholder="Enter Driver Name" name="outside_driver_name" value="${item.outside_driver_name || ''}">
-                    </div>
-                    <div class="col-xl-3 mb-3">
-                        <label class="form-label">Outside Contact Number</label>
-                        <input type="number" class="form-control" placeholder="Enter Contact Number" name="outside_contact_number" value="${item.outside_contact_number || ''}">
-                    </div>
-                    <div class="col-xl-3 mb-3">
-                        <label class="form-label">Outside Vehicle Number</label>
-                        <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="outside_vehicle_number" value="${item.outside_vehicle_number || ''}">
-                    </div>
-                    <div class="col-xl-2 mb-3" style="margin-top: 36px;">
-                        <button type="button" class="btn btn-success updateRow"><i class="fa fa-save"></i></button>
-                        <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
-                    </div>
-                </div>
-            `;
-            outsideVehicleFields.insertAdjacentHTML('beforeend', newOutSideRowHtml);
-        }
-    });
-
-    if (onVehicleChecked) {
-        document.getElementById('onVehicle').checked = true;
-        document.getElementById('onVehicleFields').style.display = 'block';
-    }
-    if (outsideVehicleChecked) {
-        document.getElementById('outsideVehicle').checked = true;
-        document.getElementById('outsideVehicleFields').style.display = 'block';
-    }
-
-    document.querySelectorAll('input[name="transportation_type"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'on_vehicle') {
-                document.getElementById('onVehicleFields').style.display = 'block';
-                document.getElementById('outsideVehicleFields').style.display = 'none';
-            } else if (this.value === 'outside_vehicle') {
-                document.getElementById('onVehicleFields').style.display = 'none';
-                document.getElementById('outsideVehicleFields').style.display = 'block';
-            }
-        });
-    });
-
-    document.querySelector('input[name="transportation_type"]:checked')?.dispatchEvent(new Event('change'));
-
-    document.querySelectorAll('.updateRow').forEach(button => {
-        button.addEventListener('click', function() {
-            var row = this.closest('.transportation-row');
-            var rowId = row.getAttribute('data-id');
-            var data = {
-                id: rowId,
-                driver_name: row.querySelector('input[name="driver_name"]') ? row.querySelector('input[name="driver_name"]').value : null,
-                contact_number: row.querySelector('input[name="contact_number"]') ? row.querySelector('input[name="contact_number"]').value : null,
-                vehicle_number: row.querySelector('input[name="vehicle_number"]') ? row.querySelector('input[name="vehicle_number"]').value : null,
-                outside_driver_name: row.querySelector('input[name="outside_driver_name"]') ? row.querySelector('input[name="outside_driver_name"]').value : null,
-                outside_contact_number: row.querySelector('input[name="outside_contact_number"]') ? row.querySelector('input[name="outside_contact_number"]').value : null,
-                outside_vehicle_number: row.querySelector('input[name="outside_vehicle_number"]') ? row.querySelector('input[name="outside_vehicle_number"]').value : null
-            };
-            updateRow(data);
-        });
-    });
-
-    document.querySelectorAll('.cancelRow').forEach(button => {
-        button.addEventListener('click', function() {
-            var row = this.closest('.transportation-row');
-            var rowId = row.getAttribute('data-id');
-            if (confirm('Are you sure you want to delete this row?')) {
-                row.remove();
-                // Optionally send a request to the server to delete the row
-                deleteRow(rowId);
-            }
-        });
-    });
-}
-
-function deleteRow(rowId) {
-    fetch(`/delete_transportation_allocation/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrfToken() // Ensure you have a function to get the CSRF token
-        },
-        body: JSON.stringify({ id: rowId })
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            alert('Row deleted successfully');
-        } else {
-            alert('Error deleting row: ' + result.error);
-        }
-    })
-    .catch(error => console.error('Error deleting row:', error));
-}
-
-function updateRow(data) {
-    fetch(`/update_transportation_allocation/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrfToken() // Ensure you have a function to get the CSRF token
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            alert('Row updated successfully');
-        } else {
-            alert('Error updating row: ' + result.error);
-        }
-    })
-    .catch(error => console.error('Error updating row:', error));
-}
-
-function getCsrfToken() {
-            const name = 'csrftoken=';
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                let cookie = cookies[i].trim();
-                if (cookie.startsWith(name)) {
-                    return cookie.substring(name.length, cookie.length);
-                }
-            }
-            return ''; // Return an empty string if CSRF token is not found
-        }
-
-// Add new transportation row when "Add More" button is clicked
-$('#addTransportation').click(function(event) {
-    event.preventDefault(); // Prevent the default form submission
-
-    // Get the selected transportation type
-    var transportationType = $('input[name="transportation_type"]:checked').val();
-
-    // Define the HTML for a new row
-    var newRowHtml = `
-        <div class="row transportation-row ${transportationType === 'on_vehicle' ? 'on-vehicle-row' : 'outside-vehicle-row'}">
-            <div class="col-xl-4 mb-3">
-                <label class="form-label">${transportationType === 'on_vehicle' ? 'Driver Name' : 'Outside Driver Name'}</label>
-                <input type="text" class="form-control" placeholder="Enter Driver Name" name="${transportationType === 'on_vehicle' ? 'driver_name' : 'outside_driver_name'}">
-            </div>
-            <div class="col-xl-3 mb-3">
-                <label class="form-label">${transportationType === 'on_vehicle' ? 'Contact Number' : 'Outside Contact Number'}</label>
-                <input type="number" class="form-control" placeholder="Enter Contact Number" name="${transportationType === 'on_vehicle' ? 'contact_number' : 'outside_contact_number'}">
-            </div>
-            <div class="col-xl-3 mb-3">
-                <label class="form-label">${transportationType === 'on_vehicle' ? 'Vehicle Number' : 'Outside Vehicle Number'}</label>
-                <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="${transportationType === 'on_vehicle' ? 'vehicle_number' : 'outside_vehicle_number'}">
-            </div>
-            <div class="col-xl-2 mb-3" style="margin-top: 36px;">
-                <button type="button" class="btn btn-success saveRow" data-type="${transportationType}"><i class="fa fa-save"></i></button>
-                <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
-            </div>
-        </div>
-    `;
-
-    // Append the new row to the appropriate section
-    if (transportationType === 'on_vehicle') {
-        $('#onVehicleFields').append(newRowHtml);
-    } else if (transportationType === 'outside_vehicle') {
-        $('#outsideVehicleFields').append(newRowHtml);
-    }
-});
-
-// Add event listener to dynamically created 'saveRow' buttons
-$(document).on('click', '.saveRow', function(event) {
-    var button = $(this);
-    var row = button.closest('.row');
-    var type = button.data('type'); // Get the type of transportation
-
-    var data = {
-        temp_id: jobId,
-        driver_name: '',
-        contact_number: '',
-        vehicle_number: '',
-        outside_driver_name: '',
-        outside_contact_number: '',
-        outside_vehicle_number: ''
-    };
-
-    // Collect data based on transportation type
-    if (type === 'on_vehicle') {
-        data.driver_name = row.find('input[name="driver_name"]').val();
-        data.contact_number = row.find('input[name="contact_number"]').val();
-        data.vehicle_number = row.find('input[name="vehicle_number"]').val();
-    } else if (type === 'outside_vehicle') {
-        data.outside_driver_name = row.find('input[name="outside_driver_name"]').val();
-        data.outside_contact_number = row.find('input[name="outside_contact_number"]').val();
-        data.outside_vehicle_number = row.find('input[name="outside_vehicle_number"]').val();
-    }
-
-    $.ajax({
-        url: '/insert_transportation/', // Replace with your actual URL
-        type: 'POST',
-        data: JSON.stringify(data),
-        contentType: 'application/json',
-        success: function(response) {
-            alert('Data saved successfully!');
-            // Optionally provide feedback or update the UI without removing the row
-        },
-        error: function(xhr, status, error) {
-            alert('An error occurred: ' + error);
-        }
-    });
-});
-
-           $('#removeButton').click(function(event) {
-                    event.preventDefault(); // Prevent the default form submission
-
-                    // Clear the form fields
-                    $('#onVehicleFields').find('input').val('');
-                    $('#outsideVehicleFields').find('input').val('');
-
             });
 
 
-$('#shareAsPdf').click(function () {
+            // Transporation Allocation Section
+            // Attach event handler to the Cancel button
+
+            fetchTransportationDetails(jobId);
+
+            function fetchTransportationDetails(jobId) {
+                fetch(`/get_transportation_allocation/?jobId=${jobId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        populateFields(data);
+                    })
+                    .catch(error => console.error('Error fetching transportation details:', error));
+            }
+
+            function populateFields(data) {
+                var onVehicleFields = document.getElementById('onVehicleFields');
+                var outsideVehicleFields = document.getElementById('outsideVehicleFields');
+
+                onVehicleFields.innerHTML = '';
+                outsideVehicleFields.innerHTML = '';
+
+                let onVehicleChecked = false;
+                let outsideVehicleChecked = false;
+
+                data.forEach(item => {
+                    if (item.driver_name || item.vehicle_number) {
+                        onVehicleChecked = true;
+                        var newRowHtml = `
+                            <div class="row transportation-row on-vehicle-row" data-id="${item.id}">
+                                <div class="col-xl-4 mb-3">
+                                    <label class="form-label">Driver Name</label>
+                                    <input type="text" class="form-control" placeholder="Enter Driver Name" name="driver_name" value="${item.driver_name || ''}">
+                                </div>
+                                <div class="col-xl-3 mb-3">
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="number" class="form-control" placeholder="Enter Contact Number" name="contact_number" value="${item.contact_number || ''}">
+                                </div>
+                                <div class="col-xl-3 mb-3">
+                                    <label class="form-label">Vehicle Number</label>
+                                    <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="vehicle_number" value="${item.vehicle_number || ''}">
+                                </div>
+                                <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                                    <button type="button" class="btn btn-success updateRow"><i class="fa fa-save"></i></button>
+                                    <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+                                </div>
+                            </div>
+                        `;
+                        onVehicleFields.insertAdjacentHTML('beforeend', newRowHtml);
+                    }
+
+                    if (item.outside_driver_name || item.outside_vehicle_number) {
+                        outsideVehicleChecked = true;
+                        var newOutSideRowHtml = `
+                            <div class="row transportation-row outside-vehicle-row" data-id="${item.id}">
+                                <div class="col-xl-4 mb-3">
+                                    <label class="form-label">Outside Driver Name</label>
+                                    <input type="text" class="form-control" placeholder="Enter Driver Name" name="outside_driver_name" value="${item.outside_driver_name || ''}">
+                                </div>
+                                <div class="col-xl-3 mb-3">
+                                    <label class="form-label">Outside Contact Number</label>
+                                    <input type="number" class="form-control" placeholder="Enter Contact Number" name="outside_contact_number" value="${item.outside_contact_number || ''}">
+                                </div>
+                                <div class="col-xl-3 mb-3">
+                                    <label class="form-label">Outside Vehicle Number</label>
+                                    <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="outside_vehicle_number" value="${item.outside_vehicle_number || ''}">
+                                </div>
+                                <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                                    <button type="button" class="btn btn-success updateRow"><i class="fa fa-save"></i></button>
+                                    <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+                                </div>
+                            </div>
+                        `;
+                        outsideVehicleFields.insertAdjacentHTML('beforeend', newOutSideRowHtml);
+                    }
+                });
+
+                if (onVehicleChecked) {
+                    document.getElementById('onVehicle').checked = true;
+                    document.getElementById('onVehicleFields').style.display = 'block';
+                }
+                if (outsideVehicleChecked) {
+                    document.getElementById('outsideVehicle').checked = true;
+                    document.getElementById('outsideVehicleFields').style.display = 'block';
+                }
+
+                document.querySelectorAll('input[name="transportation_type"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        if (this.value === 'on_vehicle') {
+                            document.getElementById('onVehicleFields').style.display = 'block';
+                            document.getElementById('outsideVehicleFields').style.display = 'none';
+                        } else if (this.value === 'outside_vehicle') {
+                            document.getElementById('onVehicleFields').style.display = 'none';
+                            document.getElementById('outsideVehicleFields').style.display = 'block';
+                        }
+                    });
+                });
+
+                document.querySelector('input[name="transportation_type"]:checked')?.dispatchEvent(new Event('change'));
+
+                document.querySelectorAll('.updateRow').forEach(button => {
+                    button.addEventListener('click', function() {
+                        var row = this.closest('.transportation-row');
+                        var rowId = row.getAttribute('data-id');
+                        var data = {
+                            id: rowId,
+                            driver_name: row.querySelector('input[name="driver_name"]') ? row.querySelector('input[name="driver_name"]').value : null,
+                            contact_number: row.querySelector('input[name="contact_number"]') ? row.querySelector('input[name="contact_number"]').value : null,
+                            vehicle_number: row.querySelector('input[name="vehicle_number"]') ? row.querySelector('input[name="vehicle_number"]').value : null,
+                            outside_driver_name: row.querySelector('input[name="outside_driver_name"]') ? row.querySelector('input[name="outside_driver_name"]').value : null,
+                            outside_contact_number: row.querySelector('input[name="outside_contact_number"]') ? row.querySelector('input[name="outside_contact_number"]').value : null,
+                            outside_vehicle_number: row.querySelector('input[name="outside_vehicle_number"]') ? row.querySelector('input[name="outside_vehicle_number"]').value : null
+                        };
+                        updateRow(data);
+                    });
+                });
+
+                document.querySelectorAll('.cancelRow').forEach(button => {
+                    button.addEventListener('click', function() {
+                        var row = this.closest('.transportation-row');
+                        var rowId = row.getAttribute('data-id');
+                        if (confirm('Are you sure you want to delete this row?')) {
+                            row.remove();
+                            // Optionally send a request to the server to delete the row
+                            deleteRow(rowId);
+                        }
+                    });
+                });
+            }
+
+            function deleteRow(rowId) {
+                fetch(`/delete_transportation_allocation/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken() // Ensure you have a function to get the CSRF token
+                    },
+                    body: JSON.stringify({ id: rowId })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Row deleted successfully');
+                    } else {
+                        alert('Error deleting row: ' + result.error);
+                    }
+                })
+                .catch(error => console.error('Error deleting row:', error));
+            }
+
+            function updateRow(data) {
+                fetch(`/update_transportation_allocation/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken() // Ensure you have a function to get the CSRF token
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Row updated successfully');
+                    } else {
+                        alert('Error updating row: ' + result.error);
+                    }
+                })
+                .catch(error => console.error('Error updating row:', error));
+            }
+
+            function getCsrfToken() {
+                        const name = 'csrftoken=';
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            let cookie = cookies[i].trim();
+                            if (cookie.startsWith(name)) {
+                                return cookie.substring(name.length, cookie.length);
+                            }
+                        }
+                        return ''; // Return an empty string if CSRF token is not found
+                    }
+
+            // Add new transportation row when "Add More" button is clicked
+            $('#addTransportation').click(function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                // Get the selected transportation type
+                var transportationType = $('input[name="transportation_type"]:checked').val();
+
+                // Define the HTML for a new row
+                var newRowHtml = `
+                    <div class="row transportation-row ${transportationType === 'on_vehicle' ? 'on-vehicle-row' : 'outside-vehicle-row'}">
+                        <div class="col-xl-4 mb-3">
+                            <label class="form-label">${transportationType === 'on_vehicle' ? 'Driver Name' : 'Outside Driver Name'}</label>
+                            <input type="text" class="form-control" placeholder="Enter Driver Name" name="${transportationType === 'on_vehicle' ? 'driver_name' : 'outside_driver_name'}">
+                        </div>
+                        <div class="col-xl-3 mb-3">
+                            <label class="form-label">${transportationType === 'on_vehicle' ? 'Contact Number' : 'Outside Contact Number'}</label>
+                            <input type="number" class="form-control" placeholder="Enter Contact Number" name="${transportationType === 'on_vehicle' ? 'contact_number' : 'outside_contact_number'}">
+                        </div>
+                        <div class="col-xl-3 mb-3">
+                            <label class="form-label">${transportationType === 'on_vehicle' ? 'Vehicle Number' : 'Outside Vehicle Number'}</label>
+                            <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="${transportationType === 'on_vehicle' ? 'vehicle_number' : 'outside_vehicle_number'}">
+                        </div>
+                        <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                            <button type="button" class="btn btn-success saveRow" data-type="${transportationType}"><i class="fa fa-save"></i></button>
+                            <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                `;
+
+                // Append the new row to the appropriate section
+                if (transportationType === 'on_vehicle') {
+                    $('#onVehicleFields').append(newRowHtml);
+                } else if (transportationType === 'outside_vehicle') {
+                    $('#outsideVehicleFields').append(newRowHtml);
+                }
+            });
+
+            // Event listener to remove a row when the cancelRow button is clicked
+            $(document).on('click', '.cancelRow', function() {
+                $(this).closest('.transportation-row').remove();
+            });
+
+            // Add event listener to dynamically created 'saveRow' buttons
+            $(document).on('click', '.saveRow', function(event) {
+                var button = $(this);
+                var row = button.closest('.row');
+                var type = button.data('type'); // Get the type of transportation
+
+                var data = {
+                    temp_id: jobId,
+                    driver_name: '',
+                    contact_number: '',
+                    vehicle_number: '',
+                    outside_driver_name: '',
+                    outside_contact_number: '',
+                    outside_vehicle_number: ''
+                };
+
+                // Collect data based on transportation type
+                if (type === 'on_vehicle') {
+                    data.driver_name = row.find('input[name="driver_name"]').val();
+                    data.contact_number = row.find('input[name="contact_number"]').val();
+                    data.vehicle_number = row.find('input[name="vehicle_number"]').val();
+                } else if (type === 'outside_vehicle') {
+                    data.outside_driver_name = row.find('input[name="outside_driver_name"]').val();
+                    data.outside_contact_number = row.find('input[name="outside_contact_number"]').val();
+                    data.outside_vehicle_number = row.find('input[name="outside_vehicle_number"]').val();
+                }
+
+                $.ajax({
+                    url: '/insert_transportation/', // Replace with your actual URL
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    contentType: 'application/json',
+                    success: function(response) {
+                       alert('Data saved successfully!');
+                        // Optionally provide feedback or update the UI without removing the row
+                    },
+                    error: function(xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+
+           $('#removeButton').click(function(event) {
+                    event.preventDefault(); // Prevent the default form submission
+                    // Clear the form fields
+                    $('#onVehicleFields').find('input').val('');
+                    $('#outsideVehicleFields').find('input').val('');
+            });
+
+
+
+            // Event handler for the '#shareAsPdf' button click
+
+           $('#shareAsPdf').click(function () {
                 var jobId = getJobIdFromURL(); // Fetch the jobId from the URL
                 console.log('Fetch the Job ID:', jobId);
 
@@ -3225,8 +3228,528 @@ $('#shareAsPdf').click(function () {
     html2pdf().from(printContent).set(opt).save();
             }
 
+            function handlePerfoma(response) {
+                // Construct the PDF content dynamically for "quotation" status
+                var equipmentLeftHtml = '';
+                var equipmentRightHtml = '';
 
-function handleDeliveryChallan(response) {
+                response.equipment_details.forEach(function (detail) {
+                    equipmentLeftHtml += `<p>${detail.quantity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${detail.equipment_name}</p>`;
+                    equipmentRightHtml += `<p>RS. ${detail.rental_price}</p>`;
+                });
+
+                var printContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                .box {
+                    background-color: #fff;
+                    padding: 20px;
+                    margin: 10px auto;
+                    max-width: 700px;
+                    min-height: 100%;
+                }
+                .container {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0px;
+                }
+                .left {
+                    width: 150px;
+                    text-align: left;
+                }
+                .right {
+                    width: 150px;
+                    text-align: right;
+                    padding-top: 5px;
+                    margin-top: -60px;
+                }
+                .left p {
+                    margin-bottom: 4px;
+                }
+                .left h3 {
+                    margin-bottom: -10px;
+                }
+                .left h5 {
+                    margin-top: 5px;
+                }
+                .logo {
+                    width: 100px;
+                    align-item: center;
+                }
+                .job-details {
+                    display: flex;
+                    border-top: 1px solid #000000;
+                    padding-top: -10px;
+                    justify-content: space-between;
+                    height: auto;
+                }
+                .job_left {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .job_left p {
+                    margin-bottom: -5px;
+                }
+                .job_left p b {
+                    display: inline-block;
+                    width: 120px;
+                }
+                .job_left p span {
+                    display: inline-block;
+                    margin-left: -22px;
+                }
+                .job_right {
+                    width: 250px;
+                    display: inline-block;
+                    vertical-align: top;
+                }
+                .job-details-description {
+                    margin-top: 15px;
+                    border-top: 1px solid #000000;
+                    display: flex;
+                    flex-direction: column;
+                    align-item: left;
+                    margin-bottom: 20px;
+                }
+                .job-details-description h4 {
+                    text-align: left;
+                }
+                .job-details-description h2 {
+                    text-align: left;
+                    margin-top: -15px;
+                }
+                .job_equipment_container {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-top: -10px;
+                }
+                .job_left_equipment {
+                    width: 45%;
+                }
+                .job_right_equipment {
+                    width: 45%;
+                    float: right;
+                    text-align: right;
+                }
+                .color-amount{
+                    background-color: #00aced;
+                }
+                @page {
+                    size: A4;
+                    margin: 0;
+                }
+                body {
+                    margin: 0;
+                    font-size: 10pt;
+                    background-color: black;
+                }
+                @media only screen and (max-width: 300px) {
+                    .container {
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    .job-details {
+                        width: 100%;
+                    }
+                    .job_left,
+                    .job_right {
+                        width: 100%;
+                        text-align: center;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="box">
+                <div class="container">
+                    <div class="left">
+                        <h3><u>Registered Address:</u></h3>
+                        <h3 style="font-size: 14px;">${response.job.company_name}</h3>
+                        <p>${response.job.company_address}</p>
+                        <p><a href="mailto:${response.job.company_email}">${response.job.company_email}</a></p>
+                        <h5>GST No: ${response.job.company_gst_no}</h5>
+                    </div>
+                    <div class="logo">
+                        <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
+                    </div>
+                    <div class="right">
+                        <h3><u>Warehouse Address:</u></h3>
+                        <p>Parle Colony, Andheri, East, 567889</p>
+                        <p>9768476574</p>
+                        <p>${response.job.job_reference_no}</p>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+                </div>
+                <div class="job-details">
+                    <div class="job_left" style="width: 300px;">
+                        <p><b>Job Title:</b><span> ${response.job.title}</span></p>
+                        <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
+                        <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                        <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                        <p><b>Customer:</b><span> Xplused Events Pvt.Ltd</span></p>
+                    </div>
+                    <div class="job_right" style="text-align: right; width: 250px;">
+                        <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                    </div>
+                </div>
+                <div class="job-details-description">
+                    <h4>Qty Description</h4>
+                    <h2>Audio Equipment</h2>
+                    <div class="job_equipment_container">
+                        <div class="job_left_equipment">
+                            ${equipmentLeftHtml}
+                        </div>
+                        <div class="job_right_equipment">
+                            ${equipmentRightHtml}
+                        </div>
+                    </div>
+                </div>
+                <div style="height:30px;" class="color-amount">
+                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT RS. ${response.job.amount_row}</b></p>
+                </div>
+                <div>
+                    <p style="text-align: right;">Total RS. ${response.job.amount_row}</p>
+                </div>
+                <div style="text-align: center; font-size: 22px;">
+                    <b><u>Warehouse Added Equipment</u></b>
+                </div>
+                <p style="font-size: 18px;"><i><b>AUDIO EQUIPMENT</i></b></p>
+                <div style="display: flex; justify-content: space-between;">
+                    <p style="text-align: left;">2 MACKIE SRM150</p>
+                    <p style="text-align: right;">RS. 0,00</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+                // Open the print window
+                var printWindow = window.open('', '_blank');
+                printWindow.document.open();
+                printWindow.document.write(printContent);
+                printWindow.document.close();
+
+                // Print the window
+                var logoImage = printWindow.document.getElementById('logoImage');
+                logoImage.onload = function () {
+                    printWindow.focus();
+                    printWindow.print();
+                };
+            }
+
+            function handlePrepsheet(response) {
+                // Group equipment details by Type
+                var groupedEquipment = {};
+
+                response.job_details.forEach(function (detail) {
+                    if (!groupedEquipment[detail.type]) {
+                        groupedEquipment[detail.type] = [];
+                    }
+                    groupedEquipment[detail.type].push({
+                        quantity: detail.quantity,
+                        equipment_name: detail.equipment_name,
+                        type: detail.type,
+                        amount: detail.amount
+                    });
+                });
+
+                // Generate HTML for each category_type
+                var equipmentLeftHtml = '';
+                var equipmentRightHtml = '';
+
+                for (var type in groupedEquipment) {
+                    if (groupedEquipment.hasOwnProperty(type)) {
+                        var equipmentItems = groupedEquipment[type];
+                        equipmentLeftHtml += `<h3>${type}</h3>`;
+                        equipmentRightHtml += `<h3>${type}</h3>`;
+
+                        equipmentItems.forEach(function (item) {
+                            equipmentLeftHtml += `<p>${item.quantity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${item.equipment_name}</p>`;
+                            equipmentRightHtml += `<p>RS. ${item.amount}</p>`;
+                        });
+                    }
+                }
+
+                var printContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            .box {
+                background-color: #fff;
+                padding: 20px;
+                margin: 10px auto;
+                max-width: 700px;
+                min-height: 100%;
+            }
+            .container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0px;
+                font-style: italic;
+                font-weight: bolder;
+            }
+            .left {
+                width: 150px;
+                text-align: left;
+            }
+            .right {
+                width: 150px;
+                text-align: right;
+                padding-top: 5px;
+                margin-top: -60px;
+            }
+            .right p {
+                margin-bottom: -8px;
+            }
+            .right h3 {
+                margin-bottom: -10px;
+            }
+            .right h4 {
+                margin-bottom: -10px;
+            }
+            .left h4 {
+                margin-bottom: -10px;
+            }
+            .left p {
+                margin-bottom: 4px;
+            }
+            .left h3 {
+                margin-bottom: -10px;
+            }
+            .left h5 {
+                margin-top: 5px;
+            }
+            .logo {
+                width: 145px;
+                align-item: center;
+            }
+            .job-details {
+                display: flex;
+                border-top: 5px solid #000000;
+                margin-top: -25px;
+                padding-top: -10px;
+                justify-content: space-between;
+                height: auto;
+            }
+            .equipment-details {
+                display: flex;
+                border-top: 10px solid #97cc9e;
+                margin-top: 20px;
+                padding-top: 10px;
+                justify-content: space-between;
+                height: auto;
+            }
+
+            .equipment_left {
+                display: flex;
+                flex-direction: column;
+                margin-top: -15px;
+            }
+
+            .equipment_left p {
+                margin-bottom: -8px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_left p b {
+                display: inline-block;
+                width: 115px; /* Fixed width for labels to align values */
+            }
+
+            .equipment_left p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .job_left {
+                display: flex;
+                flex-direction: column;
+            }
+            .job_left p {
+                margin-bottom: -12px;
+            }
+            .job_left p b {
+                display: inline-block;
+                width: 120px;
+            }
+            .job_left p span {
+                display: inline-block;
+                margin-left: -22px;
+            }
+            .job_right {
+                width: 250px;
+                display: inline-block;
+                vertical-align: top;
+            }
+            .job-details-description {
+                margin-top: 15px;
+                border-top: 1px solid #000000;
+                display: flex;
+                flex-direction: column;
+                align-item: left;
+                margin-bottom: 20px;
+            }
+            .job-details-description h4 {
+                text-align: left;
+                margin-top: auto;
+            }
+            .job-details-description h2 {
+                text-align: left;
+                margin-top: -15px;
+            }
+            .job_equipment_container {
+                display: flex;
+                justify-content: space-between;
+                margin-top: -10px;
+            }
+            .job_left_equipment {
+                width: 45%;
+            }
+            .job_right_equipment {
+                width: 45%;
+                float: right;
+                text-align: right;
+            }
+            .color-amount {
+                background-color: #00aced;
+            }
+            #default-text {
+                font-size: 20px;
+                font-weight: bolder;
+                margin-top: auto;
+                text-decoration: underline;
+            }
+            #color {
+                background-color: #bfcddb;
+                color: #0b0c0f;
+                border-bottom: 1px solid #000000;
+                font-style: italic;
+            }
+            .customer-details {
+                display: inline-block;
+                vertical-align: top;
+                max-width: 150px;
+            }
+            .company-address {
+                margin-top: 5px;
+                word-wrap: break-word;
+            }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                margin: 0px;
+                font-size: 10pt;
+                background-color: #FFFFFF;
+                padding: 0px;
+            }
+            @media only screen and (max-width: 500px) {
+                .container {
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .job-details {
+                    width: 100%;
+                }
+                .job_left,
+                .job_right {
+                    width: 100%;
+                    text-align: center;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <div class="container">
+                <div class="left">
+                    <h4><u><i>Registered Address:</i></u></h4>
+                    <h3 style="font-size: 12px;">${response.job.company_name}</h3>
+                    <p>${response.job.company_address}</p>
+                    <p style="margin-top:-4px;"><a href="mailto:${response.job.company_email}">${response.job.company_email}</a></p>
+                    <h5>GST No: ${response.job.company_gst_no}</h5>
+                </div>
+                <div class="logo">
+                    <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
+                </div>
+                <div class="right">
+                    <h4><u>Warehouse Address:</u></h4>
+                    <p>Parle Colony, Andheri, East, 567889</p>
+                    <p>9768476574</p>
+                    <p>${response.job.job_reference_no}</p>
+                </div>
+            </div>
+            <div>
+                <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+            </div>
+            <div class="job-details">
+                <div class="job_left" style="width: 400px;">
+                    <p><b>Job Title:</b><span> ${response.job.title}</span></p>
+                    <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
+                    <p><b>Customer:</b><span class="customer-details"> ${response.job.company_name}<br>${response.job.company_address}</span></p>
+                </div>
+                <div class="job_right" style="text-align: right; width: 250px;">
+                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                    <p style="margin-top: -10px;"><b>Sound Engineer:</b><span> ${response.job.employee}</span></p>
+                    <p style="margin-top: -10px;"><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                </div>
+            </div>
+            <div class="equipment-details">
+                <div class="equipment_left" style="width: 300px;">
+                    <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${response.job.job_reference_no}</span></p>
+                    <p><b>Equipment Ref:</b><span> ${response.job.job_reference_no}</span></p>
+                    <p><b>Event Start Date:</b><span> ${response.job.show_start_date ? response.job.show_start_date : '-'}</span></p>
+                    <p><b>Event End Date:</b><span> ${response.job.show_end_date ? response.job.show_end_date : '-'}</span></p>
+                </div>
+            </div>
+            <div class="job-details-description">
+                <p id="default-text">Default Section Header</p>
+                <h4>Qty Description</h4>
+                <h2 id="color">Audio Equipment</h2>
+                <div class="job_equipment_container">
+                    <div class="job_left_equipment">
+                        ${equipmentLeftHtml}
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: left; font-size: 22px;">
+                <b><u>Warehouse Added Equipment</u></b>
+            </div>
+            <p style="font-size: 18px;"><i><b>AUDIO EQUIPMENT</i></b></p>
+            <div style="display: flex; justify-content: space-between;">
+                <p style="text-align: left;">2 MACKIE SRM150</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+                // Open the print window
+                var printWindow = window.open('', '_blank');
+                printWindow.document.open();
+                printWindow.document.write(printContent);
+                printWindow.document.close();
+
+                // Wait for the content to load and then print
+                printWindow.onload = function () {
+                    printWindow.focus();
+                    printWindow.print();
+                    printWindow.close();
+                };
+            }
+
+            function handleDeliveryChallan(response) {
                 var equipmentTableHtml = `
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
@@ -3933,8 +4456,10 @@ function handleDeliveryChallan(response) {
     html2pdf().from(printContent).set(opt).save();
             }
 
-});
+        });
     </script>
+
+
 
 
     <body>

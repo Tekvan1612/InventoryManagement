@@ -458,6 +458,7 @@ select {
             }
         }
     </style>
+
 <script>
         function validateStep(currentStep, nextStep) {
             const currentStepInputs = document.querySelectorAll(`#step-${currentStep} input[required], #step-${currentStep} select[required]`);
@@ -744,6 +745,7 @@ select {
                     status: $('#status').val(),
                     venue_name: $('#venueAddressDropdown').val(),
                     venue_address: $('#venueAddressInput').val(),
+                    input_notes: $('#inputNotes').val(),
                     crew_type: $('#crewQuantity').val(),
                     employee: $('#employee').val(),
                     setup_date: $('#prepDate').val(),
@@ -780,81 +782,36 @@ select {
                 });
             }
 
+
+
         // General Details Section End
 
 
         // Add Equipment Section
-            // Event listener for change in the last input field of each row
-            $('#selectedEquipmentTable').on('input', '.quantity-input-selected', function () {
-                const lastRow = $('#selectedEquipmentTable tbody tr:last-child');
 
-                // Check if the change occurred in the last input field of the last row
-                if ($(this).closest('tr').is(lastRow)) {
-                    if (typeof window.tempId !== 'undefined') {
-                        insertEquipmentDetails(window.tempId);
-                    } else {
-                        alert('Temp ID is not available. Please insert temp data first.');
-                    }
-                }
-            });
 
-            // Function to insert equipment details
-            function insertEquipmentDetails(tempId) {
-                const equipmentDetails = [];
-                $('#selectedEquipmentTable tbody tr').each(function () {
-                    const row = $(this);
-                    equipmentDetails.push({
-                        temp_id: tempId,
-                        equipment_name: row.find('.equipment-name').text(),
-                        quantity: row.find('.quantity-input-selected').val(),
-                    });
-                });
+// Function to calculate the total amount
+function calculateTotalAmount(tempId) {
+    $.ajax({
+        url: `/calculate-total-amount/${tempId}/`,
+        type: 'GET',
+        success: function(response) {
+            $('#total_amount').val(response.total_amount);
+        },
+        error: function(error) {
+            console.error('Error fetching total amount:', error);
+        }
+    });
+}
 
-                $.ajax({
-                    url: '/insert-equipment-details/',
-                    type: 'POST',
-                    data: JSON.stringify({ equipmentDetails: equipmentDetails }),
-                    contentType: 'application/json',
-                    success: function (response) {
-                        if (response.status === 'success') {
-                            alert('Equipment details inserted successfully');
-
-                            // After successful insertion, calculate the total amount
-                            calculateTotalAmount(window.tempId);
-                        } else {
-                            alert('Error inserting equipment details: ' + response.error);
-                        }
-                    },
-                    error: function (error) {
-                        alert('Error inserting equipment details');
-                        console.log(error);
-                    }
-                });
-            }
-
-            // Function to calculate the total amount
-            function calculateTotalAmount(tempId) {
-                $.ajax({
-                    url: `/calculate-total-amount/${tempId}/`,
-                    type: 'GET',
-                    success: function(response) {
-                        $('#total_amount').val(response.total_amount);
-                    },
-                    error: function(error) {
-                        console.error('Error fetching total amount:', error);
-                    }
-                });
-            }
-
-            // Trigger calculation when quantity is clicked
-            $('.quantity-input-selected').on('click', function() {
-                if (typeof window.tempId !== 'undefined') {
-                    console.log('Equipment Quantity input is working.')
-                    calculateTotalAmount(window.tempId);
-                } else {
-                    alert('Job ID is not available. Please ensure the job data is loaded correctly.');
-                }
-            });
+// Trigger calculation when quantity is clicked
+$('.quantity-input-selected').on('click', function() {
+    if (typeof window.tempId !== 'undefined') {
+        calculateTotalAmount(window.tempId);
+    } else {
+        alert('Job ID is not available. Please ensure the job data is loaded correctly.');
+    }
+});
 
 
                 // Function to calculate discount and total amounts
@@ -946,40 +903,80 @@ $('#total_amount, #discount, #discounted_amount, #total_amount_cal').on('input',
             let timeoutId;
 
             $('#searchCategory').on('input', function () {
-                var query = $(this).val();
-                var dropdown = $('#equipmentDropdown');
+    var query = $(this).val();
+    var dropdown = $('#equipmentDropdown');
 
-                if (query.length > 2) {
-                    $.ajax({
-                        url: '/search-equipment/',
-                        data: {'query': query},
-                        success: function (data) {
-                            dropdown.empty(); // Clear previous results
-                            if (data.length > 0) {
-                                var table = '<table class="table table-bordered"><thead><tr><th>Equipment</th><th>Available</th><th>Quantity</th></tr></thead><tbody>';
-                                data.forEach(function (item) {
-                                    var disabledClass = item.available_quantity === 0 ? 'disabled-option' : '';
-                                    table += `
-                            <tr class="${disabledClass}">
-                                <td>${item.equipment_name}</td>
-                                <td style="text-align: center;">${item.available_quantity}</td>
-                                <td>
-                                    <input type="number" class="form-control quantity-input-dropdown" data-equipment-name="${item.equipment_name}" data-available-quantity="${item.available_quantity}" min="1" max="${item.available_quantity}" placeholder="Enter quantity" style="width: 73px;">
-                                </td>
-                            </tr>`;
-                                });
-                                table += '</tbody></table>';
-                                dropdown.html(table); // Use html() instead of append()
-                                dropdown.show();
-                            } else {
-                                dropdown.hide();
-                            }
+    if (query.length > 2) {
+        $.ajax({
+            url: '/search-equipment/',
+            data: { 'query': query },
+            success: function (data) {
+                dropdown.empty(); // Clear previous results
+                if (data.length > 0) {
+                    var table = '<table class="table table-bordered"><thead><tr><th>Equipment</th><th>Available</th><th>Quantity</th></tr></thead><tbody>';
+                    data.forEach(function (item) {
+                        var disabledClass = item.available_quantity === 0 ? 'disabled-option' : '';
+                        table += `
+                    <tr class="${disabledClass}">
+                        <td>${item.equipment_name}</td>
+                        <td style="text-align: center;">${item.available_quantity}</td>
+                        <td>
+                            <input type="number" class="form-control quantity-input-dropdown" data-equipment-name="${item.equipment_name}" data-available-quantity="${item.available_quantity}" min="1" max="${item.available_quantity}" placeholder="Enter quantity" style="width: 73px;">
+                        </td>
+                    </tr>`;
+                    });
+                    table += '</tbody></table>';
+                    dropdown.html(table); // Use html() instead of append()
+                    dropdown.show();
+
+                    // Attach event listener to the quantity input fields
+                    $('.quantity-input-dropdown').on('input', function () {
+                        var input = $(this);
+                        var equipmentName = input.data('equipment-name');
+                        var quantity = input.val();
+                        var tempId = window.tempId; // Fetch tempId from window.tempId
+
+                        if (quantity && !isNaN(quantity) && parseInt(quantity, 10) > 0) {
+                            var equipmentDetails = [{
+                                temp_id: tempId, // Use tempId from window.tempId
+                                equipment_name: equipmentName,
+                                quantity: parseInt(quantity, 10), // Ensure the quantity is sent as an integer
+                            }];
+
+                            // Trigger the insertEquipmentDetails function directly
+                            $.ajax({
+                                url: '/insert-equipment-details/',
+                                type: 'POST',
+                                data: JSON.stringify({ equipmentDetails: equipmentDetails }),
+                                contentType: 'application/json',
+                                success: function (response) {
+                                    if (response.status === 'success') {
+                                        alert('Equipment details inserted successfully');
+                                        calculateTotalAmount(tempId); // Use tempId in calculateTotalAmount
+                                    } else {
+                                        alert('Error inserting equipment details: ' + response.error);
+                                    }
+                                },
+                                error: function (error) {
+                                    alert('Error inserting equipment details');
+                                    console.log(error);
+                                }
+                            });
+                        } else {
+                            console.error('Invalid or missing quantity for equipment:', equipmentName);
                         }
                     });
+
                 } else {
                     dropdown.hide();
                 }
-            });
+            }
+        });
+    } else {
+        dropdown.hide();
+    }
+});
+
 
             // Event handler for quantity input change within the dropdown table
             $(document).on('input', '#equipmentDropdown .quantity-input-dropdown', function () {
@@ -1598,6 +1595,7 @@ $(document).on('click', '.cancelRow', function(event) {
         });
 
 </script>
+
     <body>
 
     <!--*******************
