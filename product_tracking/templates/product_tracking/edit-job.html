@@ -1619,6 +1619,11 @@ $('#employeeNameDropdown').on('input', function() {
 
 fetchTransportationDetails(jobId);
 
+$(document).on('click', '.cancelRow', function() {
+    $(this).closest('.transportation-row').remove();
+});
+
+
 function fetchTransportationDetails(jobId) {
     fetch(`/get_transportation_allocation/?jobId=${jobId}`)
         .then(response => response.json())
@@ -1884,54 +1889,761 @@ $(document).on('click', '.saveRow', function(event) {
             });
 
 
-// Event handler for the '#shareAsPdf' button click
 $('#shareAsPdf').click(function () {
-    var jobId = getJobIdFromURL(); // Fetch the jobId from the URL
-    console.log('Fetch the Job ID:', jobId);
+                var jobId = getJobIdFromURL(); // Fetch the jobId from the URL
+                console.log('Fetch the Job ID:', jobId);
 
-    if (jobId) {
-        $.ajax({
-            url: '/print_jobs/', // Your Django URL for fetching job details
-            type: 'GET',
-            data: { jobId: jobId },
-            success: function (response) {
-                // Check the job status and call appropriate handler function
-                if (response.job && response.job.status) {
-                    var status = response.job.status.toLowerCase();
-                    if (status === 'quotation') {
-                        handleQuotation(response);
-                    } else if (status === 'perfoma') {
-                        handlePerfoma(response);
-                    } else if (status === 'prepsheet') {
-                        handlePrepsheet(response);
-                    } else if (status === 'delivery challan') {
-                        handleDeliveryChallan(response);
-                    } else {
-                        alert('Unknown status: ' + response.job.status);
-                    }
+                if (jobId) {
+                    $.ajax({
+                        url: '/print_jobs/', // Your Django URL for fetching job details
+                        type: 'GET',
+                        data: { jobId: jobId },
+                        success: function (response) {
+                            if (response.job && response.job.status) {
+                                var status = response.job.status.toLowerCase();
+                                if (status === 'quotation') {
+                                    // Show dropdown container
+                                    $('#dropdown-container').show();
+
+                                    // Handle dropdown item click
+                                    $('#dropdown-container .dropdown-item').click(function() {
+                                        var selectedOptionId = $(this).attr('id'); // Get the id of the selected option
+
+                                        // Hide the dropdown container after selection
+                                        $('#dropdown-container').hide();
+
+                                        // Check the id and call the appropriate function
+                                        if (selectedOptionId === "equipmentQuotation") {
+                                            $('#delivery-options-container').show();
+
+                                            // Handle the click on the PDF option
+                                            $('#delivery-options-container #pdfOption').click(function() {
+                                                handleEquipmentQuotationPdf(response);
+
+                                                $('#delivery-options-container').hide(); // Hide options after selection
+                                            });
+
+                                            // Handle the click on the Print option
+                                            $('#delivery-options-container #printOption').click(function() {
+                                                handleEquipmentQuotation(response);
+
+                                                $('#delivery-options-container').hide(); // Hide options after selection
+                                            });
+
+                                        } else if (selectedOptionId === "totalQuotation") {
+                                            $('#delivery-options-container').show();
+
+                                            // Handle the click on the PDF option
+                                            $('#delivery-options-container #pdfOption').click(function() {
+                                                handleTotalQuotationPdf(response);
+
+                                                $('#delivery-options-container').hide(); // Hide options after selection
+                                            });
+
+                                            // Handle the click on the Print option
+                                            $('#delivery-options-container #printOption').click(function() {
+                                                handleTotalQuotation(response);
+
+                                                $('#delivery-options-container').hide(); // Hide options after selection
+                                            });
+                                        }
+                                    });
+
+                                } else if (status === 'perfoma') {
+                                    handlePerfoma(response);
+                                } else if (status === 'prepsheet') {
+                                    handlePrepsheet(response);
+                                } else if (status === 'delivery challan') {
+                                     // Show PDF and Print options
+                                    $('#delivery-options-container').show();
+
+                                    // Handle the click on the PDF option
+                                    $('#delivery-options-container #pdfOption').click(function() {
+                                        handleDeliveryChallanPdf(response);
+
+                                        $('#delivery-options-container').hide(); // Hide options after selection
+                                    });
+
+                                    // Handle the click on the Print option
+                                    $('#delivery-options-container #printOption').click(function() {
+                                        handleDeliveryChallan(response);
+
+                                        $('#delivery-options-container').hide(); // Hide options after selection
+                                    });
+                                } else {
+                                    alert('Unknown status: ' + response.job.status);
+                                }
+                            } else {
+                                alert('Job status not found in response.');
+                            }
+                        },
+                        error: function (error) {
+                            console.error('Error fetching job details:', error);
+                            alert('Error fetching job details. Please try again.');
+                        }
+                    });
                 } else {
-                    alert('Job status not found in response.');
+                    alert('No jobId found in URL.');
                 }
-            },
-            error: function (error) {
-                console.error('Error fetching job details:', error);
-                alert('Error fetching job details. Please try again.');
-            }
-        });
-    } else {
-        alert('No jobId found in URL.');
-    }
-});
-
-            function handleQuotation(response) {
-                // Construct the PDF content dynamically for "quotation" status
-                var equipmentLeftHtml = '';
-                var equipmentRightHtml = '';
-
-                response.equipment_details.forEach(function (detail) {
-                    equipmentLeftHtml += `<p>${detail.quantity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${detail.equipment_name}</p>`;
-                    equipmentRightHtml += `<p>RS. ${detail.rental_price}</p>`;
+                 // Hide dropdown if clicking outside of it
+                $(document).click(function (event) {
+                    if (!$(event.target).closest('#dropdown-container, #shareAsPdf').length) {
+                        $('#dropdown-container').hide();
+                    }
                 });
+
+                // Prevent hiding the dropdown when clicking inside it
+                $('#dropdown-container').click(function (event) {
+                    event.stopPropagation();
+                });
+           });
+
+            function handleEquipmentQuotation(response) {
+                // Construct the table HTML for equipment details
+                    var equipmentTableHtml = `
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
+                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Unit Price</th>
+                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">No of Days</th>
+                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total Amount</th>
+                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    response.equipment_details.forEach(function (detail) {
+                        equipmentTableHtml += `
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
+                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
+                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">RS. ${detail.rental_price}</td>
+                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
+                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">RS. ${detail.total_rental_price}</td>
+                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${response.job.notes}</td>
+                            </tr>
+                        `;
+                    });
+
+                    equipmentTableHtml += `
+                            </tbody>
+                        </table>
+                    `;
+
+
+                                var printContent = `
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <style>
+                                .box {
+                                    background-color: #fff;
+                                    padding: 20px;
+                                    margin: 10px auto;
+                                    max-width: 700px;
+                                    min-height: 100%;
+                                }
+                                .container {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    padding: 0px;
+                                }
+                                .left {
+                                    width: 150px;
+                                    text-align: left;
+                                }
+                                .right {
+                                    width: 150px;
+                                    text-align: right;
+                                    padding-top: 5px;
+                                    margin-top: -60px;
+                                }
+                                .left p {
+                                    margin-bottom: 4px;
+                                }
+                                .left h3 {
+                                    margin-bottom: -10px;
+                                }
+                                .left h5 {
+                                    margin-top: 5px;
+                                }
+                                .logo {
+                                    width: 100px;
+                                    align-item: center;
+                                }
+                                .job-details {
+                                    display: flex;
+                                    border-top: 1px solid #000000;
+                                    padding-top: -10px;
+                                    justify-content: space-between;
+                                    height: auto;
+                                }
+                                .job_left {
+                                    display: flex;
+                                    flex-direction: column;
+                                }
+                                .job_left p {
+                                    margin-bottom: -5px;
+                                }
+                                .job_left p b {
+                                    display: inline-block;
+                                    width: 120px;
+                                }
+                                .job_left p span {
+                                    display: inline-block;
+                                    margin-left: -22px;
+                                }
+                                .job_right {
+                                    display: flex;
+                                    flex-direction: column;
+                                    width: 150px; /* Maintain the width */
+                                    word-wrap: break-word; /* Ensures that long text wraps to the next line */
+                                }
+
+                                .job_right p {
+                                    margin-bottom: -5px;
+                                    display: flex;
+                                    flex-wrap: wrap;
+                                }
+
+                                .job_right p b {
+                                    flex: 0 0 90px; /* Fixed width for the label */
+                                    display: inline-block;
+                                }
+
+                                .job_right p span {
+                                    flex: 1; /* Allows the span to take up remaining space */
+                                    display: inline-block;
+                                    word-wrap: break-word; /* Ensures text inside <span> wraps properly */
+                                }
+                                .job-details-description {
+                                    margin-top: 15px;
+                                    border-top: 1px solid #000000;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-item: left;
+                                    margin-bottom: 20px;
+                                }
+                                .job-details-description h4 {
+                                    text-align: left;
+                                }
+                                .job-details-description h2 {
+                                    text-align: left;
+                                    margin-top: -15px;
+                                }
+                                .job_equipment_container {
+                                    display: flex;
+                                    justify-content: space-between;
+                                    margin-top: -10px;
+                                }
+                                .job_left_equipment {
+                                    width: 45%;
+                                }
+                                .job_right_equipment {
+                                    width: 45%;
+                                    float: right;
+                                    text-align: right;
+                                }
+                                .color-amount{
+                                    background-color: #b5c3c9;
+                                }
+                                @page {
+                                    size: A4;
+                                    margin: 0;
+                                }
+                                body {
+                                    margin: 0;
+                                    font-size: 10pt;
+                                    background-color: white;
+                                }
+                                @media only screen and (max-width: 300px) {
+                                    .container {
+                                        flex-direction: column;
+                                        align-items: center;
+                                    }
+                                    .job-details {
+                                        width: 100%;
+                                    }
+                                    .job_left,
+                                    .job_right {
+                                        width: 100%;
+                                        text-align: center;
+                                    }
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="box">
+                                <div class="container">
+                                    <div class="left">
+                                        <h3><u>Registered Address:</u></h3>
+                                        <h3 style="font-size: 14px;">${response.company.company_name}</h3>
+                                        <p>${response.company.address}</p>
+                                        <p><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                                        <h5>GST No: ${response.company.gst_no}</h5>
+                                    </div>
+                                    <div class="logo">
+                                        <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
+                                    </div>
+                                    <div class="right">
+                                        <h3><u>Warehouse Address:</u></h3>
+                                        <p>Parle Colony, Andheri, East, 567889</p>
+                                        <p>9768476574</p>
+                                        <p>${response.job.job_reference_no}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+                                </div>
+                                <div class="job-details">
+                                    <div class="job_left" style="width: 300px;">
+                                        <p><b>Job Title:</b><span> ${response.job.title}</span></p>
+                                        <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
+                                        <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                                        <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                                    </div>
+                                    <div class="job_right" style="width: 200px;">
+                                        <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                                        <p><b>Client Name:</b><span> ${response.job.client_name}</span></p>
+                                        <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                                    </div>
+                                </div>
+                                <div class="job-details-description">
+
+                                    <div style="background-color: #c5d9e1; padding: 10px; margin: 0;">
+                                <h2 style="margin: 0;">Audio Equipment</h2>
+                            </div>
+                                    ${equipmentTableHtml}
+                                </div>
+                                <div style="height:30px;" class="color-amount">
+                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT RS. ${response.total_rental_sum}</b></p>
+                                </div>
+                                <div>
+                                    <p style="text-align: right;">Total RS. ${response.total_rental_sum}</p>
+                                </div>
+                                <div>
+                                    <p style="text-align: right;">After Discount RS. ${response.total_after_discount}</p>
+                                </div>
+                                <div>
+                                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.total_with_gst}</p>
+                                </div>
+
+                            </div>
+                        </body>
+                        </html>
+                    `;
+
+                                // Open the print window
+                                var printWindow = window.open('', '_blank');
+                                printWindow.document.open();
+                                printWindow.document.write(printContent);
+                                printWindow.document.close();
+
+                                // Wait for the content to load and then print
+                                printWindow.onload = function () {
+                                    printWindow.focus();
+                                    printWindow.print();
+                                    printWindow.close();
+                                };
+            }
+
+            function handleEquipmentQuotationPdf(response) {
+                var equipmentTableHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Quantity</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Unit Price</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">No of Days</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Total Amount</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    response.equipment_details.forEach(function (detail) {
+        equipmentTableHtml += `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.total_days}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.total_rental_price}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.job.notes}</td>
+            </tr>
+        `;
+    });
+
+    equipmentTableHtml += `
+            </tbody>
+        </table>
+    `;
+
+                var printContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            .box {
+                background-color: #fff;
+                padding: 10px;
+                margin: 5px auto;
+                max-width: 90%;
+                min-height: 100%;
+            }
+            .container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .left {
+                width: 150px;
+                text-align: left;
+                padding-top: 20px;
+                color: black;
+                height: auto;
+
+            }
+            .left h4 {
+                margin-bottom: 2px;
+            }
+            .left p {
+                margin-bottom: 0px;
+            }
+            .right {
+                width: 150px;
+                text-align: right;
+                padding-top: 1px;
+                color: black;
+                height: auto;
+            }
+            .right h4 {
+                margin-bottom: 2px;
+            }
+            .right p {
+                margin-bottom: 2px;
+            }
+            .logo {
+                width: 145px;
+                align-item: center;
+            }
+            .job-details {
+                display: flex;
+                border-top: 5px solid #000000;
+                margin-top: -2px;
+                padding-top: -10px;
+                justify-content: space-between;
+                height: auto;
+                color: black;
+            }
+            .equipment-details {
+                display: flex;
+                border-top: 8px solid #d1e0d3;
+                margin-top: 20px;
+                padding-top: 10px;
+                justify-content: space-between;
+                height: auto;
+                font-size: 12px;
+            }
+
+            .equipment_left {
+                display: flex;
+                flex-direction: column;
+                margin-top: -2px;
+                justify-content: space-between;
+                color: #1a1d20;
+
+            }
+
+            .equipment_left p {
+                margin-bottom: 0px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_left p b {
+                display: inline-block;
+                width: 110px; /* Fixed width for labels to align values */
+            }
+            .equipment_left b{
+            font-size: 12px;
+            color: #0c0c0c;
+            }
+
+            .equipment_left p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .equipment_right {
+                display: flex;
+                flex-direction: column;
+                margin-top: -2px;
+                justify-content: space-between;
+                color: #1a1d20;
+            }
+
+            .equipment_right p {
+                margin-bottom: 0px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_right p b {
+                display: inline-block;
+                width: 110px; /* Fixed width for labels to align values */
+            }
+
+            .equipment_right p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .equipment_right b{
+                font-size: 12px;
+                color: #0c0c0c;
+            }
+            .job_left {
+                display: flex;
+                flex-direction: column;
+            }
+            .job_left p {
+                margin-bottom: 0px;
+                font-size: 11px;
+            }
+            .job_left p b {
+                display: inline-block;
+                width: 110px;
+            }
+            .job_left p span {
+                display: inline-block;
+                margin-left: -22px;
+            }
+            .job_right {
+                display: flex;
+                flex-direction: column;
+                width: 150px; /* Maintain the width */
+                word-wrap: break-word; /* Ensures that long text wraps to the next line */
+            }
+            .job_right p {
+                font-size: 11px;
+                margin-bottom: 0px;
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .job_right p b {
+                flex: 0 0 100px; /* Fixed width for the label */
+                display: inline-block;
+            }
+            .job_right p span {
+                flex: 1; /* Allows the span to take up remaining space */
+                display: inline-block;
+                word-wrap: break-word; /* Ensures text inside <span> wraps properly */
+            }
+            .job-details-description {
+                margin-top: 30px;
+                border-top: 1px solid #000000;
+                display: flex;
+                flex-direction: column;
+                align-item: left;
+                margin-bottom: 20px;
+            }
+            .job-details-description h4 {
+                text-align: left;
+                margin-top: 10px;
+            }
+            .job-details-description h2 {
+                text-align: left;
+                margin-top: -15px;
+            }
+            .job_equipment_container {
+                display: flex;
+                justify-content: space-between;
+                margin-top: -10px;
+                color: #0c0c0c;
+            }
+            .job_left_equipment {
+                width: 45%;
+            }
+            .job_right_equipment {
+                width: 45%;
+                float: right;
+                text-align: right;
+            }
+            .color-amount {
+                background-color: #bfcddb;
+            }
+            .job-container {
+                display: flex;
+                justify-content: space-between; /* Ensures that h4 and p are spaced apart */
+                align-items: center; /* Centers items vertically within the div */
+            }
+            .job-details-left {
+                margin-top: 10px; /* Removes default margin */
+            }
+            .job-details-center {
+                margin: 0; /* Removes default margin */
+                text-align: center; /* Centers text inside the paragraph */
+                flex: 1; /* Allows the paragraph to take up remaining space */
+            }
+            #default-text {
+                font-size: 20px;
+                font-weight: bolder;
+                margin-top: auto;
+                text-decoration: underline;
+            }
+            #color {
+                background-color: #bfcddb;
+                color: #0b0c0f;
+                border-bottom: 1px solid #000000;
+                font-style: italic;
+            }
+            .customer-details {
+                display: inline-block;
+                vertical-align: top;
+                max-width: 150px;
+            }
+            .company-address {
+                margin-top: 5px;
+                word-wrap: break-word;
+            }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                margin: 0px;
+                font-size: 10pt;
+                background-color: #FFFFFF;
+                padding: 0px;
+                font-family: "Times New Roman";
+            }
+            @media only screen and (max-width: 500px) {
+                .container {
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .job-details {
+                    width: 100%;
+                }
+                .job_left,
+                .job_right {
+                    width: 100%;
+                    text-align: center;
+                }
+
+            }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <div class="container">
+                <div class="left">
+                    <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
+                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <p style="font-size: 11px;">${response.company.address}</p>
+                    <p style="font-size: 11px; color: #56c5f5;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
+                </div>
+                <div class="logo">
+                    <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
+                </div>
+                <div class="right">
+                    <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
+                    <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
+                    <p style="font-size: 11px;">9768476574</p>
+                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>
+                </div>
+            </div>
+            <div>
+                <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+            </div>
+            <div class="job-details">
+                <div class="job_left" style="width: 400px;">
+                    <p><b>Job Title:</b><span> ${response.job.title}</span></p>
+                    <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
+                    <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                </div>
+                <div class="job_right" style="width: 200px;">
+                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                    <p><b>Client Name:</b><span> ${response.job.client_name}</span></p>
+                    <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                </div>
+            </div>
+            <div class="job-details-description">
+            <div class="job-container">
+                </div>
+                <h2 id="color" style="font-size: 14px; font-weight: bolder">AUDIO EQUIPMENT</h2>
+                        ${equipmentTableHtml}
+            </div>
+            <div style="height:30px;" class="color-amount">
+                                    <p style="background-color: #c5d9e1; text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT RS. ${response.total_rental_sum}</b></p>
+                                </div>
+                                <div>
+                                    <p style="text-align: right;">Total RS. ${response.total_rental_sum}</p>
+                                </div>
+                                <div>
+                                    <p style="text-align: right;">After Discount RS. ${response.total_after_discount}</p>
+                                </div>
+                                <div>
+                                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.total_with_gst}</p>
+                                </div>
+        </div>
+    </body>
+    </html>
+    `;
+                // Convert the HTML to a PDF and download it
+    var opt = {
+        margin:       0,
+        filename:     'Equipment Based Quotation.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().from(printContent).set(opt).save();
+            }
+
+            function handleTotalQuotation(response) {
+                // Construct the table HTML for equipment details
+    var equipmentTableHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Unit Price</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    response.equipment_details.forEach(function (detail) {
+        equipmentTableHtml += `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">RS. ${detail.rental_price}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${response.job.notes}</td>
+            </tr>
+        `;
+    });
+
+    equipmentTableHtml += `
+            </tbody>
+        </table>
+    `;
+
 
                 var printContent = `
         <!DOCTYPE html>
@@ -1998,11 +2710,32 @@ $('#shareAsPdf').click(function () {
                     display: inline-block;
                     margin-left: -22px;
                 }
-                .job_right {
-                    width: 250px;
-                    display: inline-block;
-                    vertical-align: top;
-                }
+.job_right {
+    display: flex;
+    flex-direction: column;
+    width: 150px; /* Maintain the width */
+    word-wrap: break-word; /* Ensures that long text wraps to the next line */
+}
+
+.job_right p {
+    margin-bottom: -5px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.job_right p b {
+    flex: 0 0 90px; /* Fixed width for the label */
+    display: inline-block;
+}
+
+.job_right p span {
+    flex: 1; /* Allows the span to take up remaining space */
+    display: inline-block;
+    word-wrap: break-word; /* Ensures text inside <span> wraps properly */
+}
+
+
+
                 .job-details-description {
                     margin-top: 15px;
                     border-top: 1px solid #000000;
@@ -2064,13 +2797,13 @@ $('#shareAsPdf').click(function () {
                 <div class="container">
                     <div class="left">
                         <h3><u>Registered Address:</u></h3>
-                        <h3 style="font-size: 14px;">SOUND.COM Pvt.Ltd</h3>
-                        <p>G1/G2 Flamingo, 50 Veronica Road, Bandra (West)</p>
-                        <p><a href="mailto:info@online-sound.com}">info@online-sound.com</a></p>
-                        <h5>GST No: GST No: 27AAMCS1746A1ZH</h5>
+                        <h3 style="font-size: 14px;">${response.company.company_name}</h3>
+                        <p>${response.company.address}</p>
+                        <p><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                        <h5>GST No: ${response.company.gst_no}</h5>
                     </div>
                     <div class="logo">
-                        <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
+                        <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
                     </div>
                     <div class="right">
                         <h3><u>Warehouse Address:</u></h3>
@@ -2088,41 +2821,33 @@ $('#shareAsPdf').click(function () {
                         <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
                         <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
                         <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                        <p><b>Customer:</b><span> Xplused Events Pvt.Ltd</span></p>
-                    </div>
-                    <div class="job_right" style="text-align: right; width: 250px;">
-                        <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                        <p><b>No of Days:</b><span> ${response.job.total_days}</span></p>
                         <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                    </div>
+                    <div class="job_right" style="width: 200px;">
+                        <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                        <p><b>Customer:</b><span> ${response.job.client_name}</span></p>
+                        <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
                     </div>
                 </div>
                 <div class="job-details-description">
-                    <h4>Qty Description</h4>
+
                     <div style="background-color: #c5d9e1; padding: 10px; margin: 0;">
                 <h2 style="margin: 0;">Audio Equipment</h2>
             </div>
-                    <div class="job_equipment_container">
-                        <div class="job_left_equipment">
-                            ${equipmentLeftHtml}
-                        </div>
-                        <div class="job_right_equipment">
-                            ${equipmentRightHtml}
-                        </div>
-                    </div>
+                    ${equipmentTableHtml}
                 </div>
                 <div style="height:30px;" class="color-amount">
-                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT RS. ${response.job.amount_row}</b></p>
+                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT RS. ${response.job.total_amount}</b></p>
                 </div>
                 <div>
                     <p style="text-align: right;">Total RS. ${response.job.amount_row}</p>
                 </div>
-                <div style="text-align: center; font-size: 22px;">
-                    <b><u>Warehouse Added Equipment</u></b>
+                <div>
+                    <p style="text-align: right;">After Discount RS. ${response.job.amount_after_discount}</p>
                 </div>
-                <p style="font-size: 18px;"><i><b>AUDIO EQUIPMENT</i></b></p>
-                <div style="display: flex; justify-content: space-between;">
-
-                    <p style="text-align: left;">2 MACKIE SRM150</p>
-                    <p style="text-align: right;">RS. 0,00</p>
+                <div>
+                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.job.total_amount}</p>
                 </div>
             </div>
         </body>
@@ -2135,263 +2860,43 @@ $('#shareAsPdf').click(function () {
                 printWindow.document.write(printContent);
                 printWindow.document.close();
 
-                // Print the window
-                var logoImage = printWindow.document.getElementById('logoImage');
-                logoImage.onload = function () {
+                // Wait for the content to load and then print
+                printWindow.onload = function () {
                     printWindow.focus();
                     printWindow.print();
+                    printWindow.close();
                 };
             }
 
-            function handlePerfoma(response) {
-                // Construct the PDF content dynamically for "quotation" status
-                var equipmentLeftHtml = '';
-                var equipmentRightHtml = '';
-
-                response.job_details.forEach(function (detail) {
-                    equipmentLeftHtml += `<p>${detail.quantity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${detail.equipment_name}</p>`;
-                    equipmentRightHtml += `<p>RS. ${detail.rental_price}</p>`;
-                });
-
-                var printContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                .box {
-                    background-color: #fff;
-                    padding: 20px;
-                    margin: 10px auto;
-                    max-width: 700px;
-                    min-height: 100%;
-                }
-                .container {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 0px;
-                }
-                .left {
-                    width: 150px;
-                    text-align: left;
-                }
-                .right {
-                    width: 150px;
-                    text-align: right;
-                    padding-top: 5px;
-                    margin-top: -60px;
-                }
-                .left p {
-                    margin-bottom: 4px;
-                }
-                .left h3 {
-                    margin-bottom: -10px;
-                }
-                .left h5 {
-                    margin-top: 5px;
-                }
-                .logo {
-                    width: 100px;
-                    align-item: center;
-                }
-                .job-details {
-                    display: flex;
-                    border-top: 1px solid #000000;
-                    padding-top: -10px;
-                    justify-content: space-between;
-                    height: auto;
-                }
-                .job_left {
-                    display: flex;
-                    flex-direction: column;
-                }
-                .job_left p {
-                    margin-bottom: -5px;
-                }
-                .job_left p b {
-                    display: inline-block;
-                    width: 120px;
-                }
-                .job_left p span {
-                    display: inline-block;
-                    margin-left: -22px;
-                }
-                .job_right {
-                    width: 250px;
-                    display: inline-block;
-                    vertical-align: top;
-                }
-                .job-details-description {
-                    margin-top: 15px;
-                    border-top: 1px solid #000000;
-                    display: flex;
-                    flex-direction: column;
-                    align-item: left;
-                    margin-bottom: 20px;
-                }
-                .job-details-description h4 {
-                    text-align: left;
-                }
-                .job-details-description h2 {
-                    text-align: left;
-                    margin-top: -15px;
-                }
-                .job_equipment_container {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-top: -10px;
-                }
-                .job_left_equipment {
-                    width: 45%;
-                }
-                .job_right_equipment {
-                    width: 45%;
-                    float: right;
-                    text-align: right;
-                }
-                .color-amount{
-                    background-color: #00aced;
-                }
-                @page {
-                    size: A4;
-                    margin: 0;
-                }
-                body {
-                    margin: 0;
-                    font-size: 10pt;
-                    background-color: black;
-                }
-                @media only screen and (max-width: 300px) {
-                    .container {
-                        flex-direction: column;
-                        align-items: center;
-                    }
-                    .job-details {
-                        width: 100%;
-                    }
-                    .job_left,
-                    .job_right {
-                        width: 100%;
-                        text-align: center;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="box">
-                <div class="container">
-                    <div class="left">
-                        <h3><u>Registered Address:</u></h3>
-                        <h3 style="font-size: 14px;">${response.job.company_name}</h3>
-                        <p>${response.job.company_address}</p>
-                        <p><a href="mailto:${response.job.company_email}">${response.job.company_email}</a></p>
-                        <h5>GST No: ${response.job.company_gst_no}</h5>
-                    </div>
-                    <div class="logo">
-                        <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
-                    </div>
-                    <div class="right">
-                        <h3><u>Warehouse Address:</u></h3>
-                        <p>Parle Colony, Andheri, East, 567889</p>
-                        <p>9768476574</p>
-                        <p>${response.job.job_reference_no}</p>
-                    </div>
-                </div>
-                <div>
-                    <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
-                </div>
-                <div class="job-details">
-                    <div class="job_left" style="width: 300px;">
-                        <p><b>Job Title:</b><span> ${response.job.title}</span></p>
-                        <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
-                        <p><b>Job Date Out:</b><span> ${response.job.show_start_date ? response.job.show_start_date : '-'}</span></p>
-                        <p><b>Job Date Back:</b><span> ${response.job.show_end_date ? response.job.show_end_date : '-'}</span></p>
-                        <p><b>Customer:</b><span> Xplused Events Pvt.Ltd</span></p>
-                    </div>
-                    <div class="job_right" style="text-align: right; width: 250px;">
-                        <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
-                    </div>
-                </div>
-                <div class="job-details-description">
-                    <h4>Qty Description</h4>
-                    <h2>Audio Equipment</h2>
-                    <div class="job_equipment_container">
-                        <div class="job_left_equipment">
-                            ${equipmentLeftHtml}
-                        </div>
-                        <div class="job_right_equipment">
-                            ${equipmentRightHtml}
-                        </div>
-                    </div>
-                </div>
-                <div style="height:30px;" class="color-amount">
-                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT RS. ${response.job.amount_row}</b></p>
-                </div>
-                <div>
-                    <p style="text-align: right;">Total RS. ${response.job.amount_row}</p>
-                </div>
-                <div style="text-align: center; font-size: 22px;">
-                    <b><u>Warehouse Added Equipment</u></b>
-                </div>
-                <p style="font-size: 18px;"><i><b>AUDIO EQUIPMENT</i></b></p>
-                <div style="display: flex; justify-content: space-between;">
-                    <p style="text-align: left;">2 MACKIE SRM150</p>
-                    <p style="text-align: right;">RS. 0,00</p>
-                </div>
-            </div>
-        </body>
-        </html>
+            function handleTotalQuotationPdf(response) {
+                var equipmentTableHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Quantity</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Unit Price</th>
+                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
     `;
 
-                // Open the print window
-                var printWindow = window.open('', '_blank');
-                printWindow.document.open();
-                printWindow.document.write(printContent);
-                printWindow.document.close();
+    response.equipment_details.forEach(function (detail) {
+        equipmentTableHtml += `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
+                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.job.notes}</td>
+            </tr>
+        `;
+    });
 
-                // Print the window
-                var logoImage = printWindow.document.getElementById('logoImage');
-                logoImage.onload = function () {
-                    printWindow.focus();
-                    printWindow.print();
-                };
-            }
-
-            function handlePrepsheet(response) {
-                // Group equipment details by Type
-                var groupedEquipment = {};
-
-                response.job_details.forEach(function (detail) {
-                    if (!groupedEquipment[detail.type]) {
-                        groupedEquipment[detail.type] = [];
-                    }
-                    groupedEquipment[detail.type].push({
-                        quantity: detail.quantity,
-                        equipment_name: detail.equipment_name,
-                        type: detail.type,
-                        amount: detail.amount
-                    });
-                });
-
-                // Generate HTML for each category_type
-                var equipmentLeftHtml = '';
-                var equipmentRightHtml = '';
-
-                for (var type in groupedEquipment) {
-                    if (groupedEquipment.hasOwnProperty(type)) {
-                        var equipmentItems = groupedEquipment[type];
-                        equipmentLeftHtml += `<h3>${type}</h3>`;
-                        equipmentRightHtml += `<h3>${type}</h3>`;
-
-                        equipmentItems.forEach(function (item) {
-                            equipmentLeftHtml += `<p>${item.quantity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${item.equipment_name}</p>`;
-                            equipmentRightHtml += `<p>RS. ${item.amount}</p>`;
-                        });
-                    }
-                }
+    equipmentTableHtml += `
+            </tbody>
+        </table>
+    `;
 
                 var printContent = `
     <!DOCTYPE html>
@@ -2402,49 +2907,42 @@ $('#shareAsPdf').click(function () {
         <style>
             .box {
                 background-color: #fff;
-                padding: 20px;
-                margin: 10px auto;
-                max-width: 700px;
+                padding: 10px;
+                margin: 5px auto;
+                max-width: 90%;
                 min-height: 100%;
             }
             .container {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 0px;
-                font-style: italic;
-                font-weight: bolder;
             }
             .left {
                 width: 150px;
                 text-align: left;
+                padding-top: 20px;
+                color: black;
+                height: auto;
+
+            }
+            .left h4 {
+                margin-bottom: 2px;
+            }
+            .left p {
+                margin-bottom: 0px;
             }
             .right {
                 width: 150px;
                 text-align: right;
-                padding-top: 5px;
-                margin-top: -60px;
-            }
-            .right p {
-                margin-bottom: -8px;
-            }
-            .right h3 {
-                margin-bottom: -10px;
+                padding-top: 1px;
+                color: black;
+                height: auto;
             }
             .right h4 {
-                margin-bottom: -10px;
+                margin-bottom: 2px;
             }
-            .left h4 {
-                margin-bottom: -10px;
-            }
-            .left p {
-                margin-bottom: 4px;
-            }
-            .left h3 {
-                margin-bottom: -10px;
-            }
-            .left h5 {
-                margin-top: 5px;
+            .right p {
+                margin-bottom: 2px;
             }
             .logo {
                 width: 145px;
@@ -2453,33 +2951,42 @@ $('#shareAsPdf').click(function () {
             .job-details {
                 display: flex;
                 border-top: 5px solid #000000;
-                margin-top: -25px;
+                margin-top: -2px;
                 padding-top: -10px;
                 justify-content: space-between;
                 height: auto;
+                color: black;
             }
             .equipment-details {
                 display: flex;
-                border-top: 10px solid #97cc9e;
+                border-top: 8px solid #d1e0d3;
                 margin-top: 20px;
                 padding-top: 10px;
                 justify-content: space-between;
                 height: auto;
+                font-size: 12px;
             }
 
             .equipment_left {
                 display: flex;
                 flex-direction: column;
-                margin-top: -15px;
+                margin-top: -2px;
+                justify-content: space-between;
+                color: #1a1d20;
+
             }
 
             .equipment_left p {
-                margin-bottom: -8px; /* Adjusted margin for better spacing */
+                margin-bottom: 0px; /* Adjusted margin for better spacing */
             }
 
             .equipment_left p b {
                 display: inline-block;
-                width: 115px; /* Fixed width for labels to align values */
+                width: 110px; /* Fixed width for labels to align values */
+            }
+            .equipment_left b{
+            font-size: 12px;
+            color: #0c0c0c;
             }
 
             .equipment_left p span {
@@ -2487,28 +2994,71 @@ $('#shareAsPdf').click(function () {
                 margin-left: 5px; /* Space between label and value */
                 text-align: left; /* Align values to the left */
             }
+            .equipment_right {
+                display: flex;
+                flex-direction: column;
+                margin-top: -2px;
+                justify-content: space-between;
+                color: #1a1d20;
+            }
+
+            .equipment_right p {
+                margin-bottom: 0px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_right p b {
+                display: inline-block;
+                width: 110px; /* Fixed width for labels to align values */
+            }
+
+            .equipment_right p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .equipment_right b{
+                font-size: 12px;
+                color: #0c0c0c;
+            }
             .job_left {
                 display: flex;
                 flex-direction: column;
             }
             .job_left p {
-                margin-bottom: -12px;
+                margin-bottom: 0px;
+                font-size: 11px;
             }
             .job_left p b {
                 display: inline-block;
-                width: 120px;
+                width: 110px;
             }
             .job_left p span {
                 display: inline-block;
                 margin-left: -22px;
             }
             .job_right {
-                width: 250px;
+                display: flex;
+                flex-direction: column;
+                width: 150px; /* Maintain the width */
+                word-wrap: break-word; /* Ensures that long text wraps to the next line */
+            }
+            .job_right p {
+                font-size: 11px;
+                margin-bottom: 0px;
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .job_right p b {
+                flex: 0 0 100px; /* Fixed width for the label */
                 display: inline-block;
-                vertical-align: top;
+            }
+            .job_right p span {
+                flex: 1; /* Allows the span to take up remaining space */
+                display: inline-block;
+                word-wrap: break-word; /* Ensures text inside <span> wraps properly */
             }
             .job-details-description {
-                margin-top: 15px;
+                margin-top: 30px;
                 border-top: 1px solid #000000;
                 display: flex;
                 flex-direction: column;
@@ -2517,7 +3067,7 @@ $('#shareAsPdf').click(function () {
             }
             .job-details-description h4 {
                 text-align: left;
-                margin-top: auto;
+                margin-top: 10px;
             }
             .job-details-description h2 {
                 text-align: left;
@@ -2527,6 +3077,7 @@ $('#shareAsPdf').click(function () {
                 display: flex;
                 justify-content: space-between;
                 margin-top: -10px;
+                color: #0c0c0c;
             }
             .job_left_equipment {
                 width: 45%;
@@ -2537,7 +3088,20 @@ $('#shareAsPdf').click(function () {
                 text-align: right;
             }
             .color-amount {
-                background-color: #00aced;
+                background-color: #bfcddb;
+            }
+            .job-container {
+                display: flex;
+                justify-content: space-between; /* Ensures that h4 and p are spaced apart */
+                align-items: center; /* Centers items vertically within the div */
+            }
+            .job-details-left {
+                margin-top: 10px; /* Removes default margin */
+            }
+            .job-details-center {
+                margin: 0; /* Removes default margin */
+                text-align: center; /* Centers text inside the paragraph */
+                flex: 1; /* Allows the paragraph to take up remaining space */
             }
             #default-text {
                 font-size: 20px;
@@ -2569,6 +3133,7 @@ $('#shareAsPdf').click(function () {
                 font-size: 10pt;
                 background-color: #FFFFFF;
                 padding: 0px;
+                font-family: "Times New Roman";
             }
             @media only screen and (max-width: 500px) {
                 .container {
@@ -2583,6 +3148,7 @@ $('#shareAsPdf').click(function () {
                     width: 100%;
                     text-align: center;
                 }
+
             }
         </style>
     </head>
@@ -2590,20 +3156,20 @@ $('#shareAsPdf').click(function () {
         <div class="box">
             <div class="container">
                 <div class="left">
-                    <h4><u><i>Registered Address:</i></u></h4>
-                    <h3 style="font-size: 12px;">${response.job.company_name}</h3>
-                    <p>${response.job.company_address}</p>
-                    <p style="margin-top:-4px;"><a href="mailto:${response.job.company_email}">${response.job.company_email}</a></p>
-                    <h5>GST No: ${response.job.company_gst_no}</h5>
+                    <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
+                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <p style="font-size: 11px;">${response.company.address}</p>
+                    <p style="font-size: 11px; color: #56c5f5;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
-                    <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
+                    <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
                 </div>
                 <div class="right">
-                    <h4><u>Warehouse Address:</u></h4>
-                    <p>Parle Colony, Andheri, East, 567889</p>
-                    <p>9768476574</p>
-                    <p>${response.job.job_reference_no}</p>
+                    <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
+                    <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
+                    <p style="font-size: 11px;">9768476574</p>
+                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>
                 </div>
             </div>
             <div>
@@ -2613,65 +3179,80 @@ $('#shareAsPdf').click(function () {
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                     <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Customer:</b><span class="customer-details"> ${response.job.company_name}<br>${response.job.company_address}</span></p>
+                    <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                    <p><b>No of Days:</b><span> ${response.job.total_days}</span></p>
+                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
                 </div>
-                <div class="job_right" style="text-align: right; width: 250px;">
+                <div class="job_right" style="width: 200px;">
                     <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                    <p style="margin-top: -10px;"><b>Sound Engineer:</b><span> ${response.job.employee}</span></p>
-                    <p style="margin-top: -10px;"><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                    <p><b>Customer:</b><span> ${response.job.client_name}</span></p>
+                    <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
                 </div>
             </div>
-            <div class="equipment-details">
-                <div class="equipment_left" style="width: 300px;">
-                    <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${response.job.job_reference_no}</span></p>
-                    <p><b>Equipment Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Event Start Date:</b><span> ${response.job.show_start_date ? response.job.show_start_date : '-'}</span></p>
-                    <p><b>Event End Date:</b><span> ${response.job.show_end_date ? response.job.show_end_date : '-'}</span></p>
-                </div>
-            </div>
+
             <div class="job-details-description">
-                <p id="default-text">Default Section Header</p>
-                <h4>Qty Description</h4>
-                <h2 id="color">Audio Equipment</h2>
-                <div class="job_equipment_container">
-                    <div class="job_left_equipment">
-                        ${equipmentLeftHtml}
+                <div class="job-container">
                     </div>
+                    <h2 id="color" style="font-size: 14px; font-weight: bolder">AUDIO EQUIPMENT</h2>
+                        ${equipmentTableHtml}
+                </div>
+                <div style="height:30px;" class="color-amount">
+                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT RS. ${response.job.total_amount}</b></p>
+                </div>
+                <div>
+                    <p style="text-align: right;">Total RS. ${response.job.amount_row}</p>
+                </div>
+                <div>
+                    <p style="text-align: right;">After Discount RS. ${response.job.amount_after_discount}</p>
+                </div>
+                <div>
+                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.job.total_amount}</p>
                 </div>
             </div>
-            <div style="text-align: left; font-size: 22px;">
-                <b><u>Warehouse Added Equipment</u></b>
-            </div>
-            <p style="font-size: 18px;"><i><b>AUDIO EQUIPMENT</i></b></p>
-            <div style="display: flex; justify-content: space-between;">
-                <p style="text-align: left;">2 MACKIE SRM150</p>
-            </div>
-        </div>
     </body>
     </html>
     `;
-                // Open the print window
-                var printWindow = window.open('', '_blank');
-                printWindow.document.open();
-                printWindow.document.write(printContent);
-                printWindow.document.close();
+                // Convert the HTML to a PDF and download it
+    var opt = {
+        margin:       0,
+        filename:     'Total Quotation.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
 
-                // Wait for the content to load and then print
-                printWindow.onload = function () {
-                    printWindow.focus();
-                    printWindow.print();
-                    printWindow.close();
-                };
+    html2pdf().from(printContent).set(opt).save();
             }
 
-            function handleDeliveryChallan(response) {
-                var equipmentLeftHtml = '';
-                var equipmentRightHtml = '';
 
-                response.equipment_details.forEach(function (detail) {
-                    equipmentLeftHtml += `<p>${detail.quantity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${detail.equipment_name}</p>`;
-                    equipmentRightHtml += `<p>RS. ${detail.rental_price}</p>`;
-                });
+function handleDeliveryChallan(response) {
+                var equipmentTableHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                    <th style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    response.equipment_details.forEach(function (detail) {
+        equipmentTableHtml += `
+            <tr>
+                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
+                <td style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
+                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.job.notes}</td>
+            </tr>
+        `;
+    });
+
+    equipmentTableHtml += `
+            </tbody>
+        </table>
+    `;
 
                 var printContent = `
     <!DOCTYPE html>
@@ -2803,10 +3384,28 @@ $('#shareAsPdf').click(function () {
                 margin-left: -22px;
             }
             .job_right {
-                width: 250px;
-                display: inline-block;
-                vertical-align: top;
-            }
+    display: flex;
+    flex-direction: column;
+    width: 150px; /* Maintain the width */
+    word-wrap: break-word; /* Ensures that long text wraps to the next line */
+}
+
+.job_right p {
+    margin-bottom: -5px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.job_right p b {
+    flex: 0 0 100px; /* Fixed width for the label */
+    display: inline-block;
+}
+
+.job_right p span {
+    flex: 1; /* Allows the span to take up remaining space */
+    display: inline-block;
+    word-wrap: break-word; /* Ensures text inside <span> wraps properly */
+}
             .job-details-description {
                 margin-top: 30px;
                 border-top: 1px solid #000000;
@@ -2905,13 +3504,13 @@ $('#shareAsPdf').click(function () {
             <div class="container">
                 <div class="left">
                     <h4><u><i>Registered Address:</i></u></h4>
-                    <h3 style="font-size: 12px;">${response.job.company_name}</h3>
-                    <p>${response.job.company_address}</p>
-                    <p style="margin-top:-4px;"><a href="mailto:${response.job.company_email}">${response.job.company_email}</a></p>
-                    <h5>GST No: ${response.job.company_gst_no}</h5>
+                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <p>${response.company.address}</p>
+                    <p style="margin-top:-4px;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <h5>GST No: ${response.company.gst_no}</h5>
                 </div>
                 <div class="logo">
-                    <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
+                    <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
                 </div>
                 <div class="right">
                     <h4><u>Warehouse Address:</u></h4>
@@ -2927,47 +3526,38 @@ $('#shareAsPdf').click(function () {
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                     <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Customer:</b><span class="customer-details"> ${response.job.company_name}<br>${response.job.company_address}</span></p>
+                    <p><b>Client:</b><span class="customer-details"> ${response.job.client_name}<br>${response.job.address}<br>
+                    ${response.job.state}<br>${response.job.post_code}<br>${response.job.country}</span></p>
                 </div>
-                <div class="job_right" style="text-align: right; width: 250px;">
+                <div class="job_right" style="width: 200px;">
                     <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                    <p style="margin-top: -10px;"><b>Sound Engineer:</b><span> ${response.job.employee}</span></p>
-                    <p style="margin-top: -10px;"><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                    <p><b>Sound Engineer:</b><span> ${response.job.contact_person_name}</span></p>
+                    <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
                 </div>
             </div>
             <div class="equipment-details">
                 <div class="equipment_left" style="width: 700px;">
                     <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${response.job.job_reference_no}</span></p>
                     <p><b>Equipment Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Event Start Date:</b><span> ${response.job.show_start_date ? response.job.show_start_date : '-'}</span></p>
-                    <p><b>Event End Date:</b><span> ${response.job.show_end_date ? response.job.show_end_date : '-'}</span></p>
+                    <p><b>Event Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Event End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                 </div>
                 <div class="equipment_right" style="width: 300px;">
-                    <p><b>Show Start Date:</b><span> ${response.job.show_start_date ? response.job.show_start_date : '-'}</span></p>
+                    <p><b>Show Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
                     <p><b>Setup Date:</b><span> ${response.job.setup_date}</span></p>
-                    <p><b>Show End Date:</b><span> ${response.job.show_end_date ? response.job.show_end_date : '-'}</span></p>
-                    <p><b>Pack Up Date:</b><span> ${response.job.show_end_date ? response.job.show_end_date : '-'}</span></p>
+                    <p><b>Show End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                    <p><b>Pack Up Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                 </div>
             </div>
             <div class="job-details-description">
             <div class="job-container">
-                <h4 class="job-details-left">Qty Description</h4>
-                <p class="job-details-center">Notes</p>
+
                 </div>
                 <h2 id="color">AUDIO EQUIPMENT</h2>
-                <div class="job_equipment_container">
-                    <div class="job_left_equipment">
-                        ${equipmentLeftHtml}
-                    </div>
-                </div>
+
+                        ${equipmentTableHtml}
+
             </div>
-{#            <div style="text-align: left; font-size: 22px;">#}
-{#                <b><u>Warehouse Added Equipment</u></b>#}
-{#            </div>#}
-{#            <p style="font-size: 18px;"><i><b>AUDIO EQUIPMENT</i></b></p>#}
-{#            <div style="display: flex; justify-content: space-between;">#}
-{#                <p style="text-align: left;">2 MACKIE SRM150</p>#}
-{#            </div>#}
         </div>
     </body>
     </html>
@@ -2984,6 +3574,363 @@ $('#shareAsPdf').click(function () {
                     printWindow.print();
                     printWindow.close();
                 };
+            }
+
+            function handleDeliveryChallanPdf(response) {
+                var equipmentTableHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Quantity</th>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    response.equipment_details.forEach(function (detail) {
+        equipmentTableHtml += `
+            <tr>
+                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
+                <td style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
+                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.job.notes}</td>
+            </tr>
+        `;
+    });
+
+    equipmentTableHtml += `
+            </tbody>
+        </table>
+    `;
+
+                var printContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            .box {
+                background-color: #fff;
+                padding: 10px;
+                margin: 5px auto;
+                max-width: 90%;
+                min-height: 100%;
+            }
+            .container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .left {
+                width: 150px;
+                text-align: left;
+                padding-top: 20px;
+                color: black;
+                height: auto;
+
+            }
+            .left h4 {
+                margin-bottom: 2px;
+            }
+            .left p {
+                margin-bottom: 0px;
+            }
+            .right {
+                width: 150px;
+                text-align: right;
+                padding-top: 1px;
+                color: black;
+                height: auto;
+            }
+            .right h4 {
+                margin-bottom: 2px;
+            }
+            .right p {
+                margin-bottom: 2px;
+            }
+            .logo {
+                width: 145px;
+                align-item: center;
+            }
+            .job-details {
+                display: flex;
+                border-top: 5px solid #000000;
+                margin-top: -2px;
+                padding-top: -10px;
+                justify-content: space-between;
+                height: auto;
+                color: black;
+            }
+            .equipment-details {
+                display: flex;
+                border-top: 8px solid #d1e0d3;
+                margin-top: 20px;
+                padding-top: 10px;
+                justify-content: space-between;
+                height: auto;
+                font-size: 12px;
+            }
+
+            .equipment_left {
+                display: flex;
+                flex-direction: column;
+                margin-top: -2px;
+                justify-content: space-between;
+                color: #1a1d20;
+
+            }
+
+            .equipment_left p {
+                margin-bottom: 0px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_left p b {
+                display: inline-block;
+                width: 110px; /* Fixed width for labels to align values */
+            }
+            .equipment_left b{
+            font-size: 12px;
+            color: #0c0c0c;
+            }
+
+            .equipment_left p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .equipment_right {
+                display: flex;
+                flex-direction: column;
+                margin-top: -2px;
+                justify-content: space-between;
+                color: #1a1d20;
+            }
+
+            .equipment_right p {
+                margin-bottom: 0px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_right p b {
+                display: inline-block;
+                width: 110px; /* Fixed width for labels to align values */
+            }
+
+            .equipment_right p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .equipment_right b{
+                font-size: 12px;
+                color: #0c0c0c;
+            }
+            .job_left {
+                display: flex;
+                flex-direction: column;
+            }
+            .job_left p {
+                margin-bottom: 0px;
+                font-size: 11px;
+            }
+            .job_left p b {
+                display: inline-block;
+                width: 110px;
+            }
+            .job_left p span {
+                display: inline-block;
+                margin-left: -22px;
+            }
+            .job_right {
+                display: flex;
+                flex-direction: column;
+                width: 150px; /* Maintain the width */
+                word-wrap: break-word; /* Ensures that long text wraps to the next line */
+            }
+            .job_right p {
+                font-size: 11px;
+                margin-bottom: 0px;
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .job_right p b {
+                flex: 0 0 100px; /* Fixed width for the label */
+                display: inline-block;
+            }
+            .job_right p span {
+                flex: 1; /* Allows the span to take up remaining space */
+                display: inline-block;
+                word-wrap: break-word; /* Ensures text inside <span> wraps properly */
+            }
+            .job-details-description {
+                margin-top: 30px;
+                border-top: 1px solid #000000;
+                display: flex;
+                flex-direction: column;
+                align-item: left;
+                margin-bottom: 20px;
+            }
+            .job-details-description h4 {
+                text-align: left;
+                margin-top: 10px;
+            }
+            .job-details-description h2 {
+                text-align: left;
+                margin-top: -15px;
+            }
+            .job_equipment_container {
+                display: flex;
+                justify-content: space-between;
+                margin-top: -10px;
+                color: #0c0c0c;
+            }
+            .job_left_equipment {
+                width: 45%;
+            }
+            .job_right_equipment {
+                width: 45%;
+                float: right;
+                text-align: right;
+            }
+            .color-amount {
+                background-color: #00aced;
+            }
+            .job-container {
+                display: flex;
+                justify-content: space-between; /* Ensures that h4 and p are spaced apart */
+                align-items: center; /* Centers items vertically within the div */
+            }
+            .job-details-left {
+                margin-top: 10px; /* Removes default margin */
+            }
+            .job-details-center {
+                margin: 0; /* Removes default margin */
+                text-align: center; /* Centers text inside the paragraph */
+                flex: 1; /* Allows the paragraph to take up remaining space */
+            }
+            #default-text {
+                font-size: 20px;
+                font-weight: bolder;
+                margin-top: auto;
+                text-decoration: underline;
+            }
+            #color {
+                background-color: #bfcddb;
+                color: #0b0c0f;
+                border-bottom: 1px solid #000000;
+                font-style: italic;
+            }
+            .customer-details {
+                display: inline-block;
+                vertical-align: top;
+                max-width: 150px;
+            }
+            .company-address {
+                margin-top: 5px;
+                word-wrap: break-word;
+            }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                margin: 0px;
+                font-size: 10pt;
+                background-color: #FFFFFF;
+                padding: 0px;
+                font-family: "Times New Roman";
+            }
+            @media only screen and (max-width: 500px) {
+                .container {
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .job-details {
+                    width: 100%;
+                }
+                .job_left,
+                .job_right {
+                    width: 100%;
+                    text-align: center;
+                }
+
+            }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <div class="container">
+                <div class="left">
+                    <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
+                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <p style="font-size: 11px;">${response.company.address}</p>
+                    <p style="font-size: 11px; color: #56c5f5;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
+                </div>
+                <div class="logo">
+                    <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
+                </div>
+                <div class="right">
+                    <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
+                    <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
+                    <p style="font-size: 11px;">9768476574</p>
+                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>
+                </div>
+            </div>
+            <div>
+                <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+            </div>
+            <div class="job-details">
+                <div class="job_left" style="width: 400px;">
+                    <p><b>Job Title:</b><span> ${response.job.title}</span></p>
+                    <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
+                    <p><b>Client:</b><span class="customer-details"> ${response.job.client_name}<br>${response.job.address}<br>
+                    ${response.job.state}<br>${response.job.post_code}<br>${response.job.country}</span></p>
+                </div>
+                <div class="job_right" style="width: 200px;">
+                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                    <p><b>Sound Engineer:</b><span> ${response.job.contact_person_name}</span></p>
+                    <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                </div>
+            </div>
+            <div class="equipment-details">
+                <div class="equipment_left" style="width: 60%;">
+                    <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${response.job.job_reference_no}</span></p>
+                    <p><b>Equipment Ref:</b><span> ${response.job.job_reference_no}</span></p>
+                    <p><b>Event Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Event End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                </div>
+                <div class="equipment_right" style="width: 32%;">
+                    <p><b>Show Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Setup Date:</b><span> ${response.job.setup_date}</span></p>
+                    <p><b>Show End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                    <p><b>Pack Up Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                </div>
+            </div>
+            <div class="job-details-description">
+            <div class="job-container">
+
+                </div>
+                <h2 id="color" style="font-size: 14px; font-weight: bolder">AUDIO EQUIPMENT</h2>
+
+                        ${equipmentTableHtml}
+
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+                // Convert the HTML to a PDF and download it
+    var opt = {
+        margin:       0,
+        filename:     'Delivery Challan.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().from(printContent).set(opt).save();
             }
 
 });
@@ -3044,8 +3991,23 @@ $('#shareAsPdf').click(function () {
                     </div>
 
                     <!-- Right-aligned Share as PDF button -->
-                    <div>
-                        <button id="shareAsPdf" class="btn btn-primary btn-sm">Share as Pdf</button>
+
+                    <div class="col-auto ms-auto" style="padding-left: 600px; position: relative;">
+                        <button id="shareAsPdf" class="btn btn-primary btn-sm"> Share As Pdf</button>
+                        <div id="dropdown-container" class="dropdown-menu" style="display: none; position: absolute;">
+                            <button class="dropdown-item btn btn-secondary btn-sm" id="equipmentQuotation" onclick="handleQuotation('Equipment')"
+                                ><i class="bi bi-file-earmark-pdf-fill" style="color: red"></i> Equipment Quotation
+                            </button>
+                            <button class="dropdown-item btn btn-secondary btn-sm" id="totalQuotation" onclick="handleQuotation('Total')"
+                                ><i class="bi bi-file-earmark-pdf-fill" style="color: red"></i> Total Quotation
+                            </button>
+                        </div>
+                        <div id="delivery-options-container" style="display:none;">
+                        <button id="printOption" class="dropdown-item" style="text-align: center;"><i class="bi bi-printer-fill"></i> Print</button>
+                        <button id="pdfOption" class="dropdown-item" style="text-align: center;"><i class="bi bi-file-fill"></i> PDF</button>
+
+</div>
+
                     </div>
                 </div>
 
