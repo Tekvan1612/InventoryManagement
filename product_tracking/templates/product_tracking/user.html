@@ -1,15 +1,13 @@
 {% include 'product_tracking/head.html' %}
 {% load static %}
 {% block content %}
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
     <script>
         $(document).ready(function () {
             let currentPage = 1;
             const pageSize = 10;
+            var csrftoken = getCookie('csrftoken');
 
             function fetchUserList(page) {
                 $.ajax({
@@ -87,7 +85,10 @@
             });
             // Initial fetch of user list
             fetchUserList(currentPage);
-
+            $('#usernameDropdown').on('change', function () {
+                var selectedOption = $(this).find('option:selected');
+                $('#emp_id_input').val(selectedOption.data('emp-id')); // Set emp_id based on selected option's data attribute
+            });
 
             // Function to populate edit modal with user data
             $(document).on('click', '.edit-btn', function () {
@@ -122,6 +123,41 @@
             $(document).on('click', '#saveChangesBtn', function () {
                 var modules = updateModulesArray(); // Get the updated modules array
                 updateUserInDatabase(modules);
+            });
+            $('#submitUserForm').on('click', function (e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                var formData = $('#addUserForm').serialize(); // Serialize the form data
+
+                console.log("Form Data:", formData); // Debugging - Check if formData is correct
+                console.log("CSRF Token:", csrftoken); // Debugging - Ensure CSRF token is correct
+
+                $.ajax({
+                    url: '{% url "add_user" %}', // URL for the form submission
+                    type: 'POST', // Ensure that the request is POST
+                    data: formData,
+                    headers: {'X-CSRFToken': csrftoken}, // Include the CSRF token in the request header
+                    success: function (response) {
+                        console.log("AJAX Response:", response);
+                        if (response.success) {
+                            alert(response.message);
+                            $('#addUserForm')[0].reset(); // Reset the form
+
+                            // Manually hide the offcanvas modal
+                            $('#offcanvasExample').removeClass('show');
+                            $('body').removeClass('offcanvas-open');
+                            $('.offcanvas-backdrop').remove();
+
+                            fetchUserList(currentPage); // Refresh the user list
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX Error:', xhr.responseText); // Log the entire response for debugging
+                        alert('An error occurred: ' + xhr.responseText);
+                    }
+                });
             });
 
             function updateModulesArray() {
@@ -168,7 +204,6 @@
                     }
                 });
             }
-
 
             function getCookie(name) {
                 var cookieValue = null;
@@ -226,6 +261,8 @@
                 // Close the edit modal
                 $('#editCategoryModal').modal('hide'); // or $('#yourFormId').remove();
             });
+
+
         });
 
     </script>
@@ -292,51 +329,75 @@
                                     <div class="checkbox-container" style="column-count: 2;">
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox1"
-                                                   name="modules" value="Master Category">
-                                            <label class="form-check-label form-label" for="inlineCheckbox6">Master
-                                                Category</label>
+                                                   name="modules" value="Dashboard">
+                                            <label class="form-check-label form-label" for="inlineCheckbox6">
+                                                Dashboard</label>
                                         </div>
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox2"
-                                                   name="modules" value="Sub Category">
-                                            <label class="form-check-label form-label" for="inlineCheckbox7">Sub
-                                                Category</label>
+                                                   name="modules" value="HR Management">
+                                            <label class="form-check-label form-label" for="inlineCheckbox7">
+                                                HR Management</label>
                                         </div>
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox3"
-                                                   name="modules" value="Equipment List">
-                                            <label class="form-check-label form-label" for="inlineCheckbox8">Equipment
-                                                List</label>
+                                                   name="modules" value="Connects">
+                                            <label class="form-check-label form-label" for="inlineCheckbox8">
+                                                Connects</label>
                                         </div>
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox4"
-                                                   name="modules" value="Order Summary">
-                                            <label class="form-check-label form-label" for="inlineCheckbox9">Order
-                                                Summary</label>
+                                                   name="modules" value="Asset Masters">
+                                            <label class="form-check-label form-label" for="inlineCheckbox9">
+                                                Asset Masters</label>
                                         </div>
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox5"
-                                                   name="modules" value="Incoming Orders">
-                                            <label class="form-check-label form-label" for="inlineCheckbox10">Incoming
-                                                Orders</label>
+                                                   name="modules" value="Inventory">
+                                            <label class="form-check-label form-label" for="inlineCheckbox10">
+                                                Inventory</label>
                                         </div>
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox6"
-                                                   name="modules" value="User Management">
-                                            <label class="form-check-label form-label" for="inlineCheckbox11">User
-                                                Management</label>
+                                                   name="modules" value="Order Book">
+                                            <label class="form-check-label form-label" for="inlineCheckbox11">
+                                                Order Book</label>
                                         </div>
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox7"
-                                                   name="modules" value="Employees">
+                                                   name="modules" value="Calendar">
                                             <label class="form-check-label form-label"
-                                                   for="inlineCheckbox11">Employees</label>
+                                                   for="inlineCheckbox12">Calendar</label>
                                         </div>
                                         <div class="form-check form-check-inline" style="break-inside: avoid;">
                                             <input class="form-check-input" type="checkbox" id="editModalCheckbox8"
-                                                   name="modules" value="Connects">
+                                                   name="modules" value="Reports">
                                             <label class="form-check-label form-label"
-                                                   for="inlineCheckbox12">Connects</label>
+                                                   for="inlineCheckbox13">Reports</label>
+                                        </div>
+                                        <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                            <input class="form-check-input" type="checkbox" id="editModalCheckbox9"
+                                                   name="modules" value="Jobs">
+                                            <label class="form-check-label form-label"
+                                                   for="inlineCheckbox14">Jobs</label>
+                                        </div>
+                                        <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                            <input class="form-check-input" type="checkbox" id="editModalCheckbox10"
+                                                   name="modules" value="Production">
+                                            <label class="form-check-label form-label"
+                                                   for="inlineCheckbox15">Production</label>
+                                        </div>
+                                        <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                            <input class="form-check-input" type="checkbox" id="editModalCheckbox11"
+                                                   name="modules" value="Accounts">
+                                            <label class="form-check-label form-label"
+                                                   for="inlineCheckbox16">Accounts</label>
+                                        </div>
+                                        <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                            <input class="form-check-input" type="checkbox" id="editModalCheckbox12"
+                                                   name="modules" value="HR">
+                                            <label class="form-check-label form-label"
+                                                   for="inlineCheckbox17">HR</label>
                                         </div>
                                     </div>
                                 </div>
@@ -357,6 +418,7 @@
 
             <div class="container-fluid">
                 <div class="row">
+
                     <div class="col-xl-12">
                         <div class="card">
                             <div class="card-header">
@@ -407,21 +469,30 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+
             <div class="offcanvas-body">
+
                 <div class="container-fluid">
-                    <form action="{% url 'add_user' %}" method="POST">
+
+                   <form id="addUserForm" method="POST">
+
                         {% csrf_token %}
+
                         <div class="row">
                             <div class="col-xl-6 mb-3">
                                 <label for="usernameDropdown" class="form-label">Username<span
                                         class="text-danger">*</span></label>
                                 <select class="default-select form-control" id="usernameDropdown" name="username"
                                         required>
+
                                     <option value="" disabled selected>Select Username</option>
-                                    {% for name in employee_names %}
-                                        <option value="{{ name }}">{{ name }}</option>
+                                    {% for employee in employee_data %}
+                                        <option value="{{ employee.name }}" data-emp-id="{{ employee.id }}">
+                                            {{ employee.name }}
+                                        </option>
                                     {% endfor %}
                                 </select>
+                                <input type="hidden" name="emp_id" id="emp_id_input" value="{{ employee_id }}">
                             </div>
                             <div class="col-xl-6 mb-3">
                                 <label for="exampleFormControlInput4" class="form-label">Password<span
@@ -435,67 +506,95 @@
                                 <select class="default-select form-control" id="exampleFormControlSelect1" name="status"
                                         required>
                                     <option value="" disabled selected>Select Status</option>
-                                    <option value="1">Active</option>
+                                    <option value="1" selected>Active</option>
                                     <option value="0">Inactive</option>
                                 </select>
                             </div>
+
                             <div class="col-lg-6 mb-3">
                                 <label for="modules" class="form-label">Modules:</label>
                                 <div class="checkbox-container" style="column-count: 2;">
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox6"
-                                               name="modules" value="Master Category">
-                                        <label class="form-check-label form-label" for="inlineCheckbox6">Master
-                                            Category</label>
+                                               name="modules" value="Dashboard">
+                                        <label class="form-check-label form-label" for="inlineCheckbox6">Dashboard
+                                        </label>
                                     </div>
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox7"
-                                               name="modules" value="Sub Category">
-                                        <label class="form-check-label form-label" for="inlineCheckbox7">Sub
-                                            Category</label>
+                                               name="modules" value="HR Management">
+                                        <label class="form-check-label form-label" for="inlineCheckbox7">
+                                            HR Management</label>
                                     </div>
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox8"
-                                               name="modules" value="Equipment List">
-                                        <label class="form-check-label form-label" for="inlineCheckbox8">Equipment
-                                            List</label>
+                                               name="modules" value="Connects">
+                                        <label class="form-check-label form-label" for="inlineCheckbox8">Connects
+                                        </label>
                                     </div>
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox9"
-                                               name="modules" value="Order Summary">
-                                        <label class="form-check-label form-label" for="inlineCheckbox9">Order
-                                            Summary</label>
+                                               name="modules" value="Asset Masters">
+                                        <label class="form-check-label form-label" for="inlineCheckbox9">Asset Masters
+                                        </label>
                                     </div>
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox10"
-                                               name="modules" value="Incoming Orders">
-                                        <label class="form-check-label form-label" for="inlineCheckbox10">Incoming
-                                            Orders</label>
+                                               name="modules" value="Inventory">
+                                        <label class="form-check-label form-label" for="inlineCheckbox10">Inventory
+                                        </label>
                                     </div>
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox11"
-                                               name="modules" value="User Management">
-                                        <label class="form-check-label form-label" for="inlineCheckbox11">User
-                                            Management</label>
+                                               name="modules" value="Order Book">
+                                        <label class="form-check-label form-label" for="inlineCheckbox11">Order Book
+                                        </label>
                                     </div>
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox12"
-                                               name="modules" value="Employees">
+                                               name="modules" value="Calendar">
                                         <label class="form-check-label form-label"
-                                               for="inlineCheckbox12">Employees</label>
+                                               for="inlineCheckbox12">Calendar</label>
                                     </div>
                                     <div class="form-check form-check-inline" style="break-inside: avoid;">
                                         <input class="form-check-input" type="checkbox" id="inlineCheckbox13"
-                                               name="modules" value="Connects">
+                                               name="modules" value="Reports">
                                         <label class="form-check-label form-label"
-                                               for="inlineCheckbox13">Connects</label>
+                                               for="inlineCheckbox13">Reports</label>
+                                    </div>
+                                    <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                        <input class="form-check-input" type="checkbox" id="inlineCheckbox14"
+                                               name="modules" value="Jobs">
+                                        <label class="form-check-label form-label"
+                                               for="inlineCheckbox13">Jobs</label>
+                                    </div>
+                                    <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                        <input class="form-check-input" type="checkbox" id="inlineCheckbox15"
+                                               name="modules" value="Production">
+                                        <label class="form-check-label form-label"
+                                               for="inlineCheckbox13">Production</label>
+                                    </div>
+
+                                    <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                        <input class="form-check-input" type="checkbox" id="inlineCheckbox16"
+                                               name="modules" value="Accounts">
+                                        <label class="form-check-label form-label"
+                                               for="inlineCheckbox13">Accounts</label>
+                                    </div>
+
+                                    <div class="form-check form-check-inline" style="break-inside: avoid;">
+                                        <input class="form-check-input" type="checkbox" id="inlineCheckbox17"
+                                               name="modules" value="HR">
+                                        <label class="form-check-label form-label"
+                                               for="inlineCheckbox13">HR</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <button class="btn btn-primary me-1">Submit</button>
-                            <button class="btn btn-danger light ms-1">Cancel</button>
+
+                            <button type="button" id="submitUserForm" class="btn btn-primary me-1">Submit</button>
+                            <button type="button" class="btn btn-danger light ms-1">Cancel</button>
                         </div>
                     </form>
                 </div>
