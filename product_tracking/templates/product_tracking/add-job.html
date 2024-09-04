@@ -3,6 +3,54 @@
 {% block content %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
+body, .form-container {
+    background-color: #222222 !important; /* Dark background */
+    color: #fff; /* Light text color */
+}
+input.form-control,
+select.form-control {
+    background-color: #222222 !important; /* White background */
+    color: #fff !important; /* Black text */
+    border: 1px solid #ced4da; /* Optional: add a subtle border */
+}
+
+input.form-control:focus,
+select.form-control:focus {
+    background-color: #fff; /* White background on focus */
+    color: #222222; /* Black text */
+    border-color: #80bdff; /* Optional: blue border on focus */
+    outline: none; /* Remove default outline */
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Optional: focus shadow */
+}
+
+button.step-btn {
+    background-color: #007bff; /* Blue button background */
+    color: #fff; /* White text */
+}
+
+button.step-btn:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+.dropdown-menu {
+    background-color: #343a40; /* Dark background for dropdown */
+    color: #fff; /* White text */
+}
+
+.dropdown-menu a {
+    color: #fff !important; /* Ensure the dropdown text is white */
+}
+
+.dropdown-menu a:hover {
+    background-color: #007bff; /* Highlight on hover */
+    color: #fff;
+}
+
+/* Make sure the selects also follow the input styles */
+select {
+    background-color: #fff !important;
+    color: #000 !important;
+}
 .crew-left-content {
     border: 2px solid grey;
     width: 30%;
