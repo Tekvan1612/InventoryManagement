@@ -3,6 +3,25 @@
 {% block content %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
+.crew-left-content {
+    border: 2px solid grey;
+    width: 30%;
+    border-radius: 7px;
+    margin-right: 43px;
+    padding: 10px;
+
+}
+
+.crew-right-content {
+    border: 2px solid grey;
+    border-radius: 7px;
+    width: 70%;
+    padding: 10px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
 .right-equipment-container {
     margin: 0 auto;
     border: 1px solid #ccc;
@@ -374,7 +393,6 @@
         }
 
         $(document).ready(function () {
-
             // Initial fetch
             fetchClientName();
             fetchVenueAddress();
@@ -437,7 +455,15 @@
                 });
             }
 
-            function fetchClientName() {
+            $('#venueAddressDropdown').on('keyup', function () {
+                var value = $(this).val().toLowerCase();
+                var dropdownMenu = $(this).next('.dropdown-menu');
+                dropdownMenu.children('.dropdown-item').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+             function fetchClientName() {
                 $.ajax({
                     url: '/fetch_client_name/',
                     type: 'GET',
@@ -456,14 +482,37 @@
                         console.error('Error fetching client names:', error);
                     }
                 });
+             }
+
+            function fetchIndividualNames(clientName) {
+                $.ajax({
+                    url: '/fetch_individual_names/',
+                    type: 'GET',
+                    data: { client_name: clientName },
+                    dataType: 'json',
+                    success: function (data) {
+                        var individualNames = data.individual_names;
+                        var contactDropdown = $('#clientContactName');
+                        contactDropdown.empty(); // Ensure dropdown is empty before adding options
+
+                        // Add options to the dropdown
+                        $.each(individualNames, function (index, person) {
+                            contactDropdown.append('<option value="' + person.name + '" data-mobile="' + person.mobile + '">' + person.name + '</option>');
+                        });
+
+                        // Optionally, trigger change event if needed
+                        contactDropdown.trigger('change');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching individual names:', error);
+                    }
+                });
             }
 
-            $('#venueAddressDropdown').on('keyup', function () {
-                var value = $(this).val().toLowerCase();
-                var dropdownMenu = $(this).next('.dropdown-menu');
-                dropdownMenu.children('.dropdown-item').filter(function () {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-                });
+            $(document).on('change', '#clientContactName', function () {
+                var selectedOption = $(this).find('option:selected');
+                var mobileNumber = selectedOption.data('mobile');
+                $('#clientContactNumber').val(mobileNumber);
             });
 
             $(document).on('click', '.client-name-item', function () {
@@ -472,9 +521,8 @@
                 var input = $(this).closest('.dropdown').find('.dropdown-toggle');
                 input.val(clientName);
                 input.dropdown('toggle');
-
-                // Fetch and display the contact number for the selected client name and type
-                fetchClientContactNumber(clientName, clientType);
+                // Fetch and populate individual names based on selected client
+                fetchIndividualNames(clientName);
             });
 
             $(document).on('click', '.venue-address-item', function () {
@@ -483,22 +531,6 @@
                 input.val(venueAddress);
                 input.dropdown('toggle');
             });
-
-            function fetchClientContactNumber(clientName, clientType) {
-                $.ajax({
-                    url: '/fetch_client_contact_number/',
-                    type: 'GET',
-                    data: {client_name: clientName, client_type: clientType},
-                    dataType: 'json',
-                    success: function (data) {
-                        $('#clientContactName').val(data.contact_person_name);
-                        $('#clientContactNumber').val(data.contact_person_no);
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching contact number:', error);
-                    }
-                });
-            }
 
              function fetchEmployeeNames() {
                 $.ajax({
@@ -575,7 +607,6 @@
                 }
             });
 
-
             $('#showStart').change(function () {
                 var startDate = $(this).val();
                 $('#showEnd').attr('min', startDate);
@@ -600,102 +631,217 @@
             }
 
             // Trigger insertTempData function when the user finishes entering the last value
-    $('#number_of_days').on('input', function () {
-    insertTempData();
-});
-
-    function insertTempData() {
-    const formData = {
-        title: $('#titleInput').val(),
-        client_name: $('#clientNameDropdown').val(),
-        contact_person_name: $('#clientContactName').val(),
-        contact_person_number: $('#clientContactNumber').val(),
-        status: $('#status').val(),
-        venue_name: $('#venueAddressDropdown').val(),
-        venue_address: $('#venueAddressInput').val(),
-        crew_type: $('#crew_type').val(),
-        employee: $('#employee').val(),
-        setup_date: $('#prepDate').val(),
-        rehearsal_date: $('#outDate').val(),
-        event_date: $('#showStart').val(),
-        dismantle_date: $('#showEnd').val(),
-        total_days: $('#number_of_days').val(),
-        amount_row: $('#total_amount').val(),
-        discount: $('#discount').val(),
-        amount_after_discount: $('#discounted_amount').val(),
-        total_amount: $('#total_amount_cal').val()
-    };
-
-    $.ajax({
-        url: '/insert-temp-data/',
-        type: 'POST',
-        data: JSON.stringify(formData),
-        contentType: 'application/json',
-        success: function (response) {
-            if (response.status === 'success') {
-                alert('Data inserted successfully. Job Reference No: ' + response.job_reference_no);
-
-                // Store tempId in a global variable or update the function directly
-                window.tempId = response.temp_id;
-            } else {
-                alert('Error inserting data: ' + response.error);
-            }
-        },
-        error: function (error) {
-            alert('Error inserting data');
-            console.log(error);
-        }
-    });
-}
-
-            // General Details Section End
-
-
-            // Add Equipment Section
-            // Event listener for change in the last input field of each row
-    $('#selectedEquipmentTable').on('input', '.quantity-input-selected', function () {
-        const lastRow = $('#selectedEquipmentTable tbody tr:last-child');
-
-        // Check if the change occurred in the last input field of the last row
-        if ($(this).closest('tr').is(lastRow)) {
-            if (typeof window.tempId !== 'undefined') {
-                insertEquipmentDetails(window.tempId);
-            } else {
-                alert('Temp ID is not available. Please insert temp data first.');
-            }
-        }
-    });
-
-    // Function to insert equipment details
-    function insertEquipmentDetails(tempId) {
-        const equipmentDetails = [];
-        $('#selectedEquipmentTable tbody tr').each(function () {
-            const row = $(this);
-            equipmentDetails.push({
-                temp_id: tempId,
-                equipment_name: row.find('.equipment-name').text(),
-                quantity: row.find('.quantity-input-selected').val(),
+            $('#number_of_days').on('input', function () {
+                insertTempData();
             });
-        });
 
-        $.ajax({
-            url: '/insert-equipment-details/',
-            type: 'POST',
-            data: JSON.stringify({ equipmentDetails: equipmentDetails }),
-            contentType: 'application/json',
-            success: function (response) {
-                if (response.status === 'success') {
-                    alert('Equipment details inserted successfully');
+            function insertTempData() {
+                const formData = {
+                    title: $('#titleInput').val(),
+                    client_name: $('#clientNameDropdown').val(),
+                    contact_person_name: $('#clientContactName').val(),
+                    contact_person_number: $('#clientContactNumber').val(),
+                    status: $('#status').val(),
+                    venue_name: $('#venueAddressDropdown').val(),
+                    venue_address: $('#venueAddressInput').val(),
+                    crew_type: $('#crewQuantity').val(),
+                    employee: $('#employee').val(),
+                    setup_date: $('#prepDate').val(),
+                    rehearsal_date: $('#outDate').val(),
+                    event_date: $('#showStart').val(),
+                    dismantle_date: $('#showEnd').val(),
+                    total_days: $('#number_of_days').val(),
+                    amount_row: $('#total_amount').val(),
+                    discount: $('#discount').val(),
+                    amount_after_discount: $('#discounted_amount').val(),
+                    total_amount: $('#total_amount_cal').val()
+                };
+                console.log('Fetch the DATA of FORM:',formData)
+
+                $.ajax({
+                    url: '/insert-temp-data/',
+                    type: 'POST',
+                    data: JSON.stringify(formData),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            alert('Data inserted successfully. Job Reference No: ' + response.job_reference_no);
+
+                            // Store tempId in a global variable or update the function directly
+                            window.tempId = response.temp_id;
+                        } else {
+                            alert('Error inserting data: ' + response.error);
+                        }
+                    },
+                    error: function (error) {
+                        alert('Error inserting data');
+                        console.log(error);
+                    }
+                });
+            }
+
+        // General Details Section End
+
+
+        // Add Equipment Section
+            // Event listener for change in the last input field of each row
+            $('#selectedEquipmentTable').on('input', '.quantity-input-selected', function () {
+                const lastRow = $('#selectedEquipmentTable tbody tr:last-child');
+
+                // Check if the change occurred in the last input field of the last row
+                if ($(this).closest('tr').is(lastRow)) {
+                    if (typeof window.tempId !== 'undefined') {
+                        insertEquipmentDetails(window.tempId);
+                    } else {
+                        alert('Temp ID is not available. Please insert temp data first.');
+                    }
+                }
+            });
+
+            // Function to insert equipment details
+            function insertEquipmentDetails(tempId) {
+                const equipmentDetails = [];
+                $('#selectedEquipmentTable tbody tr').each(function () {
+                    const row = $(this);
+                    equipmentDetails.push({
+                        temp_id: tempId,
+                        equipment_name: row.find('.equipment-name').text(),
+                        quantity: row.find('.quantity-input-selected').val(),
+                    });
+                });
+
+                $.ajax({
+                    url: '/insert-equipment-details/',
+                    type: 'POST',
+                    data: JSON.stringify({ equipmentDetails: equipmentDetails }),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            alert('Equipment details inserted successfully');
+
+                            // After successful insertion, calculate the total amount
+                            calculateTotalAmount(window.tempId);
+                        } else {
+                            alert('Error inserting equipment details: ' + response.error);
+                        }
+                    },
+                    error: function (error) {
+                        alert('Error inserting equipment details');
+                        console.log(error);
+                    }
+                });
+            }
+
+            // Function to calculate the total amount
+            function calculateTotalAmount(tempId) {
+                $.ajax({
+                    url: `/calculate-total-amount/${tempId}/`,
+                    type: 'GET',
+                    success: function(response) {
+                        $('#total_amount').val(response.total_amount);
+                    },
+                    error: function(error) {
+                        console.error('Error fetching total amount:', error);
+                    }
+                });
+            }
+
+            // Trigger calculation when quantity is clicked
+            $('.quantity-input-selected').on('click', function() {
+                if (typeof window.tempId !== 'undefined') {
+                    console.log('Equipment Quantity input is working.')
+                    calculateTotalAmount(window.tempId);
                 } else {
-                    alert('Error inserting equipment details: ' + response.error);
+                    alert('Job ID is not available. Please ensure the job data is loaded correctly.');
+                }
+            });
+
+
+                // Function to calculate discount and total amounts
+            function calculateAmounts() {
+                // Get the values of the total amount and discount
+                var totalAmount = parseFloat($('#total_amount').val());
+                var discount = parseFloat($('#discount').val());
+
+                // Check if both totalAmount and discount are numbers
+                if (!isNaN(totalAmount) && !isNaN(discount)) {
+                    // Calculate the discounted amount
+                    var discountedAmount = totalAmount - (totalAmount * discount / 100);
+                    $('#discounted_amount').val(discountedAmount.toFixed(2));
+
+                    // Calculate the total amount with GST
+                    var totalAmountWithGST = discountedAmount * 1.18;
+                    $('#total_amount_cal').val(totalAmountWithGST.toFixed(2));
+                }
+            }
+
+            // Trigger the calculation when the discount value changes
+            $('#discount').on('input', function() {
+                calculateAmounts();
+            });
+
+            // You can also trigger the calculation when the total amount changes
+            $('#total_amount').on('input', function() {
+                calculateAmounts();
+            });
+
+            function updateTempDetails() {
+    const amountRow = $('#total_amount').val();
+    const discount = $('#discount').val();
+    const discountedAmount = $('#discounted_amount').val();
+    const totalAmount = $('#total_amount_cal').val();
+
+    const csrfToken = getCSRFToken();
+
+    if (typeof window.tempId !== 'undefined') {
+        $.ajax({
+            url: `/update-total-amount-details/${window.tempId}/`,
+            type: 'POST',
+            data: {
+                'amount_row': amountRow,
+                'discount': discount,
+                'discounted_amount': discountedAmount,
+                'total_amount': totalAmount,
+            },
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert(response.message);
+                } else {
+                    alert('Error updating details: ' + response.message);
                 }
             },
-            error: function (error) {
-                alert('Error inserting equipment details');
+            error: function(error) {
+                alert('Error updating details');
                 console.log(error);
             }
         });
+    } else {
+        alert('Job ID is not available. Please ensure the job data is loaded correctly.');
     }
+}
+
+// Attach the updateTempDetails function to the input fields
+$('#total_amount, #discount, #discounted_amount, #total_amount_cal').on('input', updateTempDetails);
+
+            function getCSRFToken() {
+    let cookieValue = null;
+    const name = 'csrftoken';
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
             // Variable to keep track of timeout ID
             let timeoutId;
 
@@ -801,7 +947,6 @@
                 }
             });
 
-
             function fetchMasterCategories() {
                 $.ajax({
                     url: '/fetch_master_categories/',
@@ -817,143 +962,142 @@
                 });
             }
 
-               function loadSubcategories() {
-    $.ajax({
-        url: '/fetch-all-subcategories/',
-        type: 'GET',
-        success: function(response) {
-            $('.quantity-container').empty();  // Clear the container
+            function loadSubcategories() {
+                $.ajax({
+                    url: '/fetch-all-subcategories/',
+                    type: 'GET',
+                    success: function(response) {
+                        $('.quantity-container').empty();  // Clear the container
 
-            // Create the accordion structure
-            $('.quantity-container').append('<div id="accordion"></div>');
-            const accordion = $('#accordion');
+                        // Create the accordion structure
+                        $('.quantity-container').append('<div id="accordion"></div>');
+                        const accordion = $('#accordion');
 
-            // Populate the accordion with fetched subcategories
-            $.each(response, function(index, subcategory) {
-                accordion.append(`
-                    <div class="accordion-item" style="width: 100%;">
-                        <div class="accordion-header" data-target="${subcategory.id}">
-                            <span class="equipment-name">${subcategory.name}</span>
-                            <button type="button" class="btn btn-success plus-btn" style="background-color: #0d99ff;" data-target="${subcategory.id}">+</button>
-                        </div>
-                        <div class="accordion-content" id="content-${subcategory.id}" style="display: none;">
-                            <!-- Additional details can be inserted here -->
-                        </div>
-                    </div>
-                `);
+                        // Populate the accordion with fetched subcategories
+                        $.each(response, function(index, subcategory) {
+                            accordion.append(`
+                                <div class="accordion-item" style="width: 100%;">
+                                    <div class="accordion-header" data-target="${subcategory.id}">
+                                        <span class="equipment-name">${subcategory.name}</span>
+                                        <button type="button" class="btn btn-success plus-btn" style="background-color: #0d99ff;" data-target="${subcategory.id}">+</button>
+                                    </div>
+                                    <div class="accordion-content" id="content-${subcategory.id}" style="display: none;">
+                                        <!-- Additional details can be inserted here -->
+                                    </div>
+                                </div>
+                            `);
+                        });
+
+                        // Add event listener to handle button click
+                        $('.plus-btn').on('click', function() {
+                            const contentId = $(this).data('target');
+                            const contentElement = $(`#content-${contentId}`);
+
+                            if (contentElement.is(':visible')) {
+                                contentElement.slideUp();  // Hide the content
+                            } else {
+                                contentElement.slideDown();  // Show the content
+                            }
+                        });
+                    },
+                    error: function(error) {
+                        console.error('Error fetching subcategories:', error);
+                    }
+                });
+            }
+
+            // Load all subcategories on page load
+            loadSubcategories();
+
+            // Event listener for plus button
+            $(document).on('click', '.plus-btn', function() {
+                // Extract the numeric equipment ID from the data-target attribute
+                const equipmentId = $(this).closest('.accordion-header').data('target');
+
+                $.ajax({
+                    url: '/fetch-equipment-with-barcodes/',  // URL should match your Django URL configuration
+                    type: 'GET',
+                    data: { equipment_id: equipmentId },
+                    success: function(response) {
+                        if (response.length > 0) {
+                            let contentHtml = '';
+                            $.each(response, function(index, equipment) {
+                                contentHtml += `<p style="padding: 0px; text-align: center; border-bottom: 1px solid #ccc;">${equipment.equipment_name}</p>`;
+                            });
+
+                            // Display the equipment names directly
+                            $(`#content-${equipmentId}`).html(contentHtml).addClass('open');
+                        } else {
+                            $(`#content-${equipmentId}`).html('<p>No equipment available.</p>').addClass('open');
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error fetching equipment names:', error);
+                    }
+                });
+
+
             });
 
-            // Add event listener to handle button click
-            $('.plus-btn').on('click', function() {
-                const contentId = $(this).data('target');
-                const contentElement = $(`#content-${contentId}`);
+            $(document).on('input', '.quantity-input-sub-category', function () {
+                var $inputField = $(this);
+                var quantity = parseInt($inputField.val(), 10);
+                var availableQuantity = parseInt($inputField.closest('tr').find('td[data-available-quantity]').data('available-quantity'), 10);
+                var equipmentName = $inputField.closest('tr').find('td:first').text();
 
-                if (contentElement.is(':visible')) {
-                    contentElement.slideUp();  // Hide the content
-                } else {
-                    contentElement.slideDown();  // Show the content
+                if (isNaN(quantity) || quantity < 0) {
+                    return; // Exit if the input is not a valid number or less than 0
+                }
+
+                if (quantity > availableQuantity) {
+                    alert('The requested quantity exceeds the available quantity.');
+                    $inputField.val(''); // Clear the quantity input field
+                    return;
+                }
+
+                setTimeout(function () {
+                    var existingRow = $('#selectedEquipmentTable tbody tr').filter(function() {
+                        return $(this).find('td:first').text() === equipmentName;
+                    });
+
+                    if (existingRow.length > 0) {
+                        if (quantity === 0) {
+                            existingRow.remove();
+                        } else {
+                            existingRow.find('td:eq(1) input').val(quantity);
+                        }
+                    } else {
+                        if (quantity > 0) {
+                            var newRow = `
+                                <tr>
+                                    <td style="text-align: left;">${equipmentName}</td>
+                                    <td style="text-align: left;">
+                                        <input type="text" class="form-control quantity-input" value="${quantity}" style="text-align: center; padding-left: 0px;" />
+                                    </td>
+                                </tr>
+                            `;
+                            $('#selectedEquipmentTable tbody').append(newRow);
+
+                            // Automatically open the Equipment Search accordion section
+                            var equipmentSearchAccordion = $('#collapseOne');
+                            if (!equipmentSearchAccordion.hasClass('show')) {
+                                equipmentSearchAccordion.collapse('show'); // Open the accordion
+                            }
+                        }
+                    }
+
+                    $inputField.val('');
+                }, 500);
+            });
+
+            $(document).on('input', '.quantity-input', function () {
+                var $inputField = $(this);
+                var quantity = parseInt($inputField.val(), 10);
+
+                if (quantity === 0) {
+                    $inputField.closest('tr').remove();
                 }
             });
-        },
-        error: function(error) {
-            console.error('Error fetching subcategories:', error);
-        }
-    });
-}
-
-
-    // Load all subcategories on page load
-    loadSubcategories();
-
-    // Event listener for plus button
-    $(document).on('click', '.plus-btn', function() {
-    // Extract the numeric equipment ID from the data-target attribute
-    const equipmentId = $(this).closest('.accordion-header').data('target');
-
-   $.ajax({
-    url: '/fetch-equipment-with-barcodes/',  // URL should match your Django URL configuration
-    type: 'GET',
-    data: { equipment_id: equipmentId },
-    success: function(response) {
-        if (response.length > 0) {
-            let contentHtml = '';
-            $.each(response, function(index, equipment) {
-                contentHtml += `<p style="padding: 0px; text-align: center; border-bottom: 1px solid #ccc;">${equipment.equipment_name}</p>`;
-            });
-
-            // Display the equipment names directly
-            $(`#content-${equipmentId}`).html(contentHtml).addClass('open');
-        } else {
-            $(`#content-${equipmentId}`).html('<p>No equipment available.</p>').addClass('open');
-        }
-    },
-    error: function(error) {
-        console.error('Error fetching equipment names:', error);
-    }
-});
-
-
- });
-
-$(document).on('input', '.quantity-input-sub-category', function () {
-    var $inputField = $(this);
-    var quantity = parseInt($inputField.val(), 10);
-    var availableQuantity = parseInt($inputField.closest('tr').find('td[data-available-quantity]').data('available-quantity'), 10);
-    var equipmentName = $inputField.closest('tr').find('td:first').text();
-
-    if (isNaN(quantity) || quantity < 0) {
-        return; // Exit if the input is not a valid number or less than 0
-    }
-
-    if (quantity > availableQuantity) {
-        alert('The requested quantity exceeds the available quantity.');
-        $inputField.val(''); // Clear the quantity input field
-        return;
-    }
-
-    setTimeout(function () {
-        var existingRow = $('#selectedEquipmentTable tbody tr').filter(function() {
-            return $(this).find('td:first').text() === equipmentName;
-        });
-
-        if (existingRow.length > 0) {
-            if (quantity === 0) {
-                existingRow.remove();
-            } else {
-                existingRow.find('td:eq(1) input').val(quantity);
-            }
-        } else {
-            if (quantity > 0) {
-                var newRow = `
-                    <tr>
-                        <td style="text-align: left;">${equipmentName}</td>
-                        <td style="text-align: left;">
-                            <input type="text" class="form-control quantity-input" value="${quantity}" style="text-align: center; padding-left: 0px;" />
-                        </td>
-                    </tr>
-                `;
-                $('#selectedEquipmentTable tbody').append(newRow);
-
-                // Automatically open the Equipment Search accordion section
-                var equipmentSearchAccordion = $('#collapseOne');
-                if (!equipmentSearchAccordion.hasClass('show')) {
-                    equipmentSearchAccordion.collapse('show'); // Open the accordion
-                }
-            }
-        }
-
-        $inputField.val('');
-    }, 500);
- });
-
-$(document).on('input', '.quantity-input', function () {
-    var $inputField = $(this);
-    var quantity = parseInt($inputField.val(), 10);
-
-    if (quantity === 0) {
-        $inputField.closest('tr').remove();
-    }
- });
 
             // Add Equipment Section End
 
@@ -1026,164 +1170,127 @@ $(document).on('input', '.quantity-input', function () {
 
             // Crew Allocation Section Start
 
+            $('#employeeNameDropdown').on('input', function() {
+                    let query = $(this).val();
+                    if (query.length > 0) { // Start searching after at least 1 characters
+                        $.ajax({
+                            url: '/search-employee/',  // Adjust the URL to your Django view
+                            data: {
+                                'term': query
+                            },
+                            dataType: 'json',
+                            success: function(data) {
+                                let dropdown = $('#employeeNameDropdown').siblings('.employee-dropdown-menu');
+                                dropdown.empty(); // Clear any existing options
 
-let selectedEmployees = [];
+                                if(data.length === 0) {
+                                    dropdown.append('<li class="employee-dropdown-item">No results found</li>');
+                                } else {
+                                    $.each(data, function(index, employee) {
+                                        dropdown.append(
+                                            `<li class="employee-dropdown-item" data-id="${employee.id}">${employee.name}</li>`
+                                        );
+                                    });
+                                }
 
-    $('#searchCrew').on('input', function () {
-    const searchText = $(this).val();
-
-    $.ajax({
-        url: '/search-crew/',
-        data: {
-            search: searchText
-        },
-        dataType: 'json',
-        success: function (data) {
-            const tbody = $('#crew-allocation-table-body');
-            tbody.empty();  // Clear the table body
-
-            // If search box is cleared, show the selected employees
-            if (!searchText.trim()) {
-                selectedEmployees.forEach((employee, index) => {
-                    const row = createRow(employee, index + 1, true);
-                    tbody.append(row);
+                                dropdown.show(); // Show the dropdown
+                            }
+                        });
+                    } else {
+                        $('#employeeNameDropdown').siblings('.employee-dropdown-menu').hide(); // Hide the dropdown if input is too short
+                    }
                 });
-            } else {
-                if (data.length === 0) {
-                    tbody.append('<tr><td colspan="7">No matching records found</td></tr>');
-                } else {
-                    data.forEach((employee, index) => {
-                        const isSelected = selectedEmployees.some(e => e.id === employee.id);
-                        const row = createRow(employee, index + 1, isSelected);
-                        tbody.append(row);
+
+            // Optionally, handle click on the dropdown items
+            $(document).on('click', '.employee-dropdown-item', function(){
+                let employeeName = $(this).text();
+                let employeeId = $(this).data('id');
+
+                $('#employeeNameDropdown').val(employeeName);
+                // You can set the ID in a hidden input if needed
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'employee_id',
+                    value: employeeId
+                }).appendTo('form');
+
+                $('.employee-dropdown-menu').hide(); // Hide the dropdown after selection
+            });
+
+            $(document).on('click', '.employee-dropdown-item', function(){
+                let employeeName = $(this).text();
+                let employeeId = $(this).data('id');
+                let tempId = window.tempId;  // Fetch the tempId from the window object
+                let crewType = $('#crewType').val();  // Assuming crewType is stored in a hidden input or can be fetched from the context
+
+                $('#employeeNameDropdown').val(employeeName);
+
+                // Send the data to the server via AJAX
+                $.ajax({
+                    url: '/insert-crew-allocation/',  // Adjust the URL to your Django view
+                    method: 'POST',
+                    data: {
+                        'temp_id': tempId,  // Use tempId from the window object
+                        'crew_type': crewType,
+                        'employee_id': employeeId,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'  // Include CSRF token for security
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+
+                            // Append the new row to the table
+                            $('#crew-allocation-table-body').append(`
+                                <tr data-id="${response.id}">
+                                    <td>${crewType}</td>
+                                    <td>${employeeName}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" id="deleteButton"><i class="fa fa-times"></i></button>
+                                    </td>
+                                </tr>
+                            `);
+                        } else {
+                            alert('Failed to assign employee.');
+                        }
+                    },
+                    error: function() {
+                        alert('Error occurred while assigning employee.');
+                    }
+                });
+
+                $('.employee-dropdown-menu').hide(); // Hide the dropdown after selection
+            });
+
+            $(document).on('click', '#deleteButton', function(event) {
+                event.preventDefault();  // Prevent the default action
+
+                let row = $(this).closest('tr');
+                let id = row.data('id');
+
+                // Optionally confirm deletion
+                if (confirm('Are you sure you want to delete this row?')) {
+                    $.ajax({
+                        url: '/delete-crew-allocation/',  // Adjust the URL to your Django view
+                        method: 'POST',
+                        data: {
+                            'id': id,  // Send the row ID to the server
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'  // Include CSRF token for security
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.success) {
+                                row.remove();  // Remove the row from the table
+
+                            } else {
+                                alert('Failed to delete the row.');
+                            }
+                        },
+                        error: function() {
+                            alert('Error occurred while deleting the row.');
+                        }
                     });
                 }
-            }
-        },
-        error: function (xhr, status, error) {
-            console.error(`Error: ${status} - ${error}`);
-        }
-    });
-});
-
-    // Function to create a row in the table
-    function createRow(employee, index, isSelected) {
-    // Ensure the image URL is properly formatted
-    const imageUrl = employee.image_url ? employee.image_url : '/media/uploads/default.jpg';  // Default image if no URL is provided
-
-    return `
-        <tr id="row-${employee.id}" ${isSelected ? 'class="selected"' : ''}>
-            <td><input type="checkbox" name="selected_employee" value="${employee.id}"
-                ${isSelected ? 'checked' : ''}
-                onchange="handleSelect(${employee.id}, '${employee.employee_id}', '${employee.name}', '${employee.email}', '${employee.mobile_no}', this.checked)">
-            </td>
-            <td>${index}</td>
-            <td><img src="${employee.image_url}" alt="Profile Photo" style="width: 50px; height: 50px;" onerror="this.onerror=null;this.src='/media/profilepic/download (1).jpg';"></td>
-            <td>${employee.employee_id}</td>
-            <td>${employee.name}</td>
-            <td>${employee.email}</td>
-            <td>${employee.mobile_no}</td>
-        </tr>
-    `;
-}
-
-    // Function to handle the selection of an employee
-    window.handleSelect = function (id, employee_id, name, email, mobile_no, isChecked) {
-    if (isChecked) {
-        // Check if the employee is already selected
-        const employeeExists = selectedEmployees.some(e => e.id === id);
-
-        if (!employeeExists) {
-            // Add the employee to the selected list
-            selectedEmployees.push({ id, employee_id, name, email, mobile_no });
-            console.log('Checkbox selected with ID:', id);
-
-            const row = createRow({ id, employee_id, name, email, mobile_no, image_url: '/media/uploads/default.jpg' }, selectedEmployees.length, true);
-            if ($(`#row-${id}`).length === 0) {
-                $('#crew-allocation-table-body').append(row);
-            }
-        }
-    } else {
-        // Remove the employee from the selected list
-        selectedEmployees = selectedEmployees.filter(e => e.id !== id);
-        console.log('Checkbox deselected with ID:', id);
-        $(`#row-${id}`).remove();
-    }
-};
-
-// Event listener for the submit button
-{#$('#transportationBtn, #crewAllocationBtn, #addSubVendorBtn, #addEquipmentBtn').on('click', function() {#}
-{#    insertSelectedEmployees();#}
-{# });#}
-
-    function isValidKey(keyCode) {
-    // Check if the keyCode is within 'a' to 'z' or '0' to '9'
-    return (keyCode >= 65 && keyCode <= 90) ||   // 'a' to 'z'
-           (keyCode >= 97 && keyCode <= 122) || // 'A' to 'Z'
-           (keyCode >= 48 && keyCode <= 57);    // '0' to '9'
-}
-
-    // Event listener for keypress
-    $(document).on('keypress', function(event) {
-        // Check if the focus is not on the #searchCrew input
-        if (!$('#searchCrew, #outsideInput1, #outsideInput2, #outsideInput3,#input1, #input2, #input3').is(':focus') && isValidKey(event.which)) {
-            insertSelectedEmployees();
-        }
-    });
-
-// Event listener for clicks outside of specified elements
-{#$(document).on('click', function(event) {#}
-{#    var $target = $(event.target);#}
-{##}
-{#    // Check if the click is outside of #searchCrew and #crew-allocation-table-body#}
-{#    if (!$target.closest('#searchCrew').length && !$target.closest('#crew-allocation-table-body').length) {#}
-{#        insertSelectedEmployees();#}
-{#    }#}
-{# });#}
-// Function to insert selected employees into the temp_crew_allocation table
-function insertSelectedEmployees() {
-    if (selectedEmployees.length > 0) {
-        const tempId = window.tempId;
-        const employeeIds = selectedEmployees.map(employee => employee.id);
-        console.log('Fetching tempID:', tempId);
-        console.log('Selected employee IDs:', employeeIds);
-
-        $.ajax({
-            url: '/insert-crew-allocation/',
-            type: 'POST',
-            data: JSON.stringify({ temp_id: tempId, employee_ids: employeeIds }),
-            contentType: 'application/json',
-            headers: {
-                'X-CSRFToken': getCSRFToken()  // Ensure this matches your token name
-            },
-            success: function (response) {
-                if (response.status === 'success') {
-                    alert('Crew Allocation Saved Successfully..')
-                    console.log('Crew allocation saved successfully.');
-                } else {
-                    console.log('Error saving crew allocation:', response.error);
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('Error saving crew allocation:', status, error);
-            }
-        });
-
-    } else {
-        console.log('No employees selected');
-    }
-}
-
-    // Function to get CSRF token
-    function getCSRFToken() {
-    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
-    if (tokenMeta) {
-        return tokenMeta.getAttribute('content');
-    } else {
-        console.error('CSRF token meta tag not found');
-        return '';
-    }
-}
+            });
 
 // Filter table based on search input
             $('#searchCrew').on('input', function () {
@@ -1228,48 +1335,118 @@ function insertSelectedEmployees() {
             // Crew Allocation Section End
 
             //Transportation Allocation Section
-             // Transportation Section
-    $('#addJob').on('click', function (event) {
-        event.preventDefault(); // Prevent the default form submission
 
-        // Collect data from form fields
-        const formData = {
-            temp_id: window.tempId, // Ensure tempId is set properly before this
-            driver_name: $('#input1').val(),
-            contact_number: $('#input2').val(),
-            vehicle_number: $('#input1').val(), // Correct ID if necessary
-            outside_driver_name: $('#outsideInput1').val(),
-            outside_contact_number: $('#outsideInput2').val(),
-            outside_vehicle_number: $('#outsideInput3').val()
-        };
+// Add event listener to 'Add More' button
+$('#addTransportation').click(function(event) {
+    event.preventDefault(); // Prevent the default form submission
 
-        $.ajax({
-            url: '/insert-transportation-data/', // URL to your Django view
-            type: 'POST',
-            data: JSON.stringify(formData),
-            contentType: 'application/json',
-            headers: {
-                'X-CSRFToken': getCsrfToken() // Function to get CSRF token
-            },
-            success: function (response) {
-                if (response.status === 'success') {
-                    alert('Transportation data inserted successfully.');
-                    // Redirect to add-job page
-                    window.location.href = '/add_job/';
-                } else {
-                    alert('Error inserting data: ' + response.error);
-                }
-            },
-            error: function (error) {
-                alert('Error inserting data');
-                console.log(error);
-            }
-        });
-    });
+    // Get the selected transportation type
+    var transportationType = $('input[name="transportation_type"]:checked').val();
 
-    function getCsrfToken() {
-        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var newRowHtml = `
+        <div class="row transportation-row on-vehicle-row">
+            <div class="col-xl-4 mb-3">
+                <label class="form-label">Driver Name</label>
+                <input type="text" class="form-control" placeholder="Enter Driver Name" name="driver_name">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Contact Number</label>
+                <input type="number" class="form-control" placeholder="Enter Contact Number" name="contact_number">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Vehicle Number</label>
+                <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="vehicle_number">
+            </div>
+            <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                <button type="button" class="btn btn-success saveRow" data-type="on_vehicle"><i class="fa fa-save"></i></button>
+                <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+    `;
+
+    var newOutSideRowHtml = `
+        <div class="row transportation-row outside-vehicle-row">
+            <div class="col-xl-4 mb-3">
+                <label class="form-label">Outside Driver Name</label>
+                <input type="text" class="form-control" placeholder="Enter Driver Name" name="outside_driver_name">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Outside Contact Number</label>
+                <input type="number" class="form-control" placeholder="Enter Contact Number" name="outside_contact_number">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Outside Vehicle Number</label>
+                <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="outside_vehicle_number">
+            </div>
+            <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                <button type="button" class="btn btn-success saveRow" data-type="outside_vehicle"><i class="fa fa-save"></i></button>
+                <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+    `;
+
+    // Check if a transportation type is selected
+    if (!transportationType) {
+        alert('Please select a transportation type.');
+        return; // Exit the function if no transportation type is selected
     }
+
+    // Append the new row to the appropriate section
+    if (transportationType === 'on_vehicle') {
+        $('#onVehicleFields').append(newRowHtml);
+    } else if (transportationType === 'outside_vehicle') {
+        $('#outsideVehicleFields').append(newOutSideRowHtml);
+    }
+});
+
+// Add event listener to dynamically created 'saveRow' buttons
+$(document).on('click', '.saveRow', function(event) {
+    var button = $(this);
+    var row = button.closest('.row');
+    var type = button.data('type'); // Get the type of transportation
+
+    var data = {
+        temp_id: window.tempId,
+        driver_name: '',
+        contact_number: '',
+        vehicle_number: '',
+        outside_driver_name: '',
+        outside_contact_number: '',
+        outside_vehicle_number: ''
+    };
+
+    // Collect data based on transportation type
+    if (type === 'on_vehicle') {
+        data.driver_name = row.find('input[name="driver_name"]').val();
+        data.contact_number = row.find('input[name="contact_number"]').val();
+        data.vehicle_number = row.find('input[name="vehicle_number"]').val();
+    } else if (type === 'outside_vehicle') {
+        data.outside_driver_name = row.find('input[name="outside_driver_name"]').val();
+        data.outside_contact_number = row.find('input[name="outside_contact_number"]').val();
+        data.outside_vehicle_number = row.find('input[name="outside_vehicle_number"]').val();
+    }
+
+    $.ajax({
+        url: '/insert_transportation/', // Replace with your actual URL
+        type: 'POST',
+        data: JSON.stringify(data),
+        contentType: 'application/json',
+        success: function(response) {
+            alert('Data saved successfully!');
+            // Optionally provide feedback or update the UI without removing the row
+        },
+        error: function(xhr, status, error) {
+            alert('An error occurred: ' + error);
+        }
+    });
+});
+
+// Add event listener to dynamically created 'cancelRow' buttons
+$(document).on('click', '.cancelRow', function(event) {
+    // Optionally handle row cancellation if needed
+    $(this).closest('.row').remove(); // Remove the row if desired
+});
+
             // Function to handle showing/hiding fields based on selected radio button
             function toggleFields() {
                 var selectedValue = $('input[name="transportation_type"]:checked').val();
@@ -1295,6 +1472,10 @@ function insertSelectedEmployees() {
                 toggleFields();
             });
             //Transportation Allocation Section End
+
+  function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    }
 
             // Function to fetch CSRF token from the form
             function getCookie(name) {
@@ -1400,37 +1581,38 @@ function insertSelectedEmployees() {
                                        required>
                             </div>
                             <div class="col-xl-6 mb-3">
-                                <div class="dropdown">
-                                    <label for="clientNameDropdown" class="form-label">Client
-                                        Name</label>
-                                    <input type="text" class="form-control dropdown-toggle"
-                                           id="clientNameDropdown"
-                                           data-bs-toggle="dropdown" aria-expanded="false"
-                                           placeholder="Select Client Name" autocomplete="off"
-                                           name="client_name">
-                                    <ul class="dropdown-menu" aria-labelledby="clientNameDropdown">
-                                        <!-- Dynamic options will be appended here -->
-                                    </ul>
-                                </div>
+                            <div class="dropdown">
+                                <label for="clientNameDropdown" class="form-label">Client Name</label>
+                                <input type="text" class="form-control dropdown-toggle"
+                                    id="clientNameDropdown"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    placeholder="Select Client Name" autocomplete="off"
+                                    name="client_name">
+                                <ul class="dropdown-menu" aria-labelledby="clientNameDropdown">
+                                    <!-- Dynamic options will be appended here -->
+                                </ul>
                             </div>
-                            <div class="col-xl-3 mb-3">
-                                <div class="dropdown">
-                                    <label for="clientContactName" class="form-label">Contact Person
-                                        Name</label>
-                                    <input type="text" class="form-control" id="clientContactName"
-                                           placeholder="Contact Person Name"
-                                           name="contact_person_name" readonly>
-                                </div>
+                        </div>
+
+                        <div class="col-xl-3 mb-3">
+                            <div class="dropdown">
+                                <label for="clientContactName" class="form-label">Contact Person Name</label>
+                                <select class="form-control" id="clientContactName" name="contact_person_name">
+                                    <!-- Dynamic options will be appended here -->
+                                </select>
                             </div>
-                            <div class="col-xl-3 mb-3">
-                                <div class="dropdown">
-                                    <label for="clientContactNumber" class="form-label">Contact
-                                        Person Number</label>
-                                    <input type="text" class="form-control" id="clientContactNumber"
-                                           placeholder="Contact Person Number"
-                                           name="contact_person_number" readonly>
-                                </div>
+                        </div>
+
+                        <div class="col-xl-3 mb-3">
+                            <div class="dropdown">
+                                <label for="clientContactNumber" class="form-label">Contact Person Number</label>
+                                <input type="text" class="form-control" id="clientContactNumber"
+                                    placeholder="Contact Person Number"
+                                    name="contact_person_number" readonly>
                             </div>
+                        </div>
+
+
                             <div class="col-xl-3 mb-3">
                                 <label class="form-label">Status</label>
                                 <select class="default-select form-control" id="status"
@@ -1442,13 +1624,10 @@ function insertSelectedEmployees() {
                                 </select>
                             </div>
                             <div class="col-xl-3 mb-3" id="quotation-fields">
-                                <label class="form-label">Crew Type</label>
-                                <select class="default-select form-control" id="crew_type"
-                                        name="crew_type" multiple="multiple">
-                                    <option value="A1">A1</option>
-                                    <option value="A2">A2</option>
-                                    <option value="A3">A3</option>
-                                </select>
+                                <label for="crewType" class="form-label">Crew Quantity</label>
+                                <input type="text" class="form-control" id="crewQuantity"
+                                           placeholder="Enter Crew Quantity"
+                                           name="crew_quantity" style="margin-top: -2px;">
                             </div>
                             <div class="col-xl-6 mb-3">
                                 <div class="dropdown">
@@ -1503,7 +1682,14 @@ function insertSelectedEmployees() {
                                 </select>
                             </div>
                             </div>
-                            <div class="row" id="quotation-fields1">
+
+                        </div>
+                    </div>
+
+                    <div class="form-step" id="step-2">
+                        <!-- First Section -->
+                        <div class="row">
+                        <div class="row" id="quotation-fields1">
                                 <div class="col-xl-3 mb-3">
                                     <label for="total_amount" class="form-label">Amount</label>
                                     <input type="number" class="form-control" id="total_amount"
@@ -1527,12 +1713,6 @@ function insertSelectedEmployees() {
                                            name="total_amount">
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="form-step" id="step-2">
-                        <!-- First Section -->
-                        <div class="row">
                             <div class="col-md-4">
                                 <div class="left-equipment-container">
                                     <div class="quantity-container" >
@@ -1603,26 +1783,55 @@ function insertSelectedEmployees() {
                             <input type="text" class="form-control" id="searchCrew" placeholder="Search...."
                                    style="width: 200px;margin-bottom: 7px;">
                         </div>
-
-                        <div class="table-responsive table-card">
-                            <table class="table primary-table-bordered"
-                                   id="employee-table">
-                                <thead class="thead-primary">
-                                <tr>
-                                    <th>Select</th>
-                                    <th>SR NO</th>
-                                    <th>Profile Photo</th>
-                                    <th>Employee ID</th>
-                                    <th>Employee Name</th>
-                                    <th>Email Address</th>
-                                    <th>Contact Number</th>
-                                </tr>
-                                </thead>
-                                <tbody id="crew-allocation-table-body">
-                                <!-- Rows will be dynamically added here -->
-                                </tbody>
-                            </table>
+                        <div class="crew-container">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="crew-left-content">
+                                    <div class="crew-row d-flex">
+                                        <div class="col-xl-2 mb-3" style="margin-right: 14px; width: 26%;">
+                                            <label for="crewType" class="form-label">Crew Type</label>
+                                            <select class="default-select form-control" id="crewType" name="crew_type">
+                                                <option value="A1">A1</option>
+                                                <option value="A2">A2</option>
+                                                <option value="A3">A3</option>
+                                            </select>
+                                        </div>
+                                         <div class="col-xl-6 mb-3">
+                            <div class="dropdown">
+                                <label for="employeeNameDropdown" class="form-label">Client Name</label>
+                                <input type="text" class="form-control dropdown-toggle"
+                                    id="employeeNameDropdown"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    placeholder="Select Client Name" autocomplete="off"
+                                    name="employee_name">
+                                <ul class="employee-dropdown-menu" aria-labelledby="employeeNameDropdown" id="employee-dropdown-item">
+                                    <!-- Dynamic options will be appended here -->
+                                </ul>
+                            </div>
                         </div>
+
+                                    </div>
+                                </div>
+                                <div class="crew-right-content">
+                                    <div class="table-responsive table-card">
+                                        <table class="table primary-table-bordered" id="employee-table">
+                                            <thead class="thead-primary">
+                                                <tr>
+
+                                                    <th>Crew Type</th>
+                                                    <th>Employee</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="crew-allocation-table-body">
+                                                <!-- Rows will be dynamically added here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
                     </div>
 
                     <div class="form-step" id="step-5">
@@ -1630,77 +1839,27 @@ function insertSelectedEmployees() {
                         <div class="mb-3">
                             <div class="d-flex">
                                 <div class="form-check me-3">
-                                    <input class="form-check-input" type="radio"
-                                           name="transportation_type" id="onVehicle" value="on_vehicle">
-                                    <label class="form-check-label" for="onVehicle">
-                                        Own Vehicle
-                                    </label>
+                                    <input class="form-check-input" type="radio" name="transportation_type" id="onVehicle" value="on_vehicle">
+                                    <label class="form-check-label" for="onVehicle">Own Vehicle</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio"
-                                           name="transportation_type" id="outsideVehicle"
-                                           value="outside_vehicle">
-                                    <label class="form-check-label" for="outsideVehicle">
-                                        Outside Vehicle
-                                    </label>
+                                    <input class="form-check-input" type="radio" name="transportation_type" id="outsideVehicle" value="outside_vehicle">
+                                    <label class="form-check-label" for="outsideVehicle">Outside Vehicle</label>
                                 </div>
                             </div>
                         </div>
-
 
                         <!-- Fields for "On Vehicle" option -->
-                        <div id="onVehicleFields" class="transportation-fields"
-                             style="display: none;">
-                            <div class="row">
-                                <div class="col-xl-4 mb-3">
-                                    <label for="input1" class="form-label">Driver Name</label>
-                                    <input type="text" class="form-control" id="input1"
-                                           placeholder="Enter Driver Name">
-                                </div>
-                                <div class="col-xl-4 mb-3">
-                                    <label for="input2" class="form-label">Contact Number</label>
-                                    <input type="number" class="form-control" id="input2"
-                                           placeholder="Enter Contact Number">
-                                </div>
-                                <div class="col-xl-4 mb-3">
-                                    <label for="vehicleDropdown" class="form-label">Vehicle
-                                        Number</label>
-                                    <input type="text" class="form-control" id="input1"
-                                           placeholder="Enter Vehicle Number">
-
-                                </div>
-                            </div>
-                        </div>
+                        <div id="onVehicleFields" class="transportation-fields"></div>
 
                         <!-- Fields for "Outside Vehicle" option -->
-                        <div id="outsideVehicleFields" class="transportation-fields"
-                             style="display: none;">
-                            <div class="row">
-                                <div class="col-xl-4 mb-3">
-                                    <label for="outsideInput1" class="form-label">Driver
-                                        Name</label>
-                                    <input type="text" class="form-control" id="outsideInput1"
-                                           placeholder="Enter Driver Name">
-                                </div>
-                                <div class="col-xl-4 mb-3">
-                                    <label for="outsideInput2" class="form-label">Contact
-                                        Number</label>
-                                    <input type="number" class="form-control" id="outsideInput2"
-                                           placeholder="Enter Contact Number">
-                                </div>
-                                <div class="col-xl-4 mb-3">
-                                    <label for="outsideInput3" class="form-label">Vehicle
-                                        Number</label>
-                                    <input type="text" class="form-control" id="outsideInput3"
-                                           placeholder="Enter Vehicle Number">
-                                </div>
-                            </div>
-                        </div>
+                        <div id="outsideVehicleFields" class="transportation-fields"></div>
+
                         <div>
-                            <button class="btn btn-primary me-1" type="submit" id="addJob">Submit</button>
-                            <button class="btn btn-danger light ms-1" id="cancelButton">Cancel</button>
+                            <button class="btn btn-primary light ms-1" id="addTransportation">Add More</button>
                         </div>
                     </div>
+
 
                 </form>
             </div>

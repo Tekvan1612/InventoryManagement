@@ -106,6 +106,12 @@
 
                             console.log('fetched jobs id:', jobs.id)
                         });
+                        $('.job-reference-link').on('click', function (e) {
+                            e.preventDefault();
+                            var jobId = $(this).data('id');
+                            window.location.href = '/edit_job/' + jobId + '/';
+
+                        });
                         updatePaginationCount(data.length);
                     },
                     error: function (xhr, status, error) {
