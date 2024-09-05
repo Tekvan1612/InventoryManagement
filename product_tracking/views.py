@@ -441,93 +441,92 @@ def add_employee(request):
     username = request.session.get('username')
     if request.method == 'POST':
         try:
+            # Log data for debugging
+            print("Received POST data:", request.POST)
+            print("Received FILES data:", request.FILES)
+
+            # Validate and extract data
             employee_id = int(request.POST.get('employee_id').strip())
-        except (ValueError, TypeError):
-            return JsonResponse({'error': 'Invalid employee ID. Please enter a valid integer.'}, status=400)
-
-        name = request.POST.get('name')
-        email = request.POST.get('email')
-        designation = request.POST.get('designation')
-        try:
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            designation = request.POST.get('designation')
             mobile_no = int(request.POST.get('mobile_no').strip())
-        except (ValueError, TypeError):
-            return JsonResponse({'error': 'Invalid mobile number. Please enter a valid integer.'}, status=400)
+            gender = request.POST.get('gender')
+            joining_date = datetime.strptime(request.POST.get('joining_date'), '%Y-%m-%d').date()
+            dob = datetime.strptime(request.POST.get('dob'), '%Y-%m-%d').date()
+            reporting_id = request.POST.get('reporting')
+            p_address = request.POST.get('p_address')
+            c_address = request.POST.get('c_address')
+            country = request.POST.get('country')
+            state = request.POST.get('state')
+            status = request.POST.get('status').lower() == 'true'
+            blood_group = request.POST.get('bloodGroup')
+            created_by = request.session.get('user_id')
+            created_date = datetime.now().replace(tzinfo=None)  # timestamp without timezone
+            profile_photo = request.FILES.get('profile_photo')
+            attachment_images = request.FILES.getlist('attachments[]')
 
-        gender = request.POST.get('gender')
-        joining_date = request.POST.get('joining_date')
-        dob = request.POST.get('dob')
-        reporting_id = request.POST.get('reporting')
-        p_address = request.POST.get('p_address')
-        c_address = request.POST.get('c_address')
-        country = request.POST.get('country')
-        state = request.POST.get('state')
-        status = request.POST.get('status').lower() == 'true'
-        blood_group = request.POST.get('bloodGroup')
-        created_by = request.session.get('user_id')
-        created_date = datetime.now()
-        profile_photo = request.FILES.get('profile_photo')
-        attachment_images = request.FILES.getlist('attachments[]')
+            # File upload handling
+            profile_pic_dir = os.path.join(settings.MEDIA_ROOT, 'profilepic')
+            uploads_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+            os.makedirs(profile_pic_dir, exist_ok=True)
+            os.makedirs(uploads_dir, exist_ok=True)
 
-        # Validate profile photo size
-        if profile_photo:
-            if profile_photo.size < 4000 or profile_photo.size > 12288:  # 5KB to 12KB
-                return JsonResponse({'error': 'Profile photo size must be between 5KB and 12KB.'}, status=400)
-
-        profile_pic_dir = os.path.join(settings.MEDIA_ROOT, 'profilepic')
-        uploads_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-        os.makedirs(profile_pic_dir, exist_ok=True)
-        os.makedirs(uploads_dir, exist_ok=True)
-
-        # Check for duplicates
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT COUNT(*) FROM employee
-                WHERE employee_id = %s OR email = %s OR mobile_no = %s
-            """, [employee_id, email, mobile_no])
-            duplicate_count = cursor.fetchone()[0]
-
-        if duplicate_count > 0:
-            return JsonResponse({'error': 'Employee with this ID, email, or mobile number already exists.'}, status=400)
-
-        # Fetch reporting name
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT name FROM employee WHERE id = %s", [reporting_id])
-            reporting_name = cursor.fetchone()
-            if reporting_name is None:
-                return JsonResponse({'error': 'Invalid reporting ID.'}, status=400)
-            reporting_name = reporting_name[0]
-
-        # Process profile photo
-        profile_photo_path = None
-        if profile_photo:
-            profile_photo_path = os.path.join(profile_pic_dir, profile_photo.name)
-            with open(profile_photo_path, 'wb') as f:
-                for chunk in profile_photo.chunks():
-                    f.write(chunk)
-
-        # Process attachment images
-        image_paths = [None, None]
-        for i, image in enumerate(attachment_images[:2]):
-            if image:
-                image_path = os.path.join(uploads_dir, image.name)
-                with open(image_path, 'wb') as f:
-                    for chunk in image.chunks():
+            profile_photo_path = None
+            if profile_photo:
+                if profile_photo.size < 4000 or profile_photo.size > 12288:
+                    return JsonResponse({'error': 'Profile photo size must be between 5KB and 12KB.'}, status=400)
+                profile_photo_path = os.path.join(profile_pic_dir, profile_photo.name)
+                with open(profile_photo_path, 'wb') as f:
+                    for chunk in profile_photo.chunks():
                         f.write(chunk)
-                image_paths[i] = image_path
 
-        # Call the stored procedure/function
-        try:
+            # Process attachments
+            image_paths = [None, None]
+            for i, image in enumerate(attachment_images[:2]):
+                if image:
+                    image_path = os.path.join(uploads_dir, image.name)
+                    with open(image_path, 'wb') as f:
+                        for chunk in image.chunks():
+                            f.write(chunk)
+                    image_paths[i] = image_path
+
+            # Check for duplicates
             with connection.cursor() as cursor:
-                cursor.callproc('add_employee', [
-                    employee_id, name, email, designation, mobile_no, gender,
-                    joining_date, dob, reporting_name, p_address, c_address, country, state,
-                    status, blood_group, created_by, created_date,
-                    profile_photo_path, image_paths[0], image_paths[1]
-                ])
-        except IntegrityError as e:
-            return JsonResponse({'error': 'Integrity error occurred: ' + str(e)}, status=400)
+                cursor.execute("""
+                    SELECT COUNT(*) FROM employee
+                    WHERE employee_id = %s OR email = %s OR mobile_no = %s
+                """, [employee_id, email, mobile_no])
+                duplicate_count = cursor.fetchone()[0]
 
-        return JsonResponse({'success': 'Employee added successfully'}, status=200)
+            if duplicate_count > 0:
+                return JsonResponse({'error': 'Employee with this ID, email, or mobile number already exists.'}, status=400)
+
+            # Fetch reporting name
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT name FROM employee WHERE id = %s", [reporting_id])
+                reporting_name = cursor.fetchone()
+                if reporting_name is None:
+                    return JsonResponse({'error': 'Invalid reporting ID.'}, status=400)
+                reporting_name = reporting_name[0]
+
+            # Call stored procedure
+            try:
+                with connection.cursor() as cursor:
+                    cursor.callproc('add_employee', [
+                        employee_id, name, email, designation, mobile_no, gender,
+                        joining_date, dob, reporting_name, p_address, c_address, country, state,
+                        status, blood_group, created_by, created_date,
+                        profile_photo_path, image_paths[0], image_paths[1]
+                    ])
+            except IntegrityError as e:
+                return JsonResponse({'error': 'Integrity error occurred: ' + str(e)}, status=400)
+
+            return JsonResponse({'success': 'Employee added successfully'}, status=200)
+
+        except Exception as e:
+            print(f"An unexpected error occurred: {str(e)}")
+            return JsonResponse({'error': 'An unexpected error occurred: ' + str(e)}, status=500)
 
     return render(request, 'product_tracking/employee.html', {'employees': get_all_employees(), 'username': username})
 
@@ -556,76 +555,74 @@ def employee_list(request):
             cursor.execute("SELECT * FROM get_employee_details()")
             rows = cursor.fetchall()
 
-            # Fetch attachments for each employee
             for index, row in enumerate(rows):
-                created_date = row[17].strftime('%Y-%m-%d') if row[17] else None
+                # Log each row to check indexing
+                logger.debug(f"Row data: {row}")
+
+                # Extract each field from the row
+                employee_id = row[1]
+                name = row[2]
+                email = row[3]
+                designation = row[4]
+                mobile_no = row[5]
+                gender = row[6]
                 joining_date = row[7].strftime('%Y-%m-%d') if row[7] else None
                 dob = row[8].strftime('%Y-%m-%d') if row[8] else None
+                reporting_name = row[9]
+                p_address = row[10]
+                c_address = row[11]
+                country = row[12]
+                state = row[13]
+                status = row[14]
+                created_by = row[15]  # This should now correctly come from user_master
+                created_date = row[16].strftime('%Y-%m-%d') if row[16] else None  # Format created_date
+                profile_pic = row[17]  # Profile picture path
+                attachments = row[18]  # Attachments array
 
-                # Handle profile picture
-                image_path = row[18]
-                image_url = None
-                if image_path:
-                    try:
-                        image_relative_path = os.path.relpath(image_path, settings.MEDIA_ROOT)
-                        image_url = os.path.join(settings.MEDIA_URL, image_relative_path).replace('\\', '/')
-                    except ValueError as ve:
-                        logger.error("ValueError occurred while computing relative path: %s", str(ve))
-                        image_url = os.path.join(settings.MEDIA_URL, 'profilepic/default.jpg')
+                # Handle profile picture URL
+                if profile_pic:
+                    image_url = os.path.join(settings.MEDIA_URL, profile_pic).replace('\\', '/')
                 else:
                     image_url = os.path.join(settings.MEDIA_URL, 'profilepic/default.jpg')
 
-                # Fetch attachments for this employee
-                employee_id = row[0]  # Assume employee_id is in row[0]
-                cursor.execute("SELECT images FROM employee_images WHERE employee_id = %s", [employee_id])
-                attachment_rows = cursor.fetchall()
-                attachments = []
-                for attachment_row in attachment_rows:
-                    attachment_path = attachment_row[0]
-                    try:
-                        # Convert attachment path to URL
-                        if attachment_path.startswith(os.path.join(settings.MEDIA_ROOT, 'uploads')):
-                            attachment_relative_path = os.path.relpath(attachment_path, settings.MEDIA_ROOT)
-                            attachment_url = os.path.join(settings.MEDIA_URL, attachment_relative_path).replace('\\',
-                                                                                                                '/')
-                            attachments.append(attachment_url)
-                        else:
-                            logger.warning("Attachment path does not start with 'media/uploads': %s", attachment_path)
-                    except ValueError as ve:
-                        logger.error("ValueError occurred while computing relative path for attachment: %s", str(ve))
-                        # Add a placeholder or log error
-                        attachments.append(os.path.join(settings.MEDIA_URL, 'uploads/default.jpg'))
+                # Handle attachments (array of images)
+                attachment_urls = []
+                if attachments:
+                    for attachment in attachments:
+                        if attachment:
+                            attachment_url = os.path.join(settings.MEDIA_URL, attachment).replace('\\', '/')
+                            attachment_urls.append(attachment_url)
 
-                logger.debug(f"Employee row: {row}")
-
+                # Add employee details to the list
                 employee_listing.append({
                     'sr_no': index + 1,
                     'id': row[0],
-                    'employee_id': row[1],
-                    'name': row[2],
-                    'email': row[3],
-                    'mobile_no': row[5],
-                    'designation': row[4],
-                    'gender': row[6],
+                    'employee_id': employee_id,
+                    'name': name,
+                    'email': email,
+                    'mobile_no': mobile_no,
+                    'designation': designation,
+                    'gender': gender,
                     'joining_date': joining_date,
                     'dob': dob,
-                    'reporting': row[9],
-                    'p_address': row[10],
-                    'c_address': row[11],
-                    'country': row[12],
-                    'state': row[13],
-                    'status': row[14],
-                    'blood_group': row[15],
-                    'created_by': row[16],
+                    'reporting': reporting_name,
+                    'p_address': p_address,
+                    'c_address': c_address,
+                    'country': country,
+                    'state': state,
+                    'status': status,
+                    'blood_group': row[15],  # Assuming blood_group is included
+                    'created_by': created_by,
                     'created_date': created_date,
                     'profile_pic': image_url,
-                    'attachments': attachments,  # List of attachment URLs
+                    'attachments': attachment_urls  # List of attachment URLs
                 })
-                print('Fetch the correct path:', employee_listing)
+
     except Exception as e:
         logger.error("An error occurred while fetching the employee list: %s", str(e), exc_info=True)
         return JsonResponse({'error': 'An error occurred while fetching the employee list: ' + str(e)}, status=500)
 
+    # Pagination
     page = request.GET.get('page', 1)
     page_size = request.GET.get('page_size', 10)
     paginator = Paginator(employee_listing, page_size)
@@ -637,7 +634,6 @@ def employee_list(request):
         'total_pages': paginator.num_pages,
         'current_page': page_obj.number,
     }
-    print('Fetch the response:', response)
 
     return JsonResponse(response)
 

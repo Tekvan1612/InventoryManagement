@@ -2,6 +2,11 @@
 {% load static %}
 {% block content %}
     <style>
+        .header-row {
+            background-color: red;
+            color: blue;
+        }
+
         .employee-details {
             display: none;
             margin-top: 10px;
@@ -21,9 +26,67 @@
             text-decoration: underline;
             cursor: pointer;
         }
+
+        /* Container for attachments */
+        .attachments-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* Thumbnail styling */
+        .attachments-container img {
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .attachments-container img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Lightbox styling */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .lightbox-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        #caption {
+            margin: 10px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            color: #fff;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
     </style>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
     <script>
@@ -51,43 +114,44 @@
             let removedProfilePic = false;
 
             function fetchEmployeeDropdown(dropdownId, selectedId = null, callback) {
-    $.ajax({
-        url: '/employee_dropdown/',
-        type: 'GET',
-        dataType: 'json',
-        success: function (data) {
-            var dropdown = $(dropdownId);
-            dropdown.empty();
+                $.ajax({
+                    url: '/employee_dropdown/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log('Fetch the existing values ID:', selectedId)
+                        var dropdown = $(dropdownId);
+                        dropdown.empty();
+                        console.log('Fetch the existing values ID:', selectedId)
 
-            // Populate dropdown with employees
-            $.each(data.employees, function (index, employee) {
-                var option = $('<option></option>').attr('value', employee.id).text(employee.name);
-                dropdown.append(option);
-            });
+                        // Populate dropdown with employees
+                        $.each(data.employees, function (index, employee) {
+                            var option = $('<option></option>').attr('value', employee.id).text(employee.name);
+                            dropdown.append(option);
+                        });
 
-            // Initialize Select2 (if using Select2)
-            dropdown.select2();
+                        // Initialize Select2 (if using Select2)
+                        dropdown.select2();
 
-            // Set selected value
-            if (selectedId !== null) {
-                dropdown.val(selectedId).trigger('change'); // Set selected value and trigger change event
+                        // Set selected value
+                        if (selectedId !== null) {
+                            dropdown.val(selectedId).trigger('change'); // Set selected value and trigger change event
+                        }
+
+                        if (callback) callback();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching employees:', error);
+                    }
+                });
             }
 
-            if (callback) callback();
-        },
-        error: function (xhr, status, error) {
-            console.error('Error fetching employees:', error);
-        }
-    });
-}
-
-
-
-            function populateEmployeeDropdown(dropdown, employees, selectedId = null) {
+            function populateEmployeeDropdown(dropdown, employees, selectedId) {
                 console.log('Populating dropdown:', dropdown, 'Employees:', employees, 'Selected ID:', selectedId);
                 dropdown.empty();
                 dropdown.append($('<option></option>').attr('value', '').text('Select employee'));
                 $.each(employees, function (index, employee) {
+                    console.log('Employee:', employee); // Add this line to check each employee object
                     var option = $('<option></option>').attr('value', employee.id).text(employee.name);
                     dropdown.append(option);
                 });
@@ -118,55 +182,84 @@
                         if (response.data && response.data.length > 0) {
                             $.each(response.data, function (index, employee) {
                                 console.log('Employee data:', employee); // Print employee data inside the table generation loop
-                                var row = `<tr>
-                    <td>${(page - 1) * pageSize + (index + 1)}</td>
-                    <td style="display: none;">${employee.id}</td>
-                    <td><img src="${employee.profile_pic}" alt="Employee Image" width="50"></td>
-                    <td>${employee.employee_id}</td>
-                    <td><a href="#" class="employee-name" data-employee='${JSON.stringify(employee)}'>${employee.name}</a></td>
-                    <td>${employee.email}</td>
-                    <td>${employee.mobile_no}</td>
-                    <td>${employee.created_by}</td>
-                    <td>${employee.created_date}</td>
 
-                    <td>
-                        <button class="btn btn-sm btn-primary edit-btn me-2" data-id="${employee.id}" data-employee='${JSON.stringify(employee)}'><i class="fa fa-pencil"></i></button>
-                        <button class="btn btn-sm btn-danger delete-btn" data-id="${employee.id}"><i class="fa fa-trash"></i></button>
-                    </td>
-                </tr>`;
+                                var row = `<tr>
+                        <td>${(page - 1) * pageSize + (index + 1)}</td>
+                        <td style="display: none;">${employee.id}</td>
+                        <td><img src="${employee.profile_pic}" alt="Employee Image" width="50"></td>
+                        <td>${employee.employee_id}</td>
+                        <td><a href="#" class="employee-name" data-employee='${JSON.stringify(employee)}'>${employee.name}</a></td>
+                        <td>${employee.email}</td>
+                        <td>${employee.mobile_no}</td>
+                        <td>${employee.created_by}</td>
+                        <td>${employee.created_date}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-btn me-2" data-id="${employee.id}" data-employee='${JSON.stringify(employee)}'><i class="fa fa-pencil"></i></button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${employee.id}"><i class="fa fa-trash"></i></button>
+                        </td>
+                    </tr>`;
                                 $('#employee-table-body').append(row);
                             });
 
                             $('.employee-name').click(function (event) {
                                 event.preventDefault();
                                 var employee = $(this).data('employee');
-                                console.log('Selected employee data:', employee); // Print selected employee data when name is clicked
+                                console.log('Selected employee data:', employee);
 
                                 // Update the modal fields with the employee data
-                                $('#modal_designation').text(employee.designation);
-                                $('#modal_joining_date').text(employee.joining_date);
-                                $('#modal_dob').text(employee.dob);
-                                $('#modal_reporting').text(employee.reporting); // Correctly assign the reporting value
-                                $('#modal_p_address').text(employee.p_address);
-                                $('#modal_c_address').text(employee.c_address);
-                                $('#modal_country').text(employee.country);
-                                $('#modal_state').text(employee.state);
+                                $('#modal_designation').text(employee.designation || 'N/A');
+                                $('#modal_joining_date').text(employee.joining_date || 'N/A');
+                                $('#modal_dob').text(employee.dob || 'N/A');
+                                $('#modal_blood_group').text(employee.blood_group || 'N/A');
+                                $('#modal_reporting').text(employee.reporting || 'N/A');
+                                $('#modal_p_address').text(employee.p_address || 'N/A');
+                                $('#modal_c_address').text(employee.c_address || 'N/A');
+                                $('#modal_country').text(employee.country || 'N/A');
+                                $('#modal_state').text(employee.state || 'N/A');
                                 $('#modal_status').text(employee.status ? 'Active' : 'Inactive');
+
+                                // Set the attachment images in the modal
+                                var attachmentsHtml = '';
+                                if (employee.attachments && employee.attachments.length > 0) {
+                                    $.each(employee.attachments, function (index, attachment) {
+                                        attachmentsHtml += `<img src="${attachment}" alt="Attachment" width="100" style="margin-right: 10px; max-height: 200px;" class="attachment-thumbnail">`;
+                                    });
+                                } else {
+                                    attachmentsHtml = 'No attachments';
+                                }
+                                $('#modal_attachments_container').html(attachmentsHtml);
+
+                                // Lightbox functionality
+                                var lightbox = $('#lightbox');
+                                var lightboxImg = $('#lightbox-img');
+                                var captionText = $('#caption');
+
+                                $(document).on('click', '.attachment-thumbnail', function () {
+                                    lightbox.show();
+                                    lightboxImg.attr('src', $(this).attr('src'));
+                                    captionText.text($(this).attr('alt'));
+                                });
+
+                                $('.close').on('click', function () {
+                                    lightbox.hide();
+                                });
+
 
                                 $('#employeeDetailsModal').modal('show');
                             });
 
                             updatePaginationControls(response.total_items, response.current_page, response.total_pages);
                         } else {
-                            $('#employee-table-body').append('<tr><td colspan="7">No records found</td></tr>');
+                            $('#employee-table-body').append('<tr><td colspan="10">No records found</td></tr>');
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error('Error fetching employee data:', error);
-                        $('#employee-table-body').append('<tr><td colspan="7">Error fetching employee data</td></tr>');
+                        $('#employee-table-body').append('<tr><td colspan="10">Error fetching employee data</td></tr>');
                     }
                 });
             }
+
 
             function updatePaginationControls(totalItems, currentPage, totalPages) {
                 $('#pagination-controls').html('');
@@ -217,7 +310,9 @@
                 $('#editEmployeeCountry').val(employee.country);
                 $('#editEmployeeState').val(employee.state);
                 $('#editEmployeeStatus').val(employee.status ? 'true' : 'false');
+                $('#editBloodGroup').val(employee.blood_group);
                 // Fetch and populate the reporting dropdown with the existing value
+                console.log('Fetch the Employee Reporting Name:', employee.reporting);
                 fetchEmployeeDropdown('#editEmployeeReporting', employee.reporting);// Set reporting correctly
                 console.log('Employee reporting value:', employee.reporting);
                 removedAttachments = [];
@@ -229,7 +324,7 @@
             <div class="mt-2">
                 <label>Existing Attachments:</label>
                 <ul>
-                    ${employee.attachments.map((att, index) => `<li>${att.split('/').pop()} <button class="btn btn-sm btn-danger remove-attachment" data-attachment-id="${employee.attachment_ids[index]}"><i class="fa fa-times"></i></button></li>`).join('')}
+                    ${employee.attachments.map((att, index) => `<li>${att.split('/').pop()} <button class="btn btn-sm btn-danger remove-attachment" data-attachment-id="${employee.attachments[index]}"><i class="fa fa-times"></i></button></li>`).join('')}
                 </ul>
             </div>
         `);
@@ -319,25 +414,36 @@
 
             $('#employee-form').on('submit', function (event) {
                 event.preventDefault();
+
                 const formData = new FormData(this);
+
+                // Debugging: Log the form data
+                for (var pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
 
                 $.ajax({
                     url: '/add_employee/',
                     type: 'POST',
                     data: formData,
-                    processData: false,
-                    contentType: false,
+                    processData: false,  // Important for sending FormData
+                    contentType: false,  // Important for sending FormData
                     success: function (response) {
                         alert('Employee added successfully');
                         $('#offcanvasExample').offcanvas('hide');
-                        fetchEmployeeList(currentPage);
+                        fetchEmployeeList(currentPage);  // Refresh the employee list (if applicable)
                     },
                     error: function (xhr) {
-                        const response = JSON.parse(xhr.responseText);
-                        alert(response.error);
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            alert(response.error);
+                        } catch (e) {
+                            alert("An unexpected error occurred.");
+                        }
                     }
                 });
             });
+
 
             function getCookie(name) {
                 var cookieValue = null;
@@ -482,15 +588,16 @@
                             <table class="table table-bordered">
                                 <thead>
                                 <tr>
-                                    <th>Designation</th>
-                                    <th>Joining Date</th>
-                                    <th>Date of Birth</th>
-                                    <th>Reporting To</th>
-                                    <th>Permanent Address</th>
-                                    <th>Current Address</th>
-                                    <th>Country</th>
-                                    <th>State</th>
-                                    <th>Status</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Designation</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Joining Date</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Date of Birth</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Blood Group</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Reporting To</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Permanent Address</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Current Address</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Country</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">State</th>
+                                    <th style="background-color: #007ed9;color: #f0f0f0;">Status</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -498,6 +605,7 @@
                                     <td id="modal_designation"></td>
                                     <td id="modal_joining_date"></td>
                                     <td id="modal_dob"></td>
+                                    <td id="modal_blood_group"></td>
                                     <td id="modal_reporting"></td>
                                     <td id="modal_p_address"></td>
                                     <td id="modal_c_address"></td>
@@ -507,6 +615,17 @@
                                 </tr>
                                 </tbody>
                             </table>
+                            <h4>Attachments:</h4>
+                            <div id="modal_attachments_container" class="attachments-container">
+                                <!-- Attachments will be dynamically inserted here -->
+                            </div>
+
+                            <!-- Lightbox Modal -->
+                            <div id="lightbox" class="lightbox">
+                                <span class="close">&times;</span>
+                                <img class="lightbox-content" id="lightbox-img">
+                                <div id="caption"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -587,12 +706,16 @@
                                     <label for="editEmployeeState">State</label>
                                     <input type="text" class="form-control" id="editEmployeeState" name="state">
                                 </div>
-                                <div class="col-md-4 mb-3">
+                                <div class="col-md-2 mb-3">
                                     <label for="editEmployeeStatus">Status</label>
                                     <select class="form-control" id="editEmployeeStatus" name="status">
                                         <option value="true">Active</option>
                                         <option value="false">Inactive</option>
                                     </select>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label for="editBloodGroup">Blood Group</label>
+                                    <input type="text" class="form-control" id="editBloodGroup" name="blood_group">
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="editEmployeeReporting">Reporting To</label>
@@ -709,7 +832,6 @@
                                 <!-- Options will be populated dynamically -->
                             </select>
                         </div>
-
                         <div class="col-xl-6 mb-3">
                             <label class="form-label">Permanent Address<span class="text-danger">*</span></label>
                             <textarea rows="3" class="form-control" name="p_address" required></textarea>
@@ -741,10 +863,14 @@
                                 <option value="false">Inactive</option>
                             </select>
                         </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Blood Group</label>
+                            <input type="text" class="form-control" id="bloodGroup" name="bloodGroup">
+                        </div>
                         <div id="attachments" class="col-xl-6 mb-3" style="margin-top: 18px;">
-                            <label>Attachments:</label>
+                            <label>Attachments(Aadhar Card/ Pan Card/ Driving Licence/ Passport/ Election Card):</label>
                             <div class="input-group">
-                                <input type="file" name="attachments[]" accept=".jpg,.jpeg,.png" multiple>
+                                <input type="file" name="attachments[]" accept=".jpg, .jpeg, .png" multiple>
                             </div>
                         </div>
                         {% if error %}
@@ -767,8 +893,7 @@
     <!--**********************************
         Main wrapper end
     ***********************************-->
-    <!--**********************************
-        Scripts
+    Scripts
     ***********************************-->
 
     </body>
