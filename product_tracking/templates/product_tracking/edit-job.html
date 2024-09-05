@@ -2001,18 +2001,18 @@ select {
                 });
            });
 
-            function handleEquipmentQuotation(response) {
+    function handleEquipmentQuotation(response) {
                 // Construct the table HTML for equipment details
                     var equipmentTableHtml = `
                         <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                             <thead>
                                 <tr>
-                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
-                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
-                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Unit Price</th>
-                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">No of Days</th>
-                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total Amount</th>
-                                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
+                                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
+                                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Days</th>
+                                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total</th>
+                                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2021,12 +2021,12 @@ select {
                     response.equipment_details.forEach(function (detail) {
                         equipmentTableHtml += `
                             <tr>
-                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
-                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
-                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">RS. ${detail.rental_price}</td>
-                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
-                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">RS. ${detail.total_rental_price}</td>
-                                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${response.job.notes}</td>
+                                <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
+                                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
+                                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${detail.rental_price}</td>
+                                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
+                                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${detail.total_rental_price}</td>
+                                <td style=" width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> </td>
                             </tr>
                         `;
                     });
@@ -2198,7 +2198,7 @@ select {
                                         <h3><u>Warehouse Address:</u></h3>
                                         <p>Parle Colony, Andheri, East, 567889</p>
                                         <p>9768476574</p>
-                                        <p>${response.job.job_reference_no}</p>
+{#                                        <p>${response.job.job_reference_no}</p>#}
                                     </div>
                                 </div>
                                 <div>
@@ -2226,16 +2226,16 @@ select {
                                     ${equipmentTableHtml}
                                 </div>
                                 <div style="height:30px;" class="color-amount">
-                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT RS. ${response.total_rental_sum}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
                                 </div>
                                 <div>
-                                    <p style="text-align: right;">Total RS. ${response.total_rental_sum}</p>
+                                    <p style="text-align: right;">Total INR RS. ${response.total_rental_sum}</p>
                                 </div>
                                 <div>
-                                    <p style="text-align: right;">After Discount RS. ${response.total_after_discount}</p>
+                                    <p style="text-align: right;">After Discount INR RS. ${response.total_after_discount}</p>
                                 </div>
                                 <div>
-                                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.total_with_gst}</p>
+                                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.total_with_gst}</p>
                                 </div>
 
                             </div>
@@ -2262,12 +2262,12 @@ select {
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Quantity</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Unit Price</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">No of Days</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Total Amount</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Qty</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Per Unit</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Days</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Total</th>
+                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -2276,12 +2276,12 @@ select {
     response.equipment_details.forEach(function (detail) {
         equipmentTableHtml += `
             <tr>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.total_days}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.total_rental_price}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.job.notes}</td>
+                <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
+                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
+                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.total_days}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.total_rental_price}</td>
+                <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;"> </td>
             </tr>
         `;
     });
@@ -2562,7 +2562,7 @@ select {
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
                     <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
                     <p style="font-size: 11px;">9768476574</p>
-                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>
+{#                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>#}
                 </div>
             </div>
             <div>
@@ -2589,16 +2589,16 @@ select {
                         ${equipmentTableHtml}
             </div>
             <div style="height:30px;" class="color-amount">
-                                    <p style="background-color: #c5d9e1; text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT RS. ${response.total_rental_sum}</b></p>
+                                    <p style="background-color: #c5d9e1; text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
                                 </div>
                                 <div>
-                                    <p style="text-align: right;">Total RS. ${response.total_rental_sum}</p>
+                                    <p style="text-align: right;">Total INR RS. ${response.total_rental_sum}</p>
                                 </div>
                                 <div>
-                                    <p style="text-align: right;">After Discount RS. ${response.total_after_discount}</p>
+                                    <p style="text-align: right;">After Discount INR RS. ${response.total_after_discount}</p>
                                 </div>
                                 <div>
-                                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.total_with_gst}</p>
+                                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.total_with_gst}</p>
                                 </div>
         </div>
     </body>
@@ -2622,10 +2622,10 @@ select {
         <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
             <thead>
                 <tr>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Unit Price</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
+                    <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -2634,10 +2634,10 @@ select {
     response.equipment_details.forEach(function (detail) {
         equipmentTableHtml += `
             <tr>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">RS. ${detail.rental_price}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${response.job.notes}</td>
+                <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
+                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.rental_price}</td>
+                <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> </td>
             </tr>
         `;
     });
@@ -2812,7 +2812,7 @@ select {
                         <h3><u>Warehouse Address:</u></h3>
                         <p>Parle Colony, Andheri, East, 567889</p>
                         <p>9768476574</p>
-                        <p>${response.job.job_reference_no}</p>
+{#                        <p>${response.job.job_reference_no}</p>#}
                     </div>
                 </div>
                 <div>
@@ -2841,16 +2841,16 @@ select {
                     ${equipmentTableHtml}
                 </div>
                 <div style="height:30px;" class="color-amount">
-                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT RS. ${response.job.total_amount}</b></p>
+                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
                 </div>
                 <div>
-                    <p style="text-align: right;">Total RS. ${response.job.amount_row}</p>
+                    <p style="text-align: right;">Total INR RS. ${response.job.amount_row}</p>
                 </div>
                 <div>
-                    <p style="text-align: right;">After Discount RS. ${response.job.amount_after_discount}</p>
+                    <p style="text-align: right;">After Discount INR RS. ${response.job.amount_after_discount}</p>
                 </div>
                 <div>
-                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.job.total_amount}</p>
+                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.job.total_amount}</p>
                 </div>
             </div>
         </body>
@@ -2876,10 +2876,10 @@ select {
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Quantity</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Unit Price</th>
-                    <th style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Qty</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Per Unit</th>
+                    <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -2888,10 +2888,10 @@ select {
     response.equipment_details.forEach(function (detail) {
         equipmentTableHtml += `
             <tr>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
-                <td style="border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.job.notes}</td>
+                <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
+                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
+                <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;"> </td>
             </tr>
         `;
     });
@@ -3172,7 +3172,7 @@ select {
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
                     <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
                     <p style="font-size: 11px;">9768476574</p>
-                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>
+{#                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>#}
                 </div>
             </div>
             <div>
@@ -3201,16 +3201,16 @@ select {
                         ${equipmentTableHtml}
                 </div>
                 <div style="height:30px;" class="color-amount">
-                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT RS. ${response.job.total_amount}</b></p>
+                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
                 </div>
                 <div>
-                    <p style="text-align: right;">Total RS. ${response.job.amount_row}</p>
+                    <p style="text-align: right;">Total INR RS. ${response.job.amount_row}</p>
                 </div>
                 <div>
-                    <p style="text-align: right;">After Discount RS. ${response.job.amount_after_discount}</p>
+                    <p style="text-align: right;">After Discount INR RS. ${response.job.amount_after_discount}</p>
                 </div>
                 <div>
-                    <p style="text-align: right;">Total Amount with 18% GST RS. ${response.job.total_amount}</p>
+                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.job.total_amount}</p>
                 </div>
             </div>
     </body>
@@ -3227,6 +3227,7 @@ select {
 
     html2pdf().from(printContent).set(opt).save();
             }
+
 
             function handlePerfoma(response) {
                 // Construct the PDF content dynamically for "quotation" status
