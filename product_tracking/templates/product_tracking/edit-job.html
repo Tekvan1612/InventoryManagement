@@ -1893,115 +1893,124 @@ select {
             // Event handler for the '#shareAsPdf' button click
 
            $('#shareAsPdf').click(function () {
-                var jobId = getJobIdFromURL(); // Fetch the jobId from the URL
-                console.log('Fetch the Job ID:', jobId);
+    var jobId = getJobIdFromURL(); // Fetch the jobId from the URL
+    console.log('Fetch the Job ID:', jobId);
 
-                if (jobId) {
-                    $.ajax({
-                        url: '/print_jobs/', // Your Django URL for fetching job details
-                        type: 'GET',
-                        data: { jobId: jobId },
-                        success: function (response) {
-                            if (response.job && response.job.status) {
-                                var status = response.job.status.toLowerCase();
-                                if (status === 'quotation') {
-                                    // Show dropdown container
-                                    $('#dropdown-container').show();
+    if (jobId) {
+        $.ajax({
+            url: '/print_jobs/', // Your Django URL for fetching job details
+            type: 'GET',
+            data: { jobId: jobId },
+            success: function (response) {
+                if (response.job && response.job.status) {
+                    var status = response.job.status.toLowerCase();
+                    if (status === 'quotation') {
+                        // Show dropdown container
+                        $('#dropdown-container').show();
 
-                                    // Handle dropdown item click
-                                    $('#dropdown-container .dropdown-item').click(function() {
-                                        var selectedOptionId = $(this).attr('id'); // Get the id of the selected option
+                        // Handle dropdown item click
+                        $('#dropdown-container .dropdown-item').off('click').on('click', function () {
+                            var selectedOptionId = $(this).attr('id'); // Get the id of the selected option
 
-                                        // Hide the dropdown container after selection
-                                        $('#dropdown-container').hide();
+                            // Hide the dropdown container after selection
+                            $('#dropdown-container').hide();
 
-                                        // Check the id and call the appropriate function
-                                        if (selectedOptionId === "equipmentQuotation") {
-                                            $('#delivery-options-container').show();
+                            // Clear previous event listeners from #pdfOption and #printOption
+                            $('#delivery-options-container #pdfOption').off('click');
+                            $('#delivery-options-container #printOption').off('click');
 
-                                            // Handle the click on the PDF option
-                                            $('#delivery-options-container #pdfOption').click(function() {
-                                                handleEquipmentQuotationPdf(response);
+                            // Check the id and call the appropriate function
+                            if (selectedOptionId === "equipmentQuotation") {
+                                $('#delivery-options-container').show();
 
-                                                $('#delivery-options-container').hide(); // Hide options after selection
-                                            });
+                                // Handle the click on the PDF option
+                                $('#delivery-options-container #pdfOption').on('click', function () {
+                                    handleEquipmentQuotationPdf(response);
 
-                                            // Handle the click on the Print option
-                                            $('#delivery-options-container #printOption').click(function() {
-                                                handleEquipmentQuotation(response);
+                                    $('#delivery-options-container').hide(); // Hide options after selection
+                                });
 
-                                                $('#delivery-options-container').hide(); // Hide options after selection
-                                            });
+                                // Handle the click on the Print option
+                                $('#delivery-options-container #printOption').on('click', function () {
+                                    handleEquipmentQuotation(response);
 
-                                        } else if (selectedOptionId === "totalQuotation") {
-                                            $('#delivery-options-container').show();
+                                    $('#delivery-options-container').hide(); // Hide options after selection
+                                });
 
-                                            // Handle the click on the PDF option
-                                            $('#delivery-options-container #pdfOption').click(function() {
-                                                handleTotalQuotationPdf(response);
+                            } else if (selectedOptionId === "totalQuotation") {
+                                $('#delivery-options-container').show();
 
-                                                $('#delivery-options-container').hide(); // Hide options after selection
-                                            });
+                                // Handle the click on the PDF option
+                                $('#delivery-options-container #pdfOption').on('click', function () {
+                                    handleTotalQuotationPdf(response);
 
-                                            // Handle the click on the Print option
-                                            $('#delivery-options-container #printOption').click(function() {
-                                                handleTotalQuotation(response);
+                                    $('#delivery-options-container').hide(); // Hide options after selection
+                                });
 
-                                                $('#delivery-options-container').hide(); // Hide options after selection
-                                            });
-                                        }
-                                    });
+                                // Handle the click on the Print option
+                                $('#delivery-options-container #printOption').on('click', function () {
+                                    handleTotalQuotation(response);
 
-                                } else if (status === 'perfoma') {
-                                    handlePerfoma(response);
-                                } else if (status === 'prepsheet') {
-                                    handlePrepsheet(response);
-                                } else if (status === 'delivery challan') {
-                                     // Show PDF and Print options
-                                    $('#delivery-options-container').show();
-
-                                    // Handle the click on the PDF option
-                                    $('#delivery-options-container #pdfOption').click(function() {
-                                        handleDeliveryChallanPdf(response);
-
-                                        $('#delivery-options-container').hide(); // Hide options after selection
-                                    });
-
-                                    // Handle the click on the Print option
-                                    $('#delivery-options-container #printOption').click(function() {
-                                        handleDeliveryChallan(response);
-
-                                        $('#delivery-options-container').hide(); // Hide options after selection
-                                    });
-                                } else {
-                                    alert('Unknown status: ' + response.job.status);
-                                }
-                            } else {
-                                alert('Job status not found in response.');
+                                    $('#delivery-options-container').hide(); // Hide options after selection
+                                });
                             }
-                        },
-                        error: function (error) {
-                            console.error('Error fetching job details:', error);
-                            alert('Error fetching job details. Please try again.');
-                        }
-                    });
-                } else {
-                    alert('No jobId found in URL.');
-                }
-                 // Hide dropdown if clicking outside of it
-                $(document).click(function (event) {
-                    if (!$(event.target).closest('#dropdown-container, #shareAsPdf').length) {
-                        $('#dropdown-container').hide();
+                        });
+
+                    } else if (status === 'perfoma') {
+                        handlePerfoma(response);
+                    } else if (status === 'prepsheet') {
+                        handlePrepsheet(response);
+                    } else if (status === 'delivery challan') {
+                         // Show PDF and Print options
+                        $('#delivery-options-container').show();
+
+                        // Clear previous event listeners from #pdfOption and #printOption
+                        $('#delivery-options-container #pdfOption').off('click');
+                        $('#delivery-options-container #printOption').off('click');
+
+                        // Handle the click on the PDF option
+                        $('#delivery-options-container #pdfOption').on('click', function () {
+                            handleDeliveryChallanPdf(response);
+
+                            $('#delivery-options-container').hide(); // Hide options after selection
+                        });
+
+                        // Handle the click on the Print option
+                        $('#delivery-options-container #printOption').on('click', function () {
+                            handleDeliveryChallan(response);
+
+                            $('#delivery-options-container').hide(); // Hide options after selection
+                        });
+                    } else {
+                        alert('Unknown status: ' + response.job.status);
                     }
-                });
+                } else {
+                    alert('Job status not found in response.');
+                }
+            },
+            error: function (error) {
+                console.error('Error fetching job details:', error);
+                alert('Error fetching job details. Please try again.');
+            }
+        });
+    } else {
+        alert('No jobId found in URL.');
+    }
 
-                // Prevent hiding the dropdown when clicking inside it
-                $('#dropdown-container').click(function (event) {
-                    event.stopPropagation();
-                });
-           });
+    // Hide dropdown if clicking outside of it
+    $(document).click(function (event) {
+        if (!$(event.target).closest('#dropdown-container, #shareAsPdf').length) {
+            $('#dropdown-container').hide();
+        }
+    });
 
-    function handleEquipmentQuotation(response) {
+    // Prevent hiding the dropdown when clicking inside it
+    $('#dropdown-container').click(function (event) {
+        event.stopPropagation();
+    });
+});
+
+            function handleEquipmentQuotation(response) {
                 // Construct the table HTML for equipment details
                     var equipmentTableHtml = `
                         <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
@@ -3227,7 +3236,6 @@ select {
 
     html2pdf().from(printContent).set(opt).save();
             }
-
 
             function handlePerfoma(response) {
                 // Construct the PDF content dynamically for "quotation" status
