@@ -466,30 +466,24 @@ def add_employee(request):
             profile_photo = request.FILES.get('profile_photo')
             attachment_images = request.FILES.getlist('attachments[]')
 
-            # File upload handling
-            profile_pic_dir = os.path.join(settings.MEDIA_ROOT, 'profilepic')
-            uploads_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-            os.makedirs(profile_pic_dir, exist_ok=True)
-            os.makedirs(uploads_dir, exist_ok=True)
-
-            profile_photo_path = None
+            # Cloudinary upload for profile photo
+            profile_photo_url = None
             if profile_photo:
                 if profile_photo.size < 4000 or profile_photo.size > 12288:
                     return JsonResponse({'error': 'Profile photo size must be between 5KB and 12KB.'}, status=400)
-                profile_photo_path = os.path.join(profile_pic_dir, profile_photo.name)
-                with open(profile_photo_path, 'wb') as f:
-                    for chunk in profile_photo.chunks():
-                        f.write(chunk)
+                upload_result = cloudinary.uploader.upload(profile_photo, folder="profilepic/")
+                profile_photo_url = upload_result['secure_url']  # Get the URL of the uploaded image
 
-            # Process attachments
-            image_paths = [None, None]
-            for i, image in enumerate(attachment_images[:2]):
+            # Cloudinary upload for attachments
+            image_urls = []
+            for image in attachment_images[:2]:  # Limiting to first 2 attachments
                 if image:
-                    image_path = os.path.join(uploads_dir, image.name)
-                    with open(image_path, 'wb') as f:
-                        for chunk in image.chunks():
-                            f.write(chunk)
-                    image_paths[i] = image_path
+                    upload_result = cloudinary.uploader.upload(image, folder="uploads/")
+                    image_urls.append(upload_result['secure_url'])  # Get the URL of the uploaded image
+
+            # Ensure there are at least two entries in image_urls to avoid index errors
+            while len(image_urls) < 2:
+                image_urls.append(None)
 
             # Check for duplicates
             with connection.cursor() as cursor:
@@ -517,7 +511,7 @@ def add_employee(request):
                         employee_id, name, email, designation, mobile_no, gender,
                         joining_date, dob, reporting_name, p_address, c_address, country, state,
                         status, blood_group, created_by, created_date,
-                        profile_photo_path, image_paths[0], image_paths[1]
+                        profile_photo_url, image_urls[0], image_urls[1]
                     ])
             except IntegrityError as e:
                 return JsonResponse({'error': 'Integrity error occurred: ' + str(e)}, status=400)
@@ -654,10 +648,8 @@ def delete_attachment(request):
             return JsonResponse({'error': 'Invalid attachment ID'}, status=400)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-
 @csrf_exempt
 def modify_employee(request):
-    print('Fetch the ID:', id)
     if request.method == 'POST':
         operation = request.POST.get('operation')
         emp_id = request.POST.get('id')
@@ -668,6 +660,7 @@ def modify_employee(request):
         emp_id = int(emp_id)
 
         if operation == 'update':
+            # Extract employee details from the POST request
             emp_employee_id = request.POST.get('employee_id') or None
             emp_name = request.POST.get('name') or None
             emp_email = request.POST.get('email') or None
@@ -690,6 +683,7 @@ def modify_employee(request):
                 removed_attachments = json.loads(removed_attachments) if removed_attachments else []
 
                 with transaction.atomic():
+                    # Update employee details in the database
                     with connection.cursor() as cursor:
                         cursor.execute(
                             """
@@ -718,43 +712,41 @@ def modify_employee(request):
                             ]
                         )
 
-                    with connection.cursor() as cursor:
-                        cursor.execute("SELECT 1 FROM employee WHERE id = %s", [emp_id])
-                        if cursor.fetchone() is None:
-                            raise Exception(f"Employee ID {emp_id} does not exist")
-
+                    # Handle profile photo upload to Cloudinary or local
                     profile_photo = request.FILES.get('profile_photo')
                     if profile_photo:
-                        profile_pic_path = os.path.join(settings.MEDIA_ROOT, 'profilepic', profile_photo.name)
-                        with open(profile_pic_path, 'wb+') as destination:
-                            for chunk in profile_photo.chunks():
-                                destination.write(chunk)
-                        profile_pic_full_path = os.path.join('D:\\wms2\\media\\profilepic', profile_photo.name)
+                        # Upload new profile photo to Cloudinary
+                        upload_result = cloudinary.uploader.upload(profile_photo, folder="profilepic/")
+                        profile_pic_url = upload_result['secure_url']
+
+                        # Insert or update profile photo URL in the database
                         with connection.cursor() as cursor:
                             cursor.execute(
                                 """
                                 INSERT INTO employee_images (employee_id, images)
                                 VALUES (%s, %s)
+                                ON CONFLICT (employee_id) DO UPDATE SET images = EXCLUDED.images
                                 """,
-                                [emp_id, profile_pic_full_path]
+                                [emp_id, profile_pic_url]
                             )
 
+                    # Handle attachment uploads (new attachments)
                     attachments = request.FILES.getlist('attachments')
                     for attachment in attachments:
-                        attachment_path = os.path.join(settings.MEDIA_ROOT, 'uploads', attachment.name)
-                        with open(attachment_path, 'wb+') as destination:
-                            for chunk in attachment.chunks():
-                                destination.write(chunk)
-                        attachment_full_path = os.path.join('D:\\wms2\\media\\uploads', attachment.name)
+                        upload_result = cloudinary.uploader.upload(attachment, folder="uploads/")
+                        attachment_url = upload_result['secure_url']
+
+                        # Insert new attachments in the database
                         with connection.cursor() as cursor:
                             cursor.execute(
                                 """
                                 INSERT INTO employee_images (employee_id, images)
                                 VALUES (%s, %s)
                                 """,
-                                [emp_id, attachment_full_path]
+                                [emp_id, attachment_url]
                             )
 
+                    # Remove profile picture if requested
                     if removed_profile_pic:
                         with connection.cursor() as cursor:
                             cursor.execute(
@@ -764,6 +756,7 @@ def modify_employee(request):
                                 [emp_id, '%profilepic%']
                             )
 
+                    # Remove attachments by ID
                     for attachment_id in removed_attachments:
                         with connection.cursor() as cursor:
                             cursor.execute(
@@ -780,12 +773,13 @@ def modify_employee(request):
 
         elif operation == 'delete':
             try:
+                # Delete employee
                 with connection.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT modify_employee(%s, %s)
+                        SELECT delete_employee(%s)
                         """,
-                        [operation, emp_id]
+                        [emp_id]
                     )
                 return JsonResponse({'success': 'Employee deleted successfully'})
             except Exception as e:
@@ -4100,26 +4094,22 @@ def get_categories(request):
 
     return JsonResponse({'categories': category_list, 'default_category': default_category})
 
-def stock_details_view(request):
+def stock_details_view(request, equipment_id):
     print("stock_details_view called")
     with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM get_stock_details()")
+        cursor.execute("SELECT * FROM fetch_stock_details(%s)", [equipment_id])
         rows = cursor.fetchall()
 
         stock_details = [
             {
                 "id": row[0],
-                "equipment_id": row[1],
-                "vendor_name": row[2],
-                "purchase_date": row[3],
+                "serial_no": row[1],
+                "barcode_no": row[2],
+                "vendor_name": row[3],
                 "unit_price": row[4],
                 "rental_price": row[5],
-                "reference_no": row[6],
-                "attachment": row[7],
-                "unit": row[8],
-                "serial_no": row[9],
-                "barcode_no": row[10],
-                "scan_flag": row[11],
+                "purchase_date": row[6],
+                "reference_no": row[7],
             }
             for row in rows
         ]

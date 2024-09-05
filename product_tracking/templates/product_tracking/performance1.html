@@ -1050,6 +1050,7 @@ function loadEquipmentList() {
     });
 $(document).on('click', '.edit-equipment-btn', function() {
     var equipmentId = $(this).closest('tr').data('equipment-id');
+    loadStockDetails(equipmentId);
 
     $.ajax({
         url: `/fetch_equipment_details/`,
@@ -1222,21 +1223,20 @@ let originalStockData = [];
 let stockData = [];  // Array to hold the stock data
 let currentPage = 1;
 let rowsPerPage = 10;
-function loadStockDetails() {
-    console.log('loadStockDetails function triggered');
-    console.log('Starting to load stock details...');
+function loadStockDetails(equipmentId) {
+    console.log('loadStockDetails function triggered for equipmentId:', equipmentId);
     $.ajax({
-        url: '/stock_details_view/',
+        url: `/stock_details_view/${equipmentId}/`,
         method: 'GET',
         success: function (data) {
-            console.log('Data received:', data);
             if (data.stock_details && data.stock_details.length > 0) {
-                originalStockData = data.stock_details.slice(); // Save the original data
+                originalStockData = data.stock_details.slice();
                 stockData = originalStockData.slice();
-                displayStockDetails();  // Display the initial data with pagination
-                updatePaginationControls();  // Update pagination controls
+                displayStockDetails();
+                updatePaginationControls();
             } else {
-                console.log('No stock details found.');
+                console.log('No stock details found for equipmentId:', equipmentId);
+                $('#stock-details-table-body').empty();
             }
         },
         error: function (xhr, status, error) {
@@ -1244,6 +1244,7 @@ function loadStockDetails() {
         }
     });
 }
+
 
 function displayStockDetails() {
     const startIndex = (currentPage - 1) * rowsPerPage;
