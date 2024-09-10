@@ -548,9 +548,11 @@ def employee_list(request):
             # Fetch employee details
             cursor.execute("SELECT * FROM get_employee_details()")
             rows = cursor.fetchall()
+            print('Check the employee Details:', rows)
 
             for index, row in enumerate(rows):
-                # Log each row to check indexing
+                print('Check the for loop')
+                # Log row structure for debugging
                 logger.debug(f"Row data: {row}")
 
                 # Extract each field from the row
@@ -568,24 +570,32 @@ def employee_list(request):
                 country = row[12]
                 state = row[13]
                 status = row[14]
-                created_by = row[15]  # This should now correctly come from user_master
-                created_date = row[16].strftime('%Y-%m-%d') if row[16] else None  # Format created_date
-                profile_pic = row[17]  # Profile picture path
-                attachments = row[18]  # Attachments array
+                blood_group = row[15]
+                created_by = row[16]  # Assuming this is created_by, adjust as necessary
+                created_date = row[17].strftime('%Y-%m-%d') if row[17] else None  # Format created_date
+                profile_pic = row[18]  # Profile picture path
+                attachments = row[19] or []  # Attachments array
+                print('Fetch the Form DATA:', employee_id,name,email, designation,mobile_no, gender, joining_date, dob, reporting_name, p_address, c_address, country,
+                      profile_pic, attachments)
 
                 # Handle profile picture URL
                 if profile_pic:
-                    image_url = os.path.join(settings.MEDIA_URL, profile_pic).replace('\\', '/')
+                    # If the profile_pic already contains a full URL (e.g., Cloudinary URL)
+                    if profile_pic.startswith('http://') or profile_pic.startswith('https://'):
+                        image_url = profile_pic  # Use the URL as is
+                    else:
+                        # Otherwise, assume it's a local file path and construct the media URL
+                        image_url = f'{settings.MEDIA_URL}{profile_pic}'.replace('\\', '/')
                 else:
-                    image_url = os.path.join(settings.MEDIA_URL, 'profilepic/default.jpg')
+                    # Fallback to default profile picture if none is provided
+                    image_url = f'{settings.MEDIA_URL}profilepic/default.jpg'
 
                 # Handle attachments (array of images)
                 attachment_urls = []
-                if attachments:
-                    for attachment in attachments:
-                        if attachment:
-                            attachment_url = os.path.join(settings.MEDIA_URL, attachment).replace('\\', '/')
-                            attachment_urls.append(attachment_url)
+                for attachment in attachments:
+                    if attachment:
+                        attachment_url = os.path.join(settings.MEDIA_URL, attachment).replace('\\', '/')
+                        attachment_urls.append(attachment_url)
 
                 # Add employee details to the list
                 employee_listing.append({
@@ -605,20 +615,21 @@ def employee_list(request):
                     'country': country,
                     'state': state,
                     'status': status,
-                    'blood_group': row[15],  # Assuming blood_group is included
+                    'blood_group': blood_group,
                     'created_by': created_by,
                     'created_date': created_date,
                     'profile_pic': image_url,
                     'attachments': attachment_urls  # List of attachment URLs
                 })
+                print('Check the Employee Listing:', employee_listing)
 
     except Exception as e:
         logger.error("An error occurred while fetching the employee list: %s", str(e), exc_info=True)
         return JsonResponse({'error': 'An error occurred while fetching the employee list: ' + str(e)}, status=500)
 
     # Pagination
-    page = request.GET.get('page', 1)
-    page_size = request.GET.get('page_size', 10)
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 10))
     paginator = Paginator(employee_listing, page_size)
     page_obj = paginator.get_page(page)
 
@@ -630,6 +641,7 @@ def employee_list(request):
     }
 
     return JsonResponse(response)
+
 
 
 @csrf_exempt
@@ -721,14 +733,22 @@ def modify_employee(request):
 
                         # Insert or update profile photo URL in the database
                         with connection.cursor() as cursor:
-                            cursor.execute(
-                                """
-                                INSERT INTO employee_images (employee_id, images)
-                                VALUES (%s, %s)
-                                ON CONFLICT (employee_id) DO UPDATE SET images = EXCLUDED.images
-                                """,
-                                [emp_id, profile_pic_url]
-                            )
+                            # Check if the profile photo exists
+                            cursor.execute("SELECT id FROM employee_images WHERE employee_id = %s AND images LIKE %s", [emp_id, '%profilepic%'])
+                            existing_image = cursor.fetchone()
+
+                            if existing_image:
+                                # Update profile photo if it exists
+                                cursor.execute(
+                                    "UPDATE employee_images SET images = %s WHERE employee_id = %s AND images LIKE %s",
+                                    [profile_pic_url, emp_id, '%profilepic%']
+                                )
+                            else:
+                                # Insert new profile photo if it doesn't exist
+                                cursor.execute(
+                                    "INSERT INTO employee_images (employee_id, images) VALUES (%s, %s)",
+                                    [emp_id, profile_pic_url]
+                                )
 
                     # Handle attachment uploads (new attachments)
                     attachments = request.FILES.getlist('attachments')
@@ -739,10 +759,7 @@ def modify_employee(request):
                         # Insert new attachments in the database
                         with connection.cursor() as cursor:
                             cursor.execute(
-                                """
-                                INSERT INTO employee_images (employee_id, images)
-                                VALUES (%s, %s)
-                                """,
+                                "INSERT INTO employee_images (employee_id, images) VALUES (%s, %s)",
                                 [emp_id, attachment_url]
                             )
 
@@ -750,9 +767,7 @@ def modify_employee(request):
                     if removed_profile_pic:
                         with connection.cursor() as cursor:
                             cursor.execute(
-                                """
-                                DELETE FROM employee_images WHERE employee_id = %s AND images LIKE %s
-                                """,
+                                "DELETE FROM employee_images WHERE employee_id = %s AND images LIKE %s",
                                 [emp_id, '%profilepic%']
                             )
 
@@ -760,9 +775,7 @@ def modify_employee(request):
                     for attachment_id in removed_attachments:
                         with connection.cursor() as cursor:
                             cursor.execute(
-                                """
-                                DELETE FROM employee_images WHERE id = %s
-                                """,
+                                "DELETE FROM employee_images WHERE id = %s",
                                 [attachment_id]
                             )
 
@@ -776,9 +789,7 @@ def modify_employee(request):
                 # Delete employee
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        """
-                        SELECT delete_employee(%s)
-                        """,
+                        "SELECT delete_employee(%s)",
                         [emp_id]
                     )
                 return JsonResponse({'success': 'Employee deleted successfully'})
@@ -4173,56 +4184,6 @@ def fetch_job_list(request):
 
     return JsonResponse(jobs, safe=False)
 
-@csrf_exempt
-def insert_temp_data(request):
-    username = request.session.get('username')
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-
-            # Generate new job_reference_no
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT job_reference_no 
-                    FROM public.temp 
-                    WHERE job_reference_no LIKE 'J0624%' 
-                    ORDER BY job_reference_no DESC 
-                    LIMIT 1
-                """)
-                last_job_ref = cursor.fetchone()
-
-            if last_job_ref:
-                last_number = int(last_job_ref[0][5:])
-                new_number = last_number + 1
-            else:
-                new_number = 1
-
-            job_reference_no = f"J0624{new_number:04d}"
-            data['job_reference_no'] = job_reference_no
-
-            created_by = request.session.get('user_id')  # Adjust as needed, or fetch from request
-            created_date = datetime.now()  # Use the current timestamp
-
-            with connection.cursor() as cursor:
-                cursor.callproc('insert_temp_data', [
-                    job_reference_no,
-                    data['title'], data['client_name'], data['contact_person_name'],
-                    data['contact_person_number'], data['status'], data['venue_name'],
-                    data['venue_address'], data['crew_type'], data['employee'],
-                    data['setup_date'], data['rehearsal_date'], data['event_date'],
-                    data['dismantle_date'], data['total_days'], data['amount_row'],
-                    data['discount'], data['amount_after_discount'], data['total_amount'],
-                    created_by, created_date
-                ])
-                temp_id = cursor.fetchone()[0]
-
-            return JsonResponse(
-                {'status': 'success', 'job_reference_no': job_reference_no, 'temp_id': temp_id, 'username': username})
-        except Exception as e:
-            logger.error(f"Error inserting temp data: {e}")
-            return JsonResponse({'status': 'failed', 'error': str(e)}, status=500)
-
-    return JsonResponse({'status': 'failed'}, status=400)
 
 @csrf_exempt
 def insert_equipment_details(request):
@@ -4680,6 +4641,7 @@ def insert_temp_data(request):
                     LIMIT 1
                 """)
                 last_job_ref = cursor.fetchone()
+                print('Check the last job reference no:', last_job_ref)
 
             if last_job_ref:
                 last_number = int(last_job_ref[0][5:])
@@ -4694,7 +4656,6 @@ def insert_temp_data(request):
             created_date = datetime.now()  # Use the current timestamp
 
             # Convert the crew_type and employee lists to strings (or handle as needed)
-            # crew_type_str = ','.join(data['crew_type'])
             employee_str = ','.join(data['employee'])
 
             with connection.cursor() as cursor:
@@ -4702,7 +4663,7 @@ def insert_temp_data(request):
                     job_reference_no,
                     data['title'], data['client_name'], data['contact_person_name'],
                     data['contact_person_number'], data['status'], data['venue_name'],
-                    data['venue_address'], data['crew_type'], employee_str,
+                    data['venue_address'], data['input_notes'], data['crew_type'], employee_str,
                     data['setup_date'], data['rehearsal_date'], data['event_date'],
                     data['dismantle_date'], data['total_days'], data['amount_row'],
                     data['discount'], data['amount_after_discount'], data['total_amount'],

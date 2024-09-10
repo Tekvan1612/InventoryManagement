@@ -114,60 +114,51 @@
             let removedProfilePic = false;
 
             function fetchEmployeeDropdown(dropdownId, selectedId = null, callback) {
-                $.ajax({
-                    url: '/employee_dropdown/',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        console.log('Fetch the existing values ID:', selectedId)
-                        var dropdown = $(dropdownId);
-                        dropdown.empty();
-                        console.log('Fetch the existing values ID:', selectedId)
+    $.ajax({
+        url: '/employee_dropdown/',  // Make sure this endpoint is returning the expected data
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            console.log('Data fetched from server:', data);  // Debugging: Check what data is fetched
 
-                        // Populate dropdown with employees
-                        $.each(data.employees, function (index, employee) {
-                            var option = $('<option></option>').attr('value', employee.id).text(employee.name);
-                            dropdown.append(option);
-                        });
+            var dropdown = $(dropdownId);
+            dropdown.empty();  // Clear existing options
 
-                        // Initialize Select2 (if using Select2)
-                        dropdown.select2();
+            // Add a default "Select employee" option
+            dropdown.append($('<option></option>').attr('value', '').text('Select employee'));
 
-                        // Set selected value
-                        if (selectedId !== null) {
-                            dropdown.val(selectedId).trigger('change'); // Set selected value and trigger change event
-                        }
-
-                        if (callback) callback();
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching employees:', error);
-                    }
-                });
-            }
-
-            function populateEmployeeDropdown(dropdown, employees, selectedId) {
-                console.log('Populating dropdown:', dropdown, 'Employees:', employees, 'Selected ID:', selectedId);
-                dropdown.empty();
-                dropdown.append($('<option></option>').attr('value', '').text('Select employee'));
-                $.each(employees, function (index, employee) {
-                    console.log('Employee:', employee); // Add this line to check each employee object
+            // Check if the data is in the expected format
+            if (data.employees && Array.isArray(data.employees)) {
+                $.each(data.employees, function (index, employee) {
+                    console.log('Adding employee to dropdown:', employee);  // Debugging: Check each employee
                     var option = $('<option></option>').attr('value', employee.id).text(employee.name);
                     dropdown.append(option);
                 });
+
+                // Set the selected value if provided
                 if (selectedId !== null) {
-                    dropdown.val(selectedId);
+                    console.log('Setting selected employee:', selectedId);  // Debugging: Check selected ID
+                    dropdown.val(selectedId);  // Set selected value but do not trigger change immediately
                 }
-                console.log('Dropdown after population:', dropdown.html());
+
+                // Initialize Select2 after setting the value and options
+                dropdown.select2().on('change', function () {
+                    console.log('User selected:', $(this).val());  // Debugging: Check user selection
+                });
+
+                // If there's a callback, execute it
+                if (callback) callback();
+            } else {
+                console.error('Unexpected data format:', data);  // Error handling if data is not in expected format
             }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error fetching employees:', error);  // Debugging: Check for any errors
+        }
+    });
+}
 
-            $('#offcanvasExample').on('shown.bs.offcanvas', function () {
-                fetchEmployeeDropdown('#exampleFormControlInputfour');
-            });
 
-            $('#addEmployeeBtn').on('click', function () {
-                fetchEmployeeDropdown('#exampleFormControlInputfour');
-            });
 
             function fetchEmployeeList(page) {
                 $.ajax({
@@ -181,71 +172,22 @@
                         $('#employee-table-body').empty();
                         if (response.data && response.data.length > 0) {
                             $.each(response.data, function (index, employee) {
-                                console.log('Employee data:', employee); // Print employee data inside the table generation loop
-
                                 var row = `<tr>
-                        <td>${(page - 1) * pageSize + (index + 1)}</td>
-                        <td style="display: none;">${employee.id}</td>
-                        <td><img src="${employee.profile_pic}" alt="Employee Image" width="50"></td>
-                        <td>${employee.employee_id}</td>
-                        <td><a href="#" class="employee-name" data-employee='${JSON.stringify(employee)}'>${employee.name}</a></td>
-                        <td>${employee.email}</td>
-                        <td>${employee.mobile_no}</td>
-                        <td>${employee.created_by}</td>
-                        <td>${employee.created_date}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary edit-btn me-2" data-id="${employee.id}" data-employee='${JSON.stringify(employee)}'><i class="fa fa-pencil"></i></button>
-                            <button class="btn btn-sm btn-danger delete-btn" data-id="${employee.id}"><i class="fa fa-trash"></i></button>
-                        </td>
-                    </tr>`;
+                            <td>${(page - 1) * pageSize + (index + 1)}</td>
+                            <td style="display: none;">${employee.id}</td>
+                            <td><img src="${employee.profile_pic}" alt="Employee Image" width="50"></td>
+                            <td>${employee.employee_id}</td>
+                            <td><a href="#" class="employee-name" data-employee='${JSON.stringify(employee)}'>${employee.name}</a></td>
+                            <td>${employee.email}</td>
+                            <td>${employee.mobile_no}</td>
+                            <td>${employee.created_by}</td>
+                            <td>${employee.created_date}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-btn me-2" data-id="${employee.id}" data-employee='${JSON.stringify(employee)}'><i class="fa fa-pencil"></i></button>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="${employee.id}"><i class="fa fa-trash"></i></button>
+                            </td>
+                        </tr>`;
                                 $('#employee-table-body').append(row);
-                            });
-
-                            $('.employee-name').click(function (event) {
-                                event.preventDefault();
-                                var employee = $(this).data('employee');
-                                console.log('Selected employee data:', employee);
-
-                                // Update the modal fields with the employee data
-                                $('#modal_designation').text(employee.designation || 'N/A');
-                                $('#modal_joining_date').text(employee.joining_date || 'N/A');
-                                $('#modal_dob').text(employee.dob || 'N/A');
-                                $('#modal_blood_group').text(employee.blood_group || 'N/A');
-                                $('#modal_reporting').text(employee.reporting || 'N/A');
-                                $('#modal_p_address').text(employee.p_address || 'N/A');
-                                $('#modal_c_address').text(employee.c_address || 'N/A');
-                                $('#modal_country').text(employee.country || 'N/A');
-                                $('#modal_state').text(employee.state || 'N/A');
-                                $('#modal_status').text(employee.status ? 'Active' : 'Inactive');
-
-                                // Set the attachment images in the modal
-                                var attachmentsHtml = '';
-                                if (employee.attachments && employee.attachments.length > 0) {
-                                    $.each(employee.attachments, function (index, attachment) {
-                                        attachmentsHtml += `<img src="${attachment}" alt="Attachment" width="100" style="margin-right: 10px; max-height: 200px;" class="attachment-thumbnail">`;
-                                    });
-                                } else {
-                                    attachmentsHtml = 'No attachments';
-                                }
-                                $('#modal_attachments_container').html(attachmentsHtml);
-
-                                // Lightbox functionality
-                                var lightbox = $('#lightbox');
-                                var lightboxImg = $('#lightbox-img');
-                                var captionText = $('#caption');
-
-                                $(document).on('click', '.attachment-thumbnail', function () {
-                                    lightbox.show();
-                                    lightboxImg.attr('src', $(this).attr('src'));
-                                    captionText.text($(this).attr('alt'));
-                                });
-
-                                $('.close').on('click', function () {
-                                    lightbox.hide();
-                                });
-
-
-                                $('#employeeDetailsModal').modal('show');
                             });
 
                             updatePaginationControls(response.total_items, response.current_page, response.total_pages);
@@ -259,7 +201,6 @@
                     }
                 });
             }
-
 
             function updatePaginationControls(totalItems, currentPage, totalPages) {
                 $('#pagination-controls').html('');
@@ -290,12 +231,15 @@
                 fetchEmployeeList(currentPage);
             });
 
+            // Fetch initial employee list
             fetchEmployeeList(currentPage);
 
+            // Event listener for editing an employee
             $(document).on('click', '.edit-btn', function () {
                 var employee = $(this).data('employee');
                 console.log('Editing employee:', employee);
 
+                // Populate the edit form with employee data
                 $('#editEmployeeIdHidden').val(employee.id);
                 $('#editEmployeeId').val(employee.employee_id);
                 $('#editEmployeeName').val(employee.name);
@@ -311,10 +255,34 @@
                 $('#editEmployeeState').val(employee.state);
                 $('#editEmployeeStatus').val(employee.status ? 'true' : 'false');
                 $('#editBloodGroup').val(employee.blood_group);
-                // Fetch and populate the reporting dropdown with the existing value
+
+                // Fetch and populate the reporting dropdown with the existing value (employee.reporting contains the name)
                 console.log('Fetch the Employee Reporting Name:', employee.reporting);
-                fetchEmployeeDropdown('#editEmployeeReporting', employee.reporting);// Set reporting correctly
-                console.log('Employee reporting value:', employee.reporting);
+
+                // Get the ID of the reporting employee based on the name
+                $.ajax({
+                    url: '/employee_dropdown/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        // Find the employee ID that matches the reporting employee name
+                        var reportingEmployeeId = null;
+                        $.each(data.employees, function (index, emp) {
+                            if (emp.name === employee.reporting) {
+                                reportingEmployeeId = emp.id;
+                            }
+                        });
+
+                        console.log('Found reporting employee ID:', reportingEmployeeId);
+
+                        // Populate the dropdown and set the selected employee ID
+                        fetchEmployeeDropdown('#editEmployeeReporting', reportingEmployeeId);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching employees:', error);
+                    }
+                });
+
                 removedAttachments = [];
                 removedProfilePic = false;
 
@@ -338,6 +306,8 @@
                 $('#editEmployeeModal').modal('show');
             });
 
+
+            // Removing profile picture
             $(document).on('click', '.remove-profile-pic', function () {
                 if (confirm('Are you sure you want to remove the profile picture?')) {
                     $('#profilePicPreview').empty();
@@ -345,15 +315,19 @@
                 }
             });
 
+            // Submit changes for employee editing
             $('#saveChangesBtn').on('click', function () {
                 const formData = new FormData($('#editEmployeeForm')[0]);
                 formData.append('operation', 'update');
 
-                formData.append('removed_attachments', JSON.stringify(removedAttachments));
-                formData.append('removed_profile_pic', removedProfilePic);
-
-                console.log('Form data before edit:', formData);
-
+                // Handling attachments
+                const images = [];
+                $('input[name="attachments[]"]').each(function () {
+                    if (this.files.length > 0) {
+                        images.push(this.files[0].name);  // Assuming you're passing filenames, adjust as needed.
+                    }
+                });
+                formData.append('emp_images', JSON.stringify(images));  // Send images as JSON array.
 
                 $.ajax({
                     url: '/modify_employee/',
@@ -373,10 +347,7 @@
                 });
             });
 
-            $('#closeFormBtn').on('click', function () {
-                $('#editEmployeeModal').modal('hide');
-            });
-
+            // Deleting an employee
             $(document).on('click', '.delete-btn', function () {
                 const employeeId = $(this).data('id');
                 if (confirm('Are you sure you want to delete this employee?')) {
@@ -399,52 +370,7 @@
                 }
             });
 
-            $(document).on('click', '.remove-attachment', function () {
-                const attachmentId = $(this).data('attachment-id');
-                const removeButton = $(this);
-                if (confirm('Are you sure you want to delete this attachment?')) {
-                    removedAttachments.push(attachmentId);
-                    removeButton.closest('li').remove();
-                }
-            });
-
-            $('#closeDetailsBtn').on('click', function () {
-                $('#employeeDetailsModal').modal('hide');
-            });
-
-            $('#employee-form').on('submit', function (event) {
-                event.preventDefault();
-
-                const formData = new FormData(this);
-
-                // Debugging: Log the form data
-                for (var pair of formData.entries()) {
-                    console.log(pair[0] + ': ' + pair[1]);
-                }
-
-                $.ajax({
-                    url: '/add_employee/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,  // Important for sending FormData
-                    contentType: false,  // Important for sending FormData
-                    success: function (response) {
-                        alert('Employee added successfully');
-                        $('#offcanvasExample').offcanvas('hide');
-                        fetchEmployeeList(currentPage);  // Refresh the employee list (if applicable)
-                    },
-                    error: function (xhr) {
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            alert(response.error);
-                        } catch (e) {
-                            alert("An unexpected error occurred.");
-                        }
-                    }
-                });
-            });
-
-
+            // Utility function for CSRF token
             function getCookie(name) {
                 var cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
@@ -460,6 +386,7 @@
                 return cookieValue;
             }
         });
+
 
     </script>
 
@@ -500,13 +427,7 @@
         ***********************************-->
         {% include 'product_tracking/sidebar.html' %}
 
-        <!--**********************************
-            Sidebar end
-        ***********************************-->
 
-        <!--**********************************
-            Content body start
-        ***********************************-->
         <div class="content-body">
             <!-- row -->
             <div class="page-titles">
@@ -571,9 +492,6 @@
             </div>
         </div>
 
-        <!--**********************************
-            Content body end
-        ***********************************-->
 
         <!-- Employee Details Modal -->
         <div class="modal fade" id="employeeDetailsModal" tabindex="-1" role="dialog"
@@ -748,13 +666,8 @@
         </div>
 
 
-        <!--**********************************
-            Footer start
-        ***********************************-->
         {% include 'product_tracking/footer.html' %}
-        <!--**********************************
-            Footer end
-        ***********************************-->
+
 
         <!-- Add Employee -->
         <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas"
@@ -890,11 +803,7 @@
 
 
     </div>
-    <!--**********************************
-        Main wrapper end
-    ***********************************-->
-    Scripts
-    ***********************************-->
+
 
     </body>
 {% endblock %}

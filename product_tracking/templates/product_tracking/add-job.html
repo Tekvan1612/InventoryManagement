@@ -578,6 +578,23 @@ select {
                             dropdownMenu.append('<li><a class="dropdown-item client-name-item" href="#" data-client-name="' + client.name + '" data-client-type="' + client.type + '">' + client.name + '</a></li>');
                             console.log('name', client.name, client.type);
                         });
+                         // Show the dropdown when the input is clicked
+                        $('#clientNameDropdown').on('click', function () {
+                            dropdownMenu.show();  // Show dropdown when input is clicked
+                        });
+
+                        // Add click event listener for each dropdown item
+                        $('.client-name-item').on('click', function (e) {
+                            e.preventDefault();  // Prevent default action (navigation)
+
+                            var selectedClientName = $(this).data('client-name');
+
+                            // Set the selected client name in the input field
+                            $('#clientNameDropdown').val(selectedClientName);
+
+                            // Hide the dropdown menu after selection
+                            dropdownMenu.hide();
+                        });
                     },
                     error: function (xhr, status, error) {
                         console.error('Error fetching client names:', error);
@@ -767,7 +784,7 @@ select {
                     contentType: 'application/json',
                     success: function (response) {
                         if (response.status === 'success') {
-                            alert('Data inserted successfully. Job Reference No: ' + response.job_reference_no);
+                            {#alert('Data inserted successfully. Job Reference No: ' + response.job_reference_no);#}
 
                             // Store tempId in a global variable or update the function directly
                             window.tempId = response.temp_id;
@@ -906,7 +923,7 @@ $('#total_amount, #discount, #discounted_amount, #total_amount_cal').on('input',
     var query = $(this).val();
     var dropdown = $('#equipmentDropdown');
 
-    if (query.length > 2) {
+    if (query.length > 0) {
         $.ajax({
             url: '/search-equipment/',
             data: { 'query': query },
@@ -951,7 +968,7 @@ $('#total_amount, #discount, #discounted_amount, #total_amount_cal').on('input',
                                 contentType: 'application/json',
                                 success: function (response) {
                                     if (response.status === 'success') {
-                                        alert('Equipment details inserted successfully');
+                                        {#alert('Equipment details inserted successfully');#}
                                         calculateTotalAmount(tempId); // Use tempId in calculateTotalAmount
                                     } else {
                                         alert('Error inserting equipment details: ' + response.error);
@@ -1727,7 +1744,7 @@ $(document).on('click', '.cancelRow', function(event) {
                                            placeholder="Enter Crew Quantity"
                                            name="crew_quantity" style="margin-top: -2px;">
                             </div>
-                            <div class="col-xl-6 mb-3">
+                            <div class="col-xl-4 mb-3">
                                 <div class="dropdown">
                                     <label for="venueAddressDropdown" class="form-label">Venue</label>
                                     <input type="text" class="form-control dropdown-toggle" id="venueAddressDropdown"
@@ -1738,10 +1755,15 @@ $(document).on('click', '.cancelRow', function(event) {
                                     </ul>
                                 </div>
                             </div>
-                            <div class="col-xl-6 mb-3">
+                            <div class="col-xl-4 mb-3">
                                 <label for="venueAddressInput" class="form-label">Venue Address</label>
                                 <input type="text" class="form-control" id="venueAddressInput" placeholder="Venue Address"
                                     name="venue_address" readonly>
+                            </div>
+                            <div class="col-xl-4 mb-3">
+                                <label for="inputNotes" class="form-label">Notes</label>
+                                <input type="text" class="form-control" id="inputNotes" placeholder="Enter Notes"
+                                    name="input_notes">
                             </div>
 
                             <div class="row">
