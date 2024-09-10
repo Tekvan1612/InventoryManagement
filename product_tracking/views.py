@@ -1462,10 +1462,10 @@ def add_job(request):
                 # Fetch the returned data from the cursor
                 data = cursor.fetchall()
                 print('Returned data:', data)
-                return JsonResponse({'success': True})
+                return JsonResponse({'success': True, 'data': data})
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            return JsonResponse({'success': False}, status=400)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return render(request, 'product_tracking/jobs.html', {'username': username})
 
 
