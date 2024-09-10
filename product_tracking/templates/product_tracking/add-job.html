@@ -753,58 +753,58 @@ select {
                 insertTempData();
             });
 
-        function insertTempData() {
-    const formData = {
-        title: $('#titleInput').val(),
-        client_name: $('#clientNameDropdown').val(),
-        contact_person_name: $('#clientContactName').val(),
-        contact_person_number: $('#clientContactNumber').val(),
-        status: $('#status').val(),
-        venue_name: $('#venueAddressDropdown').val(),
-        venue_address: $('#venueAddressInput').val(),
-        input_notes: $('#inputNotes').val(),
-        crew_type: $('#crewQuantity').val(),
-        employee: $('#employee').val(),
-        setup_date: $('#prepDate').val(),
-        rehearsal_date: $('#outDate').val(),
-        event_date: $('#showStart').val(),
-        dismantle_date: $('#showEnd').val(),
-        total_days: $('#number_of_days').val(),
-        amount_row: $('#total_amount').val(),
-        discount: $('#discount').val(),
-        amount_after_discount: $('#discounted_amount').val(),
-        total_amount: $('#total_amount_cal').val()
-    };
+            function insertTempData() {
+            const formData = {
+                title: $('#titleInput').val(),
+                client_name: $('#clientNameDropdown').val(),
+                contact_person_name: $('#clientContactName').val(),
+                contact_person_number: $('#clientContactNumber').val(),
+                status: $('#status').val(),
+                venue_name: $('#venueAddressDropdown').val(),
+                venue_address: $('#venueAddressInput').val(),
+                input_notes: $('#inputNotes').val(),
+                crew_type: $('#crewQuantity').val(),
+                employee: $('#employee').val(),
+                setup_date: $('#prepDate').val(),
+                rehearsal_date: $('#outDate').val(),
+                event_date: $('#showStart').val(),
+                dismantle_date: $('#showEnd').val(),
+                total_days: $('#number_of_days').val(),
+                amount_row: $('#total_amount').val(),
+                discount: $('#discount').val(),
+                amount_after_discount: $('#discounted_amount').val(),
+                total_amount: $('#total_amount_cal').val()
+            };
 
-    console.log('Fetch the DATA of FORM:', formData);
+            console.log('Fetch the DATA of FORM:', formData);
 
-    $.ajax({
-        url: '/insert-temp-data/',
-        type: 'POST',
-        data: JSON.stringify(formData),
-        contentType: 'application/json',
-        success: function (response) {
-            if (response.success) {
-                window.tempId = response.temp_id;
-            } else {
-                alert('Error inserting data: ' + response.error);
-            }
-        },
-        error: function (jqXHR, textStatus, errorThrown) {
-            // Fetch the error message returned by the server
-            let errorMessage = 'An unknown error occurred.';
-            try {
-                const response = JSON.parse(jqXHR.responseText);
-                errorMessage = response.error || errorMessage;
-            } catch (e) {
-                console.error('Error parsing response:', e);
-            }
+            $.ajax({
+                url: '/insert-temp-data/',
+                type: 'POST',
+                data: JSON.stringify(formData),
+                contentType: 'application/json',
+                success: function (response) {
+                    if (response.success) {
+                        window.tempId = response.temp_id;
+                    } else {
+                        alert('Error inserting data: ' + response.error);
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    // Fetch the error message returned by the server
+                    let errorMessage = 'An unknown error occurred.';
+                    try {
+                        const response = JSON.parse(jqXHR.responseText);
+                        errorMessage = response.error || errorMessage;
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                    }
 
-            alert('Error: ' + errorMessage);
-            console.error('Error details:', textStatus, errorThrown);
+                    alert('Error: ' + errorMessage);
+                    console.error('Error details:', textStatus, errorThrown);
+                }
+            });
         }
-    });
-}
 
 
         // General Details Section End
