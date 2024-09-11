@@ -778,32 +778,56 @@ select {
 
             console.log('Fetch the DATA of FORM:', formData);
 
-            $.ajax({
-                url: '/insert-temp-data/',
-                type: 'POST',
-                data: JSON.stringify(formData),
-                contentType: 'application/json',
-                success: function (response) {
-                    if (response.success) {
-                       alert('Data inserted successfully.');
-                    } else {
-                        alert('Error inserting data: ' + response.error);
-                    }
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    // Fetch the error message returned by the server
-                    let errorMessage = 'An unknown error occurred.';
-                    try {
-                        const response = JSON.parse(jqXHR.responseText);
-                        errorMessage = response.error || errorMessage;
-                    } catch (e) {
-                        console.error('Error parsing response:', e);
-                    }
+           $.ajax({
+    url: '/insert-temp-data/',
+    type: 'POST',
+    data: JSON.stringify(formData),
+    contentType: 'application/json',
+    success: function (response) {
+        console.log('AJAX success callback hit');
+        if (response.status === 'success') {
+            console.log('Response status: success');
+            // Dynamically create and show the success message box
+            $('body').append('<div id="message-box" style="position:fixed; top:90px; right:10px; background-color:lightgreen; padding:10px; border:1px solid green;">Data inserted successfully.</div>');
+            console.log('Message box appended');
+            // Hide and remove the message box after 10 seconds
+            setTimeout(function() {
+                $('#message-box').fadeOut(function() {
+                    console.log('Message box fading out');
+                    $(this).remove();
+                });
+            }, 5000);
 
-                    alert('Error: ' + errorMessage);
-                    console.error('Error details:', textStatus, errorThrown);
-                }
+            // Store tempId in a global variable or update the function directly
+            window.tempId = response.temp_id;
+        } else {
+            console.log('Response status: error');
+            // Dynamically create and show the error message box
+            $('body').append('<div id="message-box" style="position:fixed; top:20px; right:20px; background-color:lightcoral; padding:10px; border:1px solid red;">Error inserting data: ' + response.error + '</div>');
+
+            // Hide and remove the message box after 10 seconds
+            setTimeout(function() {
+                $('#message-box').fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 10000);
+        }
+    },
+    error: function (error) {
+        console.log('AJAX error callback hit');
+        // Dynamically create and show a generic error message box
+        $('body').append('<div id="message-box" style="position:fixed; top:20px; right:20px; background-color:lightcoral; padding:10px; border:1px solid red;">Error inserting data</div>');
+
+        // Hide and remove the message box after 10 seconds
+        setTimeout(function() {
+            $('#message-box').fadeOut(function() {
+                $(this).remove();
             });
+        }, 10000);
+
+        console.log(error);
+    }
+});
         }
 
 

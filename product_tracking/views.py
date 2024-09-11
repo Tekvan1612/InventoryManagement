@@ -4623,6 +4623,7 @@ def get_employee_name(request):
             print('Fetch employee Names with id:', employee_names_list)
         return JsonResponse({'employee_names': employee_names_list})
 
+
 @csrf_exempt
 def insert_temp_data(request):
     username = request.session.get('username')
@@ -4630,27 +4631,6 @@ def insert_temp_data(request):
         try:
             data = json.loads(request.body)
             print('Fetch Form Extracted DATA:', data)
-
-            # Generate new job_reference_no
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT job_reference_no 
-                    FROM public.temp 
-                    WHERE job_reference_no LIKE 'J0624%' 
-                    ORDER BY job_reference_no DESC 
-                    LIMIT 1
-                """)
-                last_job_ref = cursor.fetchone()
-                print('Check the last job reference no:', last_job_ref)
-
-            if last_job_ref:
-                last_number = int(last_job_ref[0][5:])
-                new_number = last_number + 1
-            else:
-                new_number = 1
-
-            job_reference_no = f"J0624{new_number:04d}"
-            data['job_reference_no'] = job_reference_no
 
             created_by = request.session.get('user_id')  # Adjust as needed, or fetch from request
             created_date = datetime.now()  # Use the current timestamp
@@ -4660,7 +4640,6 @@ def insert_temp_data(request):
 
             with connection.cursor() as cursor:
                 cursor.callproc('insert_temp_data', [
-                    job_reference_no,
                     data['title'], data['client_name'], data['contact_person_name'],
                     data['contact_person_number'], data['status'], data['venue_name'],
                     data['venue_address'], data['input_notes'], data['crew_type'], employee_str,
@@ -4672,7 +4651,7 @@ def insert_temp_data(request):
                 temp_id = cursor.fetchone()[0]
 
             return JsonResponse(
-                {'status': 'success', 'job_reference_no': job_reference_no, 'temp_id': temp_id, 'username': username})
+                {'status': 'success', 'temp_id': temp_id, 'username': username})
         except Exception as e:
             logger.error(f"Error inserting temp data: {e}")
             return JsonResponse({'status': 'failed', 'error': str(e)}, status=500)
