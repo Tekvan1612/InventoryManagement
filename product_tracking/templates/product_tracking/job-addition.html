@@ -1,0 +1,2351 @@
+{% include 'product_tracking/head.html' %}
+{% load static %}
+{% block content %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Fixed content width */
+        #smartwizard .tab-content {
+            width: 100%; /* Fixed width, adjust as needed */
+            min-height: 300px; /* Optional: set a consistent min height */
+            overflow: hidden;
+        }
+
+        .container-popup {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header-popup {
+            background-color: #f2f2f2;
+            padding: 1px;
+            border-bottom: 1px solid #ddd;
+
+        }
+
+        .header-popup h1 {
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .content-popup {
+            flex: 1;
+            padding: 0px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            height: 420px; /* Set your desired fixed height here */
+            overflow-y: auto; /* Add vertical scrollbar if content exceeds the height */
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 2px;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .footer-popup {
+            padding: 1px;
+            border-top: 1px solid #ddd;
+            background-color: #f2f2f2;
+        }
+
+        .search-bar {
+            margin-left: 0px;
+            padding: 3px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 75%;
+        }
+
+        /* Popup container */
+        .popup {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
+        }
+
+        /* Popup content */
+        .popup-content {
+            background-color: #fff;
+            margin: 4% auto;
+            border: 1px solid #ddd;
+            width: 80%;
+            max-width: 400px;
+            height: 80%;
+            max-height: 800px;
+        }
+
+        .popup-content .header {
+            background-color: #f2f2f2;
+        }
+
+        .employee-delivery-dropdown {
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 13%;
+            position: absolute;
+        {#background-color: #fff;#} z-index: 999;
+        }
+
+        .employee-delivery-dropdown li {
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .employee-delivery-dropdown li:hover {
+            background-color: #f0f0f0;
+        }
+
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            // SmartWizard initialize
+            $('#smartwizard').smartWizard({
+                autoAdjustHeight: false, // Disable auto height adjustment
+                toolbarSettings: {
+                    showNextButton: false, // Hide Next button
+                    showPreviousButton: false // Hide Previous button
+                },
+                anchorSettings: {
+                    anchorClickable: true, // Enable clicking on tabs to navigate
+                    enableAllAnchors: true // Enable all anchor navigation at all times
+                }
+            });
+
+
+            fetchClientName();
+            fetchVenueAddress();
+            fetchVenueName();
+            fetchEmployeeNames();
+            {#fetchMasterCategories();#}
+
+            // General Details Section
+            $('#venueAddressDropdown').on('keyup', function () {
+                var query = $(this).val();
+                if (query.length > 0) {  // Start searching after a few characters
+                    fetchVenueName(query);
+                } else {
+                    $('#dropdown-item').empty(); // Clear the dropdown if input is empty
+                }
+            });
+
+            function fetchVenueName(query) {
+                $.ajax({
+                    url: '/fetch_venue_name/',
+                    type: 'GET',
+                    data: {'query': query},  // Pass the query to the server
+                    dataType: 'json',
+                    success: function (data) {
+                        var venueNames = data.venue_names;
+                        var dropdownMenu = $('#dropdown-item');
+                        dropdownMenu.empty();  // Clear the dropdown before appending new data
+
+                        $.each(venueNames, function (index, venue) {
+                            dropdownMenu.append('<li><a class="dropdown-item venue-name-item" href="#" data-venue-name="' + venue.name + '">' + venue.name + '</a></li>');
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching venue names:', error);
+                    }
+                });
+            }
+
+            $(document).on('click', '.venue-name-item', function (e) {
+                e.preventDefault();
+                var venueName = $(this).data('venue-name');
+                $('#venueAddressDropdown').val(venueName);  // Set the selected venue name in the input
+                fetchVenueAddress(venueName);  // Fetch the corresponding venue address
+                $('#dropdown-item').empty();  // Clear the dropdown after selection
+            });
+
+            function fetchVenueAddress(venueNames) {
+                $.ajax({
+                    url: '/fetch_venue_address/',  // Your Django view URL for fetching venue addresses
+                    type: 'GET',
+                    data: {'venue_name': venueNames},  // Pass the selected venue name to the server
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.venue_address) {
+                            $('#venueAddressInput').val(data.venue_address);  // Set the venue address in the input
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching venue address:', error);
+                    }
+                });
+            }
+
+            $('#venueAddressDropdown').on('keyup', function () {
+                var value = $(this).val().toLowerCase();
+                var dropdownMenu = $(this).next('.dropdown-menu');
+                dropdownMenu.children('.dropdown-item').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            function fetchClientName() {
+                $.ajax({
+                    url: '/fetch_client_name/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        var clientNames = data.client_names;
+                        var dropdownMenu = $('#clientNameDropdown').next('.dropdown-menu');
+                        dropdownMenu.empty();
+
+                        $.each(clientNames, function (index, client) {
+                            dropdownMenu.append('<li><a class="dropdown-item client-name-item" href="#" data-client-name="' + client.name + '" data-client-type="' + client.type + '">' + client.name + '</a></li>');
+                            console.log('name', client.name, client.type);
+                        });
+                        // Show the dropdown when the input is clicked
+                        $('#clientNameDropdown').on('click', function () {
+                            dropdownMenu.show();  // Show dropdown when input is clicked
+                        });
+
+                        // Add click event listener for each dropdown item
+                        $('.client-name-item').on('click', function (e) {
+                            e.preventDefault();  // Prevent default action (navigation)
+
+                            var selectedClientName = $(this).data('client-name');
+
+                            // Set the selected client name in the input field
+                            $('#clientNameDropdown').val(selectedClientName);
+
+                            // Hide the dropdown menu after selection
+                            dropdownMenu.hide();
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching client names:', error);
+                    }
+                });
+            }
+
+            function fetchIndividualNames(clientName) {
+                $.ajax({
+                    url: '/fetch_individual_names/',
+                    type: 'GET',
+                    data: {client_name: clientName},
+                    dataType: 'json',
+                    success: function (data) {
+                        var individualNames = data.individual_names;
+                        var contactDropdown = $('#clientContactName');
+                        contactDropdown.empty(); // Ensure dropdown is empty before adding options
+
+                        // Add options to the dropdown
+                        $.each(individualNames, function (index, person) {
+                            contactDropdown.append('<option value="' + person.name + '" data-mobile="' + person.mobile + '">' + person.name + '</option>');
+                        });
+
+                        // Optionally, trigger change event if needed
+                        contactDropdown.trigger('change');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching individual names:', error);
+                    }
+                });
+            }
+
+            $(document).on('change', '#clientContactName', function () {
+                var selectedOption = $(this).find('option:selected');
+                var mobileNumber = selectedOption.data('mobile');
+                $('#clientContactNumber').val(mobileNumber);
+            });
+
+            $(document).on('click', '.client-name-item', function () {
+                var clientName = $(this).data('client-name');
+                var clientType = $(this).data('client-type');
+                var input = $(this).closest('.dropdown').find('.dropdown-toggle');
+                input.val(clientName);
+                input.dropdown('toggle');
+                // Fetch and populate individual names based on selected client
+                fetchIndividualNames(clientName);
+            });
+
+            $(document).on('click', '.venue-address-item', function () {
+                var venueAddress = $(this).text();
+                var input = $(this).closest('.dropdown').find('.dropdown-toggle');
+                input.val(venueAddress);
+                input.dropdown('toggle');
+            });
+
+            function fetchEmployeeNames() {
+                $.ajax({
+                    url: '/get_employee_name/',
+                    type: 'GET',
+                    success: function (response) {
+                        var employeeDropdown = $('#employee');
+                        employeeDropdown.empty();
+                        employeeDropdown.append('<option value="" data-display="Select">Select</option>');
+                        response.employee_names.forEach(function (employee) {
+                            employeeDropdown.append('<option value="' + employee.name + '">' + employee.name + '</option>');
+                        });
+
+                        // Set the selected values after the dropdown is populated
+                        setTimeout(function () {
+                            setEmployeeValues();
+                        }, 500);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Failed to fetch employee names:', error);
+                    }
+                });
+            }
+
+            $('#employee').select2({
+                placeholder: "Select Employee Name",
+                allowClear: true
+            });
+
+            // Check the initial value of #status when the page loads
+            var selectedValue = $('#status').val();
+
+            // Show/hide fields based on the initial status value
+            if (selectedValue === "Quotation") {
+                $('#quotation-fields').show();
+                $('#quotation-details').show();
+                $('#quotation-fields1').show();
+                $('#crew-allocation-delivery-challan').hide();
+                $('#crew-allocation-quotation').show();
+                $('#prepsheet-fields').hide();
+                $('#nav-general_details').show();
+                $('#general_Information').show();
+                $('#nav-crew_allocation').hide();
+                $('#nav-transportation_allocation').hide();
+                $('#nav-add_sub_vendor').hide();
+            } else if (selectedValue === "Perfoma") {
+                $('#quotation-fields1').show();
+                $('#crew-allocation-delivery-challan').hide();
+                $('#crew-allocation-quotation').show();
+                $('#quotation-fields').hide();
+                $('#prepsheet-fields').hide();
+                $('#nav-general_details').show();
+                $('#nav-add_equipment').show();
+                $('#nav-add_sub_vendor').hide();
+                $('#nav-crew_allocation').hide();
+                $('#nav-transportation_allocation').hide();
+            } else if (selectedValue === "Prepsheet") {
+                $('#quotation-fields').hide();
+                $('#prepsheet-fields').show();
+                $('#quotation-fields1').hide();
+                $('#crew-allocation-delivery-challan').show();
+                $('#crew-allocation-quotation').hide();
+                $('#nav-general_details').show();
+                $('#nav-add_equipment').show();
+                $('#nav-add_sub_vendor').show();
+                $('#nav-crew_allocation').show();
+                $('#nav-transportation_allocation').show();
+                fetchEmployeeNames();
+            } else {
+                $('#quotation-fields').hide();
+                $('#crew-allocation-quotation').hide();
+                $('#prepsheet-fields').hide();
+                $('#quotation-fields1').hide();
+                $('#nav-general_details').show();
+                $('#nav-add_equipment').show();
+                $('#nav-add_sub_vendor').show();
+                $('#nav-crew_allocation').show();
+                $('#nav-transportation_allocation').show();
+                $('#crew-allocation-delivery-challan').show();
+            }
+
+            // Status dropdown change event
+            $('#status').change(function () {
+                var selectedValue = $(this).val();
+
+                // Show/hide fields based on status
+                if (selectedValue === "Quotation") {
+                    $('#quotation-fields').show();
+                    $('#quotation-details').show();
+                    $('#quotation-fields1').show();
+                    $('#crew-allocation-delivery-challan').hide();
+                    $('#crew-allocation-quotation').show();
+                    $('#prepsheet-fields').hide();
+                    $('#nav-general_details').show();
+                    $('#general_Information').show();
+                    $('#nav-crew_allocation').hide();
+                    $('#nav-transportation_allocation').hide();
+                    $('#nav-add_sub_vendor').hide();
+                } else if (selectedValue === "Perfoma") {
+                    $('#quotation-fields1').show();
+                    $('#crew-allocation-delivery-challan').hide();
+                    $('#crew-allocation-quotation').show();
+                    $('#quotation-fields').hide();
+                    $('#prepsheet-fields').hide();
+                    $('#nav-general_details').show();
+                    $('#nav-add_equipment').show();
+                    $('#nav-add_sub_vendor').hide();
+                    $('#nav-crew_allocation').hide();
+                    $('#nav-transportation_allocation').hide();
+                } else if (selectedValue === "Prepsheet") {
+                    $('#quotation-fields').hide();
+                    $('#prepsheet-fields').show();
+                    $('#quotation-fields1').hide();
+                    $('#crew-allocation-delivery-challan').show();
+                    $('#crew-allocation-quotation').hide();
+                    $('#nav-general_details').show();
+                    $('#nav-add_equipment').show();
+                    $('#nav-add_sub_vendor').show();
+                    $('#nav-crew_allocation').show();
+                    $('#nav-transportation_allocation').show();
+                    fetchEmployeeNames();
+                } else {
+                    $('#quotation-fields').hide();
+                    $('#crew-allocation-quotation').hide();
+                    $('#prepsheet-fields').hide();
+                    $('#quotation-fields1').hide();
+                    $('#nav-general_details').show();
+                    $('#nav-add_equipment').show();
+                    $('#nav-add_sub_vendor').show();
+                    $('#nav-crew_allocation').show();
+                    $('#nav-transportation_allocation').show();
+                    $('#crew-allocation-delivery-challan').show();
+                }
+            });
+
+            $('#showStart').change(function () {
+                var startDate = $(this).val();
+                $('#showEnd').attr('min', startDate);
+                validateDates();
+            });
+
+            $('#showEnd').change(function () {
+                validateDates();
+            });
+
+            function validateDates() {
+                var showStartDate = $('#showStart').val();
+                var showEndDate = $('#showEnd').val();
+
+                if (showStartDate && showEndDate) {
+                    if (new Date(showEndDate) < new Date(showStartDate)) {
+                        alert("Select a valid date. Show End Date cannot be before Show Start Date.");
+                        $('#showEnd').val('');
+                        $('#number_of_days').val('');  // Clear number_of_days if dates are invalid
+                    }
+                }
+            }
+
+            $('#number_of_days').on('input', function () {
+                insertTempData();
+            });
+
+            function insertTempData() {
+                const formData = {
+                    title: $('#titleInput').val(),
+                    client_name: $('#clientNameDropdown').val(),
+                    contact_person_name: $('#clientContactName').val(),
+                    contact_person_number: $('#clientContactNumber').val(),
+                    status: $('#status').val(),
+                    venue_name: $('#venueAddressDropdown').val(),
+                    venue_address: $('#venueAddressInput').val(),
+                    input_notes: $('#inputNotes').val(),
+                    crew_type: $('#crewQuantity').val(),
+                    employee: $('#employee').val(),
+                    setup_date: $('#prepDate').val(),
+                    rehearsal_date: $('#outDate').val(),
+                    event_date: $('#showStart').val(),
+                    dismantle_date: $('#showEnd').val(),
+                    total_days: $('#number_of_days').val(),
+                    amount_row: $('#total_amount').val(),
+                    discount: $('#discount').val(),
+                    amount_after_discount: $('#discounted_amount').val(),
+                    total_amount: $('#total_amount_cal').val()
+                };
+                console.log('Fetch the DATA of FORM:', formData)
+
+                $.ajax({
+                    url: '/insert-temp-data/',
+                    type: 'POST',
+                    data: JSON.stringify(formData),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        console.log('AJAX success callback hit');
+                        if (response.status === 'success') {
+                            console.log('Response status: success');
+                            // Dynamically create and show the success message box
+                            $('body').append('<div id="message-box" style="position:fixed; top:90px; right:10px; background-color:lightgreen; padding:10px; border:1px solid green;">Data inserted successfully.</div>');
+                            console.log('Message box appended');
+                            // Hide and remove the message box after 10 seconds
+                            setTimeout(function () {
+                                $('#message-box').fadeOut(function () {
+                                    console.log('Message box fading out');
+                                    $(this).remove();
+                                });
+                            }, 5000);
+
+                            // Store tempId in a global variable or update the function directly
+                            window.tempId = response.temp_id;
+
+                        } else {
+                            console.log('Response status: error');
+                            // Dynamically create and show the error message box
+                            $('body').append('<div id="message-box" style="position:fixed; top:20px; right:20px; background-color:lightcoral; padding:10px; border:1px solid red;">Error inserting data: ' + response.error + '</div>');
+
+                            // Hide and remove the message box after 10 seconds
+                            setTimeout(function () {
+                                $('#message-box').fadeOut(function () {
+                                    $(this).remove();
+                                });
+                            }, 10000);
+                        }
+                    },
+                    error: function (error) {
+                        console.log('AJAX error callback hit');
+                        // Dynamically create and show a generic error message box
+                        $('body').append('<div id="message-box" style="position:fixed; top:20px; right:20px; background-color:lightcoral; padding:10px; border:1px solid red;">Error inserting data</div>');
+
+                        // Hide and remove the message box after 10 seconds
+                        setTimeout(function () {
+                            $('#message-box').fadeOut(function () {
+                                $(this).remove();
+                            });
+                        }, 10000);
+
+                        console.log(error);
+                    }
+                });
+            }
+
+            // General Details Section End
+
+            // Equipment Details Section Start
+            $('#addEquipmentBtn').on('click', function () {
+                if (window.tempId) {
+                    // Fetch the job reference number using tempId
+                    $.ajax({
+                        url: '/fetch-job-reference-no/',  // Endpoint to fetch the job reference number
+                        type: 'GET',
+                        data: {temp_id: window.tempId},  // Send tempId as query parameter
+                        success: function (response) {
+                            if (response.status === 'success') {
+                                // Update the job reference number in the #jobReferenceNo span
+                                $('#jobReferenceNo').text(response.job_reference_no + ' - ' + response.title);
+                                console.log('Fetched Job Reference No:', response.job_reference_no);
+                            } else {
+                                console.log('Error fetching job reference number:', response.error);
+                            }
+                        },
+                        error: function (error) {
+                            console.log('Error in AJAX request:', error);
+                        }
+                    });
+                } else {
+                    console.log('TempId is not available');
+                }
+            });
+
+            // when clicking on the Job Reference No
+            $('#job-J06240001').on('click', function () {
+                const heading = $('#heading-J06240001'); // Get the equipment heading
+                heading.toggle(); // Show or hide the equipment heading
+
+                // Change the sign from + to - and vice versa
+                const sign = heading.children('.toggle-sign');
+                sign.text(sign.text() === '+' ? '+' : '-');
+            });
+
+            // Toggle sub-equipment details when clicking on the equipment name
+            $('#heading-J06240001').on('click', function () {
+                const equipmentList = $('#equipment-list-J06240001, #rightEquipment'); // Get the equipment list
+                equipmentList.toggle(); // Show or hide the equipment list
+
+                // Change the sign from + to - and vice versa
+                const sign = $(this).children('.toggle-sign');
+                sign.text(sign.text() === '+' ? '-' : '+');
+            });
+
+            // Function to add a new equipment section
+            $(document).on('click', '#addNewEquipment', function () {
+                var newSection = `
+                    <div class="equipment-section" data-temp-id="${window.tempId}">
+                        <div class="row">
+                            <div class="col-xl-3 mb-4">
+                                <label for="locationName" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="locationName" name="location_name">
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="inchargeEmployee" class="form-label">Incharge</label>
+
+                                <input type="text" class="form-control dropdown-toggle"
+                                                id="inchargeEmployee"
+                                                data-bs-toggle="dropdown" aria-expanded="false"
+                                                placeholder="Select Incharge Name" autocomplete="off"
+                                                name="employee_name">
+                                            <ul class="employee-dropdown-menu" aria-labelledby="inchargeEmployee" id="employee-dropdown-item">
+                                                <!-- Dynamic options will be appended here -->
+                                            </ul>
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="setupDate" class="form-label">Rehearsal Date</label>
+                                <input type="date" class="form-control" id="setupDate" name="setup_date" required>
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="rehearsalDate" class="form-label">Event Date</label>
+                                <input type="date" class="form-control" id="rehearsalDate" name="rehearsal_date" required>
+                            </div>
+                        </div>
+                        <div class="equipment-table-container">
+                            <button class="btn btn-primary add-equipment-btn" id="addNewEquipmentForm">+</button>
+                            <button class="btn btn-success insert-details-btn" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
+                            <table id="selectedEquipmentTable" class="table custom-table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left;">Equipment Name</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="text" id="equipmentNameClick" name="equipment_name" /></td>
+                                        <td><input type="number" name="quantity" class="quantity-input" /></td>
+                                        <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
+                                        <td><input type="text" name="total" class="total-input" readonly /></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                $('#rightEquipment').html(newSection); // Replace previous content with new content
+
+                // Disable further clicks on #addNewEquipment
+                $('#addNewEquipment').off('click');
+            });
+
+            document.getElementById('saveEquipmentList').addEventListener('click', function (event) {
+                // Prevent the default behavior (page refresh)
+                event.preventDefault();
+
+                // You can also close the popup here or do any other necessary actions
+                document.getElementById('equipmentPopup').style.display = 'none';
+            });
+
+            // Event listener for the "Save" button
+            $('#saveEquipmentList').click(function () {
+                var selectedEquipmentBody = $('#selectedEquipmentTable tbody');
+
+                // Remove only blank rows from the selected equipment table
+                selectedEquipmentBody.find('tr').each(function () {
+                    var quantityInput = $(this).find('input[name="quantity"]');
+                    if (quantityInput.val() === "" || quantityInput.val() <= 0) {
+                        $(this).remove(); // Remove the row if quantity is empty or zero
+                    }
+                });
+
+                // Loop through each row in the equipment table
+                $('#equipmentTable tbody tr').each(function () {
+                    var quantityInput = $(this).find('input[name^="quantity_"]');
+                    var equipmentName = $(this).find('td:eq(1)').text(); // Get equipment name from the second column
+                    var availableQuantity = $(this).find('td:eq(2)').text(); // Get available quantity
+                    var unitPrice = $(this).find('td:eq(3)').text(); // Get rental price
+
+                    var quantity = quantityInput.val();
+                    if (quantity > 0) { // Only include items where quantity is entered
+                        // Check if the equipment name is already in the selected equipment table
+                        var existingRow = selectedEquipmentBody.find('tr:contains("' + equipmentName + '")');
+                        if (existingRow.length === 0) { // If it does not exist
+                            var total = (unitPrice.replace('?', '') * quantity).toFixed(2); // Calculate total
+
+                            // Append the new row to the selected equipment table
+                            selectedEquipmentBody.append(
+                                '<tr>' +
+                                '<td>' + equipmentName + '</td>' +
+                                '<td>' + quantity + '</td>' +
+                                '<td>' + unitPrice + '</td>' +
+                                '<td>' + total + '</td>' +
+                                '</tr>'
+                            );
+                        }
+                        // If the item already exists, do nothing (skip adding)
+                    }
+                });
+
+                // Optionally close the popup after saving the equipment list
+                closePopup();
+            });
+
+            $('#existingSaveEquipmentList').click(function (event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                var selectedEquipmentBody = $('#selectedEquipmentTable tbody');
+                var tempId = window.tempId; // Replace with the actual temp_id
+                var equipmentDetailId = currentEquipId; // Replace with the actual equipment_detail_id
+                var location = $('#locationNameExisting').val(); // Replace with the actual location
+                var incharge = $('#inchargeEmployeeExisting').val(); // Replace with the actual incharge
+                var setupDate = $('#setupDateExisting').val(); // Replace with the actual setup date
+                var rehearsalDate = $('#rehearsalDateExisting').val(); // Replace with the actual rehearsal date
+
+                // Remove only blank rows from the selected equipment table
+                selectedEquipmentBody.find('tr').each(function () {
+                    var quantityInput = $(this).find('input[name="quantity"]');
+                    if (quantityInput.val() === "" || quantityInput.val() <= 0) {
+                        $(this).remove(); // Remove the row if quantity is empty or zero
+                    }
+                });
+
+                // Prepare an array to hold the data to be sent to the backend
+                var equipmentData = [];
+
+                // Loop through each row in the equipment table
+                $('#equipmentTable tbody tr').each(function () {
+                    var quantityInput = $(this).find('input[name^="quantity_"]');
+                    var equipmentName = $(this).find('td:eq(1)').text(); // Get equipment name from the input field
+                    var availableQuantity = $(this).find('td:eq(2)').text(); // Get available quantity
+                    var unitPrice = $(this).find('td:eq(3)').text(); // Get rental price
+
+                    var quantity = quantityInput.val();
+                    if (quantity > 0) { // Only include items where quantity is entered
+                        var total = (unitPrice.replace('?', '') * quantity).toFixed(2); // Calculate total
+
+                        // Prepare the data object for this row
+                        equipmentData.push({
+                            temp_id: tempId,
+                            equipment_detail_id: equipmentDetailId,
+                            location: location,
+                            incharge: incharge,
+                            setup_date: setupDate,
+                            rehearsal_date: rehearsalDate,
+                            equipment_name: equipmentName,
+                            quantity: quantity,
+                            equipment_unit_price: unitPrice,
+                            equipment_total: total
+                        });
+                    }
+                });
+
+                // AJAX request to insert the data into the temp_equipment_details table
+                $.ajax({
+                    url: '/insert-equipment-details-id/', // Update with your backend endpoint
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(equipmentData),
+                    success: function (response) {
+                        console.log("Data inserted successfully:", response);
+
+                        // Automatically hide the equipment popup after successful insertion
+                        $('#equipmentInsertPopup').hide(); // Hide the popup
+
+                        // Automatically call the second AJAX to fetch equipment details after successful insertion
+                        $.ajax({
+                            url: '/fetch-equipment-details-multiple/', // Django view URL
+                            type: 'GET',
+                            data: {equipId: equipmentDetailId}, // Use the equipmentDetailId to fetch details
+                            success: function (response) {
+                                if (response.status === 'success') {
+                                    var data = response.data; // This is now an array of objects
+                                    console.log('Fetch the DATA:', data); // Debug: Check fetched data
+
+                                    // Call the function to show existing values
+                                    showExistingValues(data);
+                                } else {
+                                    alert(response.message); // Show error message if no data found
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                alert('Error fetching equipment details: ' + error);
+                            }
+                        });
+
+                        // Optionally close the popup after saving the equipment list
+                        closePopup();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error inserting data:", error);
+                        // Optionally show an error message to the user
+                    }
+                });
+            });
+
+            $(document).on('click', '#insertDetailsBtn', function (event) {
+                event.preventDefault();
+                var equipmentData = [];
+                var tempId = window.tempId; // Get tempId from window object
+
+                // Fetch the new input values
+                var locationName = $('#locationName').val();
+                var inchargeName = $('#inchargeEmployee').val();
+                var setupDate = $('#setupDate').val();
+                var rehearsalDate = $('#rehearsalDate').val();
+
+                $('#selectedEquipmentTable tbody tr').each(function () {
+                    var equipmentDetail = {
+                        equipment_name: $(this).find('td:eq(0)').text(), // Equipment Name
+                        quantity: $(this).find('td:eq(1)').text(), // Quantity
+                        equipment_unit_price: $(this).find('td:eq(2)').text(), // Unit Price
+                        equipment_total: $(this).find('td:eq(3)').text(), // Total
+                        location: locationName, // Add location
+                        incharge: inchargeName, // Add incharge
+                        equipment_setup_date: setupDate, // Add setup date
+                        equipment_rehearsal_date: rehearsalDate // Add rehearsal date
+                    };
+                    equipmentData.push(equipmentDetail);
+                });
+
+                $.ajax({
+                    url: '/insert-equipment-details/', // Updated URL
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({equipment: equipmentData, temp_id: tempId}),
+                    success: function (response) {
+                        alert(response.message); // Show success message
+
+                        // Display the equipment_detail_ids in the specified HTML elements
+                        // Get unique equipment_detail_ids from the response
+                        const uniqueEquipmentIds = [...new Set(response.equipment_detail_ids)];
+                        console.log('Fetch the Unique Equipment:', uniqueEquipmentIds)
+                        const equipmentContainer = $('#equipmentContainer'); // Assuming you have a container to hold these spans
+                        console.log('Fetch the DETAILS:', equipmentContainer)
+
+                        // Clear the container before adding new spans
+                        equipmentContainer.empty();
+
+                        uniqueEquipmentIds.forEach(function (equipId) {
+                            // Create a new span with the "+" sign and equipment ID in the desired format
+                            const newSpan = $('<div><span class="toggle-sign" id="createNewEquipment">+</span> <span id="equipmentIdName" class="equipment-name" data-equip-id="' + equipId + '" style="cursor: pointer;">' + equipId + '</span></div>');
+                            console.log('Fetch the equip ID:', equipId)
+                            equipmentContainer.append(newSpan);
+                            console.log('Fetch the span id of:', equipmentContainer)
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error inserting equipment details: ' + error);
+                    }
+                });
+            });
+
+            var currentEquipId; // Variable to hold the currently selected equipId
+
+            $(document).on('click', '#equipmentIdName', function () {
+                var equipId = $(this).data('equip-id'); // Get the equipment ID from the clicked element
+                currentEquipId = equipId; // Store equipId in a global variable
+                console.log('Fetch the DETAILS:', equipId); // Debug: Check the fetched equipId
+
+                // Make an AJAX request to fetch the equipment details
+                $.ajax({
+                    url: '/fetch-equipment-details-multiple/', // Django view URL
+                    type: 'GET',
+                    data: {equipId: equipId},
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            var data = response.data; // This is now an array of objects
+                            console.log('Fetch the DATA:', data); // Debug: Check fetched data
+
+                            // Call the new function to show existing values
+                            showExistingValues(data);
+                        } else {
+                            alert(response.message); // Show error message if no data found
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error fetching equipment details: ' + error);
+                    }
+                });
+            });
+
+            function showExistingValues(data) {
+                var newSection = `
+                    <div class="equipment-section" data-temp-id="${window.tempId}">
+                        <div class="row">
+                            <div class="col-xl-3 mb-4">
+                                <label for="locationName" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="locationNameExisting" name="location_name" value="${data[0].location}">
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="inchargeEmployee" class="form-label">Incharge</label>
+                                <input type="text" class="form-control dropdown-toggle"
+                                       id="inchargeEmployeeExisting" data-bs-toggle="dropdown"
+                                       aria-expanded="false" placeholder="Select Incharge Name"
+                                       autocomplete="off" name="employee_name" value="${data[0].incharge}">
+                                <ul class="employee-dropdown-menu" aria-labelledby="inchargeEmployee" id="employee-dropdown-item">
+                                    <!-- Dynamic options will be appended here -->
+                                </ul>
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="setupDate" class="form-label">Rehearsal Date</label>
+                                <input type="date" class="form-control" id="setupDateExisting" name="setup_date" value="${data[0].setup_date}" required>
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="rehearsalDate" class="form-label">Event Date</label>
+                                <input type="date" class="form-control" id="rehearsalDateExisting" name="rehearsal_date" value="${data[0].rehearsal_date}" required>
+                            </div>
+                        </div>
+                        <div class="equipment-table-container">
+                            <button class="btn btn-primary add-equipment-btn" id="insertUpdatedForm">+</button>
+                            <table id="selectedEquipmentTable" class="table custom-table">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th style="text-align: left;">Equipment Name</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th>Total</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.map(detail => `
+                                    <tr data-equip-id="${detail.id}">
+                                        <td><input type="hidden" name="equipment_id" value="${detail.id}" /><input type="text" name="equipment_name" value="${detail.equipment_name}" /></td>
+                                        <td><input type="number" name="quantity" class="quantity-input" value="${detail.quantity}" /></td>
+                                        <td><input type="number" name="unit_price" class="unit-price-input" value="${detail.unit_price}" readonly /></td>
+                                        <td><input type="text" name="total" class="total-input" value="${detail.total}" readonly /></td>
+                                        <td><button class="btn btn-secondary delete-equipment-btn"><i class="fa fa-times"></i></button></td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                $('#rightEquipment').html(newSection);
+            }
+
+            // Delete the row functionality
+            $(document).on('click', '.delete-equipment-btn', function (e) {
+                e.preventDefault();
+
+                // Find the equipment ID from the hidden input field
+                var row = $(this).closest('tr'); // Get the row where the delete button was clicked
+                var equipmentId = row.find('input[name="equipment_id"]').val(); // Fetch the equipment_id from hidden input
+
+                // Confirm deletion
+                if (confirm('Are you sure you want to delete this equipment?')) {
+                    // Make an AJAX request to delete the equipment
+                    $.ajax({
+                        url: '/delete-equipment-id/', // Your Django view for handling the delete request
+                        type: 'POST',
+                        data: {
+                            equipId: equipmentId, // Send equipment ID to backend
+                            csrfmiddlewaretoken: '{{ csrf_token }}' // CSRF token for security
+                        },
+                        success: function (response) {
+                            if (response.status === 'success') {
+                                // Remove the row from the table if deletion was successful
+                                row.remove();
+                                {#alert('Equipment deleted successfully.');#}
+                            } else {
+                                alert('Failed to delete equipment: ' + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert('Error deleting equipment: ' + error);
+                        }
+                    });
+                }
+            });
+
+            // Update the row
+            $(document).on('input', 'input[name="equipment_name"], input[name="quantity"], input[name="unit_price"], #locationNameExisting, #inchargeEmployeeExisting, #setupDateExisting, #rehearsalDateExisting', function () {
+                var row = $(this).closest('tr'); // Get the current row
+
+                // Hidden equipId used for equipment details
+                var equipmentRowId = row.find('input[name="equipment_id"]').val();
+
+                // EquipId from the global variable
+                var elementEquipId = currentEquipId;
+                console.log('Check the global element id:', elementEquipId)
+
+                // Debug logs to check both equipId values
+                console.log('Equipment ID (from row):', equipmentRowId);
+                console.log('Equipment ID (from element):', elementEquipId);
+
+                // Fetch updated values from input fields
+                var equipmentName = row.find('input[name="equipment_name"]').val();
+                var quantity = row.find('input[name="quantity"]').val();
+                var unitPrice = row.find('input[name="unit_price"]').val();
+                var total = quantity * unitPrice;
+                row.find('input[name="total"]').val(total); // Update the total field
+
+                // Fetch location and incharge from the inputs
+                var location = $('#locationNameExisting').val();  // Assuming there's an input with id="locationName"
+                var incharge = $('#inchargeEmployeeExisting').val();  // Assuming there's an input with id="inchargeEmployee"
+                var setupDate = $('#setupDateExisting').val(); // Setup date input
+                var rehearsalDate = $('#rehearsalDateExisting').val(); // Rehearsal date input
+
+
+                // Send an AJAX request to update both equipment details and location, incharge
+                $.ajax({
+                    url: '/update-equipment-id/', // The Django view URL for updating
+                    type: 'POST',
+                    data: {
+                        rowEquipId: equipmentRowId,    // Send equipment ID from hidden input (for row update)
+                        elementEquipId: elementEquipId, // Send equipment ID from clicked element (for location/incharge update)
+                        equipment_name: equipmentName,  // Equipment details
+                        quantity: quantity,
+                        unit_price: unitPrice,
+                        total: total,
+                        location: location,             // Location (from element)
+                        incharge: incharge,             // Incharge (from element)
+                        setup_date: setupDate,          // Setup date
+                        rehearsal_date: rehearsalDate,  // Rehearsal date
+                        csrfmiddlewaretoken: '{{ csrf_token }}' // CSRF token for security
+                    },
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            console.log('Equipment updated successfully.');
+                        } else {
+                            alert('Failed to update equipment: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error updating equipment: ' + error);
+                    }
+                });
+            });
+
+            // Function to add a new equipment section
+            $(document).on('click', '#addNewEquipment', function () {
+                var newSection = `
+                    <div class="equipment-section" data-temp-id="${window.tempId}">
+                        <div class="row">
+                            <div class="col-xl-3 mb-4">
+                                <label for="locationName" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="locationName" name="location_name">
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="inchargeEmployee" class="form-label">Incharge</label>
+
+                                <input type="text" class="form-control dropdown-toggle"
+                                                id="inchargeEmployee"
+                                                data-bs-toggle="dropdown" aria-expanded="false"
+                                                placeholder="Select Incharge Name" autocomplete="off"
+                                                name="employee_name">
+                                            <ul class="employee-dropdown-menu" aria-labelledby="inchargeEmployee" id="employee-dropdown-item">
+                                                <!-- Dynamic options will be appended here -->
+                                            </ul>
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="setupDate" class="form-label">Rehearsal Date</label>
+                                <input type="date" class="form-control" id="setupDate" name="setup_date" required>
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="rehearsalDate" class="form-label">Event Date</label>
+                                <input type="date" class="form-control" id="rehearsalDate" name="rehearsal_date" required>
+                            </div>
+                        </div>
+                        <div class="equipment-table-container">
+                            <button class="btn btn-primary add-equipment-btn" id="addNewEquipmentForm">+</button>
+                            <button class="btn btn-success insert-details-btn" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
+                            <table id="selectedEquipmentTable" class="table custom-table">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th style="text-align: left;">Equipment Name</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="text" id="equipmentNameClick" name="equipment_name" /></td>
+                                        <td><input type="number" name="quantity" class="quantity-input" /></td>
+                                        <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
+                                        <td><input type="text" name="total" class="total-input" readonly /></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                $('#rightEquipment').html(newSection); // Replace previous content with new content
+
+                // Disable further clicks on #addNewEquipment
+                $('#addNewEquipment').off('click');
+            });
+
+            $(document).on('click', '#addNewEquipmentForm', function (event) {
+                event.preventDefault(); // Prevent any default actions
+
+                // Create a new row
+                const newRow = `
+                    <tr>
+                        <td><input type="text" id="equipmentNameClick" name="equipment_name"/></td>
+                        <td><input type="number" name="quantity" class="quantity-input"/></td>
+                        <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
+                        <td><input type="text" name="total" class="total-input" readonly /></td>
+                    </tr>
+                `;
+
+                // Append the new row to the table body
+                $('#selectedEquipmentTable tbody').append(newRow);
+            });
+
+            // Use event delegation to bind input event for dynamically added inchargeEmployee
+            $(document).on('input', '#inchargeEmployee', function () {
+                const query = $(this).val();
+
+                if (query.length > 0) {
+                    $.ajax({
+                        url: '/fetch-employee-names/',
+                        type: 'GET',
+                        data: {query: query},
+                        success: function (data) {
+                            $('#employee-dropdown-item').empty(); // Clear previous results
+
+                            data.forEach(employee => {
+                                $('#employee-dropdown-item').append(
+                                    `<li class="dropdown-item" data-id="${employee.id}">${employee.name}</li>`
+                                );
+                            });
+
+                            // Add click event to the newly created list items
+                            $('.dropdown-item').on('click', function () {
+                                $('#inchargeEmployee').val($(this).text()); // Set input value
+                                $('#employee-dropdown-item').empty(); // Clear dropdown
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error fetching employee names:', error);
+                        }
+                    });
+                } else {
+                    $('#employee-dropdown-item').empty(); // Clear dropdown if input is empty
+                }
+            });
+
+            // Bind the function to .toggle-sign for subsequent clicks
+            $(document).on('click', '#createNewEquipment', function () {
+                var newSection = `
+                    <div class="equipment-section" data-temp-id="${window.tempId}">
+                        <div class="row">
+                            <div class="col-xl-3 mb-4">
+                                <label for="locationName" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="locationName" name="location_name">
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="inchargeEmployee" class="form-label">Incharge</label>
+                                  <input type="text" class="form-control dropdown-toggle"
+                                                id="inchargeEmployee"
+                                                data-bs-toggle="dropdown" aria-expanded="false"
+                                                placeholder="Select Incharge Name" autocomplete="off"
+                                                name="employee_name">
+                                            <ul class="employee-dropdown-menu" aria-labelledby="inchargeEmployee" id="employee-dropdown-item">
+                                                <!-- Dynamic options will be appended here -->
+                                            </ul>
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="setupDate" class="form-label">Rehearsal Date</label>
+                                <input type="date" class="form-control" id="setupDate" name="setup_date">
+                            </div>
+                            <div class="col-xl-3 mb-4">
+                                <label for="rehearsalDate" class="form-label">Event Date</label>
+                                <input type="date" class="form-control" id="rehearsalDate" name="rehearsal_date">
+                            </div>
+                        </div>
+                        <div class="equipment-table-container">
+                            <button class="btn btn-primary add-equipment-btn" id="addNewEquipmentForm">+</button>
+                            <button class="btn btn-success insert-details-btn" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
+
+                            <table id="selectedEquipmentTable" class="table custom-table">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th style="text-align: left;">Equipment Name</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="text" id="equipmentNameClick" name="equipment_name" /></td>
+                                        <td><input type="number" name="quantity" class="quantity-input" /></td>
+                                        <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
+                                        <td><input type="text" name="total" class="total-input" readonly /></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                $('#rightEquipment').html(newSection); // Replace previous content with new content
+            });
+
+            // Attach the double click event to a parent container that exists
+            $('#rightEquipment').on('click', 'input[name="equipment_name"]', function () {
+                fetchEquipmentData();
+            });
+
+            // Function to open the popup
+            function openPopup() {
+                document.getElementById("equipmentPopup").style.display = "block";
+            }
+
+            // Filter table rows based on the search input
+            $('#searchBar').on('keyup', function () {
+                var searchTerm = $(this).val().toLowerCase(); // Get the search term and convert to lowercase
+
+                // Iterate over each row in the equipment table
+                $('#equipmentTable tbody tr').each(function () {
+                    var row = $(this);
+                    var equipmentName = row.find('td:eq(1)').text().toLowerCase(); // Get the equipment name (second column)
+
+                    // Check if the equipment name includes the search term
+                    if (equipmentName.includes(searchTerm)) {
+                        row.show();  // Show the row if it matches the search
+                    } else {
+                        row.hide();  // Hide the row if it doesn't match
+                    }
+                });
+            });
+
+            // Function to fetch equipment data
+            function fetchEquipmentData() {
+                $.ajax({
+                    url: '/fetch-equipment-data/',  // URL for the Django view that fetches equipment data
+                    type: 'GET',
+                    success: function (response) {
+                        console.log('AJAX Response:', response);
+                        if (response.data) {
+                            var tableBody = $('#equipmentTable tbody');
+                            tableBody.empty(); // Clear existing rows
+                            $.each(response.data, function (index, equipment) {
+                                tableBody.append(
+                                    '<tr>' +
+                                    '<td><input type="number" name="quantity_' + equipment.id + '" placeholder="Enter quantity" style="width: 100%;"></td>' +
+                                    '<td>' + equipment.equipment_name + '</td>' +
+                                    '<td>' + equipment.available_quantity + '</td>' +
+                                    '<td>' + equipment.rental_price + '</td>' +
+                                    '</tr>'
+                                );
+                            });
+                            openPopup(); // Open the popup after data is fetched
+                        } else {
+                            console.log('No data received');
+                        }
+                    },
+                    error: function (error) {
+                        console.log('Error in AJAX request:', error);
+                    }
+                });
+            }
+
+            // insert data in equipment after update
+            $(document).on('click', '#insertUpdatedForm', function (event) {
+                event.preventDefault(); // Prevent any default actions
+
+                // Create a new row
+                const newRow = `
+                    <tr>
+                        <td><input type="text" id="equipmentNameClick" name="equipment_name_insert"/></td>
+                        <td><input type="number" name="quantity" class="quantity-input"/></td>
+                        <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
+                        <td><input type="text" name="total" class="total-input" readonly /></td>
+                    </tr>
+                `;
+
+                // Append the new row to the table body
+                $('#selectedEquipmentTable tbody').append(newRow);
+            });
+
+            $('#rightEquipment').on('click', 'input[name="equipment_name_insert"]', function () {
+                fetchEquipmentInsertData();
+            });
+
+            // Function to open the popup
+            function openInsertPopup() {
+                document.getElementById("equipmentInsertPopup").style.display = "block";
+            }
+
+            // Event listener for the search bar input
+            $('#searchBarExisting').on('keyup', function () {
+                var searchTerm = $(this).val().toLowerCase(); // Get the search term and convert to lowercase
+
+                // Iterate over each row in the equipment table
+                $('#equipmentTable tbody tr').each(function () {
+                    var row = $(this);
+                    var equipmentName = row.find('td:eq(1)').text().toLowerCase(); // Get the equipment name from the second column
+
+                    // Check if the equipment name contains the search term
+                    if (equipmentName.includes(searchTerm)) {
+                        row.show();  // Show the row if it matches the search term
+                    } else {
+                        row.hide();  // Hide the row if it doesn't match
+                    }
+                });
+            });
+
+            // Function to fetch equipment data
+            function fetchEquipmentInsertData() {
+                $.ajax({
+                    url: '/fetch-equipment-data/',  // URL for the Django view that fetches equipment data
+                    type: 'GET',
+                    success: function (response) {
+                        console.log('AJAX Response:', response);
+                        if (response.data) {
+                            var tableBody = $('#equipmentTable tbody');
+                            tableBody.empty(); // Clear existing rows
+                            $.each(response.data, function (index, equipment) {
+                                tableBody.append(
+                                    '<tr>' +
+                                    '<td><input type="number" name="quantity_' + equipment.id + '" placeholder="Enter quantity" style="width: 100%;"></td>' +
+                                    '<td>' + equipment.equipment_name + '</td>' +
+                                    '<td>' + equipment.available_quantity + '</td>' +
+                                    '<td>' + equipment.rental_price + '</td>' +
+                                    '</tr>'
+                                );
+                            });
+                            openInsertPopup(); // Open the popup after data is fetched
+                        } else {
+                            console.log('No data received');
+                        }
+                    },
+                    error: function (error) {
+                        console.log('Error in AJAX request:', error);
+                    }
+                });
+            }
+
+            $('#cancelButton').click(function (e) {
+                e.preventDefault();
+                // Hide the popup
+                $('#equipmentPopup').hide();
+            });
+
+            $('#cancelInsertButton').click(function (e) {
+                e.preventDefault();
+                // Hide the popup
+                $('#equipmentInsertPopup').hide();
+            });
+            // Equipment Details Section End
+
+            // Add Sub Vendor Section Start
+            $('#add-sub-vendor-row-btn').click(function (event) {
+                event.preventDefault();
+                // Create the new row HTML
+                var newRow = `
+                    <tr>
+                        <td>
+                            <input type="text" name="vendor-name" placeholder="Vendor Name" class="form-control">
+                        </td>
+                        <td>
+                            <input type="text" name="equipment-name" placeholder="Equipment Name" class="form-control">
+                        </td>
+                        <td>
+                            <input type="number" name="quantity" placeholder="Quantity" class="form-control">
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary save-sub-vendor-row me-2" data-toggle="tooltip" title="Save Sub Vendor Row" id="insertSubVendor" style="background-color: #0d99ff;"><i class="fa fa-check"></i></button>
+                            <button type="button" class="btn btn-sm btn-danger remove-sub-vendor-row me-2" data-toggle="tooltip" title="Delete Sub Vendor Row" style="background-color: #ff5e5e;"><i class="fa fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+
+                // Append the new row to the table body
+                $('#sub-vendor-table').append(newRow);
+            });
+
+            // Handle click event for Save button
+            $('#sub-vendor-table').on('click', '.save-sub-vendor-row', function (event) {
+                event.preventDefault();
+
+                const row = $(this).closest('tr');
+                const subVendorDetails = {
+                    temp_id: window.tempId,
+                    vendor_name: row.find('input[name="vendor-name"]').val(),
+                    sub_equipment_name: row.find('input[name="equipment-name"]').val(),
+                    sub_quantity: row.find('input[name="quantity"]').val(),
+                };
+
+                // Check the structure before sending
+                console.log('Sending Data:', subVendorDetails);
+
+                $.ajax({
+                    url: '/insert-sub-vendor-details/',
+                    type: 'POST',
+                    data: JSON.stringify(subVendorDetails),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            alert('Sub-vendor details inserted successfully');
+                        } else {
+                            alert('Error inserting sub-vendor details: ' + response.error);
+                        }
+                    },
+                    error: function (error) {
+                        alert('Error inserting sub-vendor details');
+                        console.log(error);
+                    }
+                });
+            });
+
+            // Remove row functionality
+            $('#sub-vendor-table').on('click', '.remove-sub-vendor-row', function () {
+                $(this).closest('tr').remove();
+            });
+
+            //Add Sub Vendor Section End
+
+            // Crew Allocation Section Start
+            function activateEditMode(row) {
+                // Hide the Edit button and show Save/Cancel buttons
+                row.find('.edit-btn, .delete-btn').hide();
+                row.find('.save-btn, .cancel-btn').show();
+
+                // Attach event handler to the Cancel button
+                row.find('.cancel-crew-btn').on('click', function () {
+                    row.remove(); // Remove the row from the UI
+                });
+            }
+
+            function cancelEditMode(row) {
+                row.find('td').each(function (index, element) {
+                    const cell = $(element);
+
+                    if (cell.data('editable') === true) {
+                        const input = cell.find('input');
+                        if (input.length) {
+                            const value = input.val();
+                            cell.text(value);
+                        }
+                    } else if (cell.data('editable-select') === true) {
+                        const select = cell.find('select');
+                        if (select.length) {
+                            const value = select.val();
+                            cell.text(value === '1' ? 'Active' : 'Inactive');
+                        }
+                    }
+                });// Show the Edit button and hide Save/Cancel buttons
+                row.find('.edit-btn, .delete-btn').show();
+                row.find('.save-btn, .cancel-btn').hide();
+            }
+
+            // Adding new row for Master Category
+            $(document).on('click', '#addCrewAllocationRow', function () {
+                const newRow = `
+        <tr class="editable-row">
+            <td>
+                <button class="btn btn-success save-crew-btn"><i class="fa fa-save"></i></button>
+                <button class="btn btn-secondary cancel-crew-btn"><i class="fa fa-times"></i></button>
+                <button class="btn btn-primary edit-crew-btn" style="display:none;"><i class="fa fa-pencil"></i></button>
+                <button class="btn btn-danger delete-crew-btn" style="display:none;"><i class="fa fa-trash"></i></button>
+            </td>
+            <td data-editable-select="true">
+                <select class="default-select form-control" id="crewType" name="crew_type">
+                    <option value="A1" selected>A1</option>
+                    <option value="A2">A2</option>
+                    <option value="A3">A3</option>
+                </select>
+            </td>
+            <td data-editable="true"><input type="text" class="form-control" name="no_of_days" style="width: 83px;"></td>
+            <td data-editable="true"><input type="text" class="form-control" name="perday_charges"></td>
+            <td data-editable="true"><input type="text" class="form-control" name="total"></td>
+            <td data-editable="true"><input type="text" class="form-control" name="crew_notes"></td>
+        </tr>
+    `;
+
+                const $newRow = $(newRow); // Wrap the string with jQuery to create a jQuery object
+                $('#crew-allocation-table-body').prepend($newRow); // Append the new row to the table
+
+                activateEditMode($newRow); // Activate edit mode for the new row
+
+                // Set 'A1' as the default selected value when the row is added
+                $newRow.find('select').val('A1');
+            });
+
+            $(document).on('input', 'input[name="no_of_days"], input[name="perday_charges"]', function () {
+                const $row = $(this).closest('tr'); // Get the current row
+                const noOfDays = parseFloat($row.find('input[name="no_of_days"]').val()) || 0;
+                const perDayCharges = parseFloat($row.find('input[name="perday_charges"]').val()) || 0;
+
+                const total = noOfDays * perDayCharges;
+
+                $row.find('input[name="total"]').val(total);
+            });
+
+            $(document).on('click', '.save-crew-btn', function (event) {
+                event.preventDefault();
+
+                const $row = $(this).closest('tr');
+
+                // Get the values from the row inputs
+                const crewType = $row.find('select[name="crew_type"]').val();
+                const noOfDays = $row.find('input[name="no_of_days"]').val();
+                const perDayCharges = $row.find('input[name="perday_charges"]').val();
+                const total = $row.find('input[name="total"]').val();
+                const crewNotes = $row.find('input[name="crew_notes"]').val();
+
+                const tempId = window.tempId;
+
+                // AJAX call to save the row data to the server
+                $.ajax({
+                    url: '/save_crew_allocation/',
+                    method: 'POST',
+                    data: {
+                        'temp_id': tempId,
+                        'crew_type': crewType,
+                        'crew_no_of_days': noOfDays,
+                        'perday_charges': perDayCharges,
+                        'total': total,
+                        'crew_notes': crewNotes,
+                        'csrfmiddlewaretoken': getCsrfToken() // Use the function here
+                    },
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            alert('Crew allocation saved successfully');
+
+                            // Create a new row in the desired format
+                            const newRow = `
+                    <tr class="editable-row" data-category-id="${response.crew_allocation_id}">
+                        <td style="width: 40px;">
+                            <button class="btn btn-sm btn-primary edit-crew-list-btn me-2" data-toggle="tooltip" title="Edit"><i class="fa fa-pencil"></i></button>
+                            <button class="btn btn-sm btn-success edit-save-btn me-2" style="display:none;" data-toggle="tooltip" title="Save" id="save-crew-allocation"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-sm btn-secondary edit-cancel-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel" id="cancel-crew-allocation"><i class="fa fa-times"></i></button>
+                            <button class="btn btn-sm btn-danger delete-crew-btn me-2" data-toggle="tooltip" title="Delete"><i class="fa fa-trash"></i></button>
+                        </td>
+                        <td style="font-size: 14px;">${crewType}</td>
+                        <td style="font-size: 14px;">${noOfDays}</td>
+                        <td style="font-size: 14px;">${perDayCharges}</td>
+                        <td style="font-size: 14px;">${total}</td>
+                        <td style="font-size: 14px;">${crewNotes}</td>
+                    </tr>
+                `;
+
+                            // Replace the existing row with the new row HTML
+                            $row.replaceWith(newRow);
+                        } else {
+                            alert('Failed to save crew allocation');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while saving the crew allocation. Please try again.'); // Provide user feedback
+                    }
+                });
+            });
+
+            $(document).on('click', '.delete-crew-btn', function (event) {
+                event.preventDefault();
+                const $row = $(this).closest('tr');
+                const crewAllocationId = $row.data('category-id'); // Get the id from data attribute
+
+                // Confirm deletion
+                if (confirm('Are you sure you want to delete this crew allocation?')) {
+                    // AJAX call to delete the crew allocation
+                    $.ajax({
+                        url: '/delete_crew_allocation_row/',
+                        method: 'POST',
+                        data: {
+                            'crew_allocation_id': crewAllocationId,
+                            'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val() // CSRF token
+                        },
+                        success: function (response) {
+                            if (response.status === 'success') {
+                                alert('Crew allocation deleted successfully');
+                                $row.remove(); // Remove the row from the table
+                            } else {
+                                alert('Failed to delete crew allocation');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error:', error);
+                            alert('An error occurred while deleting the crew allocation. Please try again.');
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.edit-crew-list-btn', function (event) {
+                event.preventDefault();
+                const $row = $(this).closest('.editable-row');
+
+                // Get current values
+                const crewType = $row.find('td').eq(1).text();
+                const noOfDays = $row.find('td').eq(2).text();
+                const perDayCharges = $row.find('td').eq(3).text();
+                const total = $row.find('td').eq(4).text();
+                const crewNotes = $row.find('td').eq(5).text();
+
+                // Replace text with input fields
+                $row.find('td').eq(1).html(`
+        <select class="default-select form-control" name="crew_type">
+            <option value="A1" ${crewType === 'A1' ? 'selected' : ''}>A1</option>
+            <option value="A2" ${crewType === 'A2' ? 'selected' : ''}>A2</option>
+            <option value="A3" ${crewType === 'A3' ? 'selected' : ''}>A3</option>
+        </select>
+    `);
+
+                $row.find('td').eq(2).html(`<input type="text" class="form-control" name="no_of_days" value="${noOfDays}" style="width: 83px;">`);
+                $row.find('td').eq(3).html(`<input type="text" class="form-control" name="perday_charges" value="${perDayCharges}">`);
+                $row.find('td').eq(4).html(`<input type="text" class="form-control" name="total" value="${total}">`);
+                $row.find('td').eq(5).html(`<input type="text" class="form-control" name="crew_notes" value="${crewNotes}">`);
+
+                // Toggle button visibility
+                $row.find('.edit-crew-list-btn, .delete-crew-btn').hide();
+                $row.find('.edit-save-btn, .edit-cancel-btn').show();
+            });
+
+            $(document).on('click', '#save-crew-allocation', function (event) {
+                event.preventDefault();
+
+                // Get the data-category-id from the row
+                const $row = $(this).closest('.editable-row');
+                const categoryId = $row.data('category-id');
+
+                // Get values from input fields
+                const crewType = $row.find('select[name="crew_type"]').val();
+                const noOfDays = $row.find('input[name="no_of_days"]').val();
+                const perDayCharges = $row.find('input[name="perday_charges"]').val();
+                const total = $row.find('input[name="total"]').val();
+                const crewNotes = $row.find('input[name="crew_notes"]').val();
+
+                // Send AJAX request to update the database
+                $.ajax({
+                    type: 'POST',
+                    url: '/update-crew-allocation-row/',
+                    data: {
+                        'id': categoryId,
+                        'crew_type': crewType,
+                        'no_of_days': noOfDays,
+                        'perday_charges': perDayCharges,
+                        'total': total,
+                        'crew_notes': crewNotes,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            // Optionally, update the row text with new values
+                            $row.find('td').eq(1).text(crewType);
+                            $row.find('td').eq(2).text(noOfDays);
+                            $row.find('td').eq(3).text(perDayCharges);
+                            $row.find('td').eq(4).text(total);
+                            $row.find('td').eq(5).text(crewNotes);
+
+                            // Hide save and cancel buttons, show edit and delete buttons
+                            $row.find('.edit-save-btn, .edit-cancel-btn').hide();
+                            $row.find('.edit-crew-list-btn, .delete-crew-btn').show();
+                        } else {
+                            alert('Update failed: ' + response.error);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while updating the crew allocation.');
+                    }
+                });
+            });
+
+
+
+            // Crew Allocation Section End
+
+            //Transportation Allocation Section
+
+// Add event listener to 'Add More' button
+            $('#addTransportation').click(function (event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                // Get the selected transportation type
+                var transportationType = $('input[name="transportation_type"]:checked').val();
+
+                var newRowHtml = `
+        <div class="row transportation-row on-vehicle-row">
+            <div class="col-xl-4 mb-3">
+                <label class="form-label">Driver Name</label>
+                <input type="text" class="form-control" placeholder="Enter Driver Name" name="driver_name">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Contact Number</label>
+                <input type="number" class="form-control" placeholder="Enter Contact Number" name="contact_number">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Vehicle Number</label>
+                <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="vehicle_number">
+            </div>
+            <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                <button type="button" class="btn btn-success saveRow" data-type="on_vehicle"><i class="fa fa-save"></i></button>
+                <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+    `;
+
+                var newOutSideRowHtml = `
+        <div class="row transportation-row outside-vehicle-row">
+            <div class="col-xl-4 mb-3">
+                <label class="form-label">Outside Driver Name</label>
+                <input type="text" class="form-control" placeholder="Enter Driver Name" name="outside_driver_name">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Outside Contact Number</label>
+                <input type="number" class="form-control" placeholder="Enter Contact Number" name="outside_contact_number">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Outside Vehicle Number</label>
+                <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="outside_vehicle_number">
+            </div>
+            <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                <button type="button" class="btn btn-success saveRow" data-type="outside_vehicle"><i class="fa fa-save"></i></button>
+                <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+    `;
+
+                // Check if a transportation type is selected
+                if (!transportationType) {
+                    alert('Please select a transportation type.');
+                    return; // Exit the function if no transportation type is selected
+                }
+
+                // Append the new row to the appropriate section
+                if (transportationType === 'on_vehicle') {
+                    $('#onVehicleFields').append(newRowHtml);
+                } else if (transportationType === 'outside_vehicle') {
+                    $('#outsideVehicleFields').append(newOutSideRowHtml);
+                }
+            });
+
+// Add event listener to dynamically created 'saveRow' buttons
+            $(document).on('click', '.saveRow', function (event) {
+                var button = $(this);
+                var row = button.closest('.row');
+                var type = button.data('type'); // Get the type of transportation
+
+                var data = {
+                    temp_id: window.tempId,
+                    driver_name: '',
+                    contact_number: '',
+                    vehicle_number: '',
+                    outside_driver_name: '',
+                    outside_contact_number: '',
+                    outside_vehicle_number: ''
+                };
+
+                // Collect data based on transportation type
+                if (type === 'on_vehicle') {
+                    data.driver_name = row.find('input[name="driver_name"]').val();
+                    data.contact_number = row.find('input[name="contact_number"]').val();
+                    data.vehicle_number = row.find('input[name="vehicle_number"]').val();
+                } else if (type === 'outside_vehicle') {
+                    data.outside_driver_name = row.find('input[name="outside_driver_name"]').val();
+                    data.outside_contact_number = row.find('input[name="outside_contact_number"]').val();
+                    data.outside_vehicle_number = row.find('input[name="outside_vehicle_number"]').val();
+                }
+
+                $.ajax({
+                    url: '/insert_transportation/',
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        alert('Data saved successfully!');
+                        // Optionally provide feedback or update the UI without removing the row
+                    },
+                    error: function (xhr, status, error) {
+                        alert('An error occurred: ' + error);
+                    }
+                });
+            });
+
+// Add event listener to dynamically created 'cancelRow' buttons
+            $(document).on('click', '.cancelRow', function (event) {
+                // Optionally handle row cancellation if needed
+                $(this).closest('.row').remove(); // Remove the row if desired
+            });
+
+            // Function to handle showing/hiding fields based on selected radio button
+            function toggleFields() {
+                var selectedValue = $('input[name="transportation_type"]:checked').val();
+
+                if (selectedValue === "on_vehicle") {
+                    $('#onVehicleFields').show();
+                    $('#outsideVehicleFields').hide();
+                } else if (selectedValue === "outside_vehicle") {
+                    $('#onVehicleFields').hide();
+                    $('#outsideVehicleFields').show();
+                } else {
+                    // Hide both if no option is selected
+                    $('#onVehicleFields').hide();
+                    $('#outsideVehicleFields').hide();
+                }
+            }
+
+            // Initial call to handle any pre-selected radio button
+            toggleFields();
+
+            // Add change event listener to radio buttons
+            $('input[name="transportation_type"]').change(function () {
+                toggleFields();
+            });
+
+            //Transportation Allocation Section End
+
+            function getCsrfToken() {
+                return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            }
+
+            // Function to fetch CSRF token from the form
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            const csrftoken = getCookie('csrftoken');
+
+        });
+    </script>
+    <body>
+
+    <!--*******************
+        Preloader start
+    ********************-->
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <!--*******************
+        Preloader end
+    ********************-->
+
+
+    <!--**********************************
+        Main wrapper start
+    ***********************************-->
+    <div id="main-wrapper">
+
+        <!--**********************************
+            Nav header start
+        ***********************************-->
+        {% include 'product_tracking/navheader.html' %}
+        <!--**********************************
+            Nav header end
+        ***********************************-->
+
+        <!--**********************************
+
+            Header start
+        ***********************************-->
+        {% include 'product_tracking/header.html' %}
+        <!--**********************************
+            Header end ti-comment-alt
+        ***********************************-->
+
+
+        <!--**********************************
+            Header end ti-comment-alt
+        ***********************************-->
+
+        <!--**********************************
+            Sidebar start
+        ***********************************-->
+        {% include 'product_tracking/sidebar.html' %}
+
+        <!--**********************************
+            Sidebar end
+        ***********************************-->
+
+        <!--**********************************
+            Content body start
+        ***********************************-->
+        <div class="content-body">
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title">Order book</h5></li>
+                </ol>
+            </div>
+
+            <div class="container-fluid">
+
+                <!-- row -->
+                <div class="row">
+                    <div class="col-xl-12 col-xxl-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="smartwizard" class="form-wizard order-create">
+                                    <ul class="nav nav-wizard">
+                                        <li><a class="nav-link" href="#wizard_Service">
+                                            <span>General Details</span>
+                                        </a></li>
+                                        <li><a class="nav-link" href="#wizard_Time" id="addEquipmentBtn">
+                                            <span>Equipment</span>
+                                        </a></li>
+                                        <li><a class="nav-link" href="#wizard_Details">
+                                            <span>Sub Vendor</span>
+                                        </a></li>
+                                        <li><a class="nav-link" href="#wizard_Crew">
+                                            <span>Crew Allocation</span>
+                                        </a></li>
+                                        <li><a class="nav-link" href="#wizard_Transportation">
+                                            <span>Transportation</span>
+                                        </a></li>
+                                    </ul>
+                                    <div class="tab-content">
+                                        <div id="wizard_Service" class="tab-pane" role="tabpanel">
+                                            <div class="row">
+                                                <div class="col-xl-4 mb-3">
+                                                    <label for="titleInput" class="form-label">Title</label>
+                                                    <input type="text" class="form-control" id="titleInput" name="title"
+                                                           required>
+                                                </div>
+                                                <div class="col-xl-4 mb-3">
+                                                    <div class="dropdown">
+                                                        <label for="venueAddressDropdown"
+                                                               class="form-label">Venue</label>
+                                                        <input type="text" class="form-control dropdown-toggle"
+                                                               id="venueAddressDropdown"
+                                                               data-bs-toggle="dropdown" aria-expanded="false"
+                                                               placeholder="Select Venue Name"
+                                                               autocomplete="off" name="venue_address">
+                                                        <ul class="dropdown-menu" aria-labelledby="venueAddressDropdown"
+                                                            id="dropdown-item">
+                                                            <!-- Dynamic options will be appended here -->
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xl-4 mb-3">
+                                                    <label for="venueAddressInput" class="form-label">Venue
+                                                        Address</label>
+                                                    <input type="text" class="form-control" id="venueAddressInput"
+                                                           placeholder="Venue Address"
+                                                           name="venue_address" readonly>
+                                                </div>
+                                                <div class="col-lg-4 mb-2">
+                                                    <div class="mb-3">
+                                                        <div class="dropdown">
+                                                            <label for="clientNameDropdown" class="form-label">Client
+                                                                Name</label>
+                                                            <input type="text" class="form-control dropdown-toggle"
+                                                                   id="clientNameDropdown"
+                                                                   data-bs-toggle="dropdown" aria-expanded="false"
+                                                                   placeholder="Select Client Name" autocomplete="off"
+                                                                   name="client_name">
+                                                            <ul class="dropdown-menu"
+                                                                aria-labelledby="clientNameDropdown">
+                                                                <!-- Dynamic options will be appended here -->
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-2">
+                                                    <div class="mb-3">
+                                                        <div class="dropdown">
+                                                            <label for="clientContactName" class="form-label">Contact
+                                                                Person Name</label>
+                                                            <select class="form-control" id="clientContactName"
+                                                                    name="contact_person_name">
+                                                                <!-- Dynamic options will be appended here -->
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-2">
+                                                    <div class="mb-3">
+                                                        <div class="dropdown">
+                                                            <label for="clientContactNumber" class="form-label">Contact
+                                                                Person Number</label>
+                                                            <input type="text" class="form-control"
+                                                                   id="clientContactNumber"
+                                                                   placeholder="Contact Person Number"
+                                                                   name="contact_person_number" readonly>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xl-3 mb-3">
+                                                    <label for="preDate" class="form-label">Setup Date</label>
+                                                    <input type="date" class="form-control" id="prepDate"
+                                                           name="setup_date" required>
+                                                </div>
+                                                <div class="col-xl-3 mb-3">
+                                                    <label for="outDate" class="form-label">Rehearsal Date</label>
+                                                    <input type="date" class="form-control" id="outDate"
+                                                           name="rehearsal_date" required>
+                                                </div>
+                                                <div class="col-xl-3 mb-3">
+                                                    <label for="showStart" class="form-label">Event Date</label>
+                                                    <input type="date" class="form-control" id="showStart"
+                                                           name="start_date" required>
+                                                </div>
+                                                <div class="col-xl-3 mb-3">
+                                                    <label for="showEnd" class="form-label">Dismantle Date</label>
+                                                    <input type="date" class="form-control" id="showEnd" name="end_date"
+                                                           required>
+                                                </div>
+                                                <div class="col-lg-3 mb-2">
+                                                    <div class="mb-3">
+                                                        <label class="text-label form-label">Status<span
+                                                                class="required">*</span></label>
+                                                        <select class="default-select form-control" id="status"
+                                                                name="status">
+                                                            <option value="Quotation">Quotation</option>
+                                                            <option value="Perfoma">Perfoma</option>
+                                                            <option value="Prepsheet">Prepsheet</option>
+                                                            <option value="Delivery Challan">Delivery Challan</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xl-3 mb-3">
+                                                    <label for="crewType" class="form-label">Crew Quantity</label>
+                                                    <input type="text" class="form-control" id="crewQuantity"
+                                                           placeholder="Enter Crew Quantity"
+                                                           name="crew_quantity">
+                                                </div>
+                                                <div class="col-xl-3 mb-3">
+                                                    <label for="inputNotes" class="form-label">Notes</label>
+                                                    <input type="text" class="form-control" id="inputNotes"
+                                                           placeholder="Enter Notes"
+                                                           name="input_notes">
+                                                </div>
+                                                <div class="col-xl-3 mb-3">
+                                                    <label for="number_of_days" class="form-label">Number of
+                                                        Days</label>
+                                                    <input type="number" class="form-control" id="number_of_days"
+                                                           name="total_days">
+                                                </div>
+                                                <div class="row" id="quotation-fields1">
+                                                    <div class="col-xl-3 mb-3">
+                                                        <label for="total_amount" class="form-label">Amount</label>
+                                                        <input type="number" class="form-control" id="total_amount"
+                                                               name="amount_row">
+                                                    </div>
+                                                    <div class="col-xl-3 mb-3">
+                                                        <label for="discount" class="form-label">Discount(%)</label>
+                                                        <input type="number" class="form-control" id="discount"
+                                                               name="discount">
+                                                    </div>
+                                                    <div class="col-xl-3 mb-3">
+                                                        <label for="discounted_amount" class="form-label">Amount After
+                                                            Discount</label>
+                                                        <input type="text" class="form-control" id="discounted_amount"
+                                                               name="discounted_amount">
+                                                    </div>
+                                                    <div class="col-xl-3 mb-3">
+                                                        <label for="total_amount_cal" class="form-label">Total Amount
+                                                            (18% GST)</label>
+                                                        <input type="number" class="form-control" id="total_amount_cal"
+                                                               name="total_amount">
+                                                    </div>
+                                                </div>
+                                                <div class="col-xl-3 mb-3" id="prepsheet-fields" style="display: none;">
+                                                    <label class="form-label">Handler</label>
+                                                    <select class="default-select form-control" id="employee"
+                                                            name="prep_sheet" multiple="multiple">
+                                                        <option value="" data-display="Select">Select</option>
+                                                    </select>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <!-- The Popup -->
+                                        <!-- The Popup -->
+                                        <div id="equipmentPopup" class="popup">
+                                            <div class="popup-content">
+                                                <div class="header-popup">
+                                                    <h1>PopStock (Equipment Selector)</h1>
+                                                </div>
+                                                <div class="content-popup">
+                                                    <table id="equipmentTable">
+                                                        <thead>
+                                                        <tr>
+                                                            <th style="width: 10%;">Qty</th>
+                                                            <th style="width: 30%;">Desc</th>
+                                                            <th style="width: 5%;">Av</th>
+                                                            <th style="width: 20%;">Unit Price</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        <tr>
+                                                            <td></td>
+                                                            <td>Audio - Sample Default Category</td>
+                                                            <td>0</td>
+                                                            <td>?0.00</td>
+                                                        </tr>
+
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="footer-popup">
+                                                    <input type="text" class="search-bar" placeholder="Search..."
+                                                           id="searchBar">
+                                                    <button class="button" id="saveEquipmentList">OK</button>
+                                                    <button class="button" id="cancelButton">Cancel</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="equipmentInsertPopup" class="popup">
+                                            <div class="popup-content">
+                                                <div class="header-popup">
+                                                    <h1>PopStock (Equipment Selector)</h1>
+                                                </div>
+                                                <div class="content-popup">
+                                                    <table id="equipmentTable">
+                                                        <thead>
+                                                        <tr>
+                                                            <th style="width: 10%;">Qty</th>
+                                                            <th style="width: 30%;">Desc</th>
+                                                            <th style="width: 5%;">Av</th>
+                                                            <th style="width: 20%;">Unit Price</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        <tr>
+                                                            <td></td>
+                                                            <td>Audio - Sample Default Category</td>
+                                                            <td>0</td>
+                                                            <td>?0.00</td>
+                                                        </tr>
+
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="footer-popup">
+                                                    <input type="text" class="search-bar" placeholder="Search..."
+                                                           id="searchBarExisting">
+                                                    <button class="button" id="existingSaveEquipmentList">OK</button>
+                                                    <button class="button" id="cancelInsertButton">Cancel</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="wizard_Time" class="tab-pane" role="tabpanel">
+                                            <div class="row">
+
+                                                <div class="col-md-3">
+                                                    <div class="left-equipment-container">
+                                                        <div class="equipment">
+                                                            <div class="job" id="job-J06240001">
+                                                                <span class="toggle-sign"
+                                                                      style="cursor: pointer;">+</span>
+                                                                <span class="job-name" id="jobReferenceNo"></span>
+                                                            </div>
+
+
+                                                            <!-- New div for Equipment List heading with toggle sign -->
+                                                            <div class="equipment-heading" id="heading-J06240001"
+                                                                 style="display:none;">
+                                                                <span class="toggle-sign" id="addNewEquipment"
+                                                                      style="cursor:pointer;">+</span>
+                                                                <h6 style="display:inline;">Equipment List</h6>
+                                                            </div>
+
+                                                            <div class="equipment-list" id="equipment-list-J06240001"
+                                                                 style="display:none;">
+                                                                <div class="equipment-item" id="equip-01">
+                                                                    <span class="equipment-name"
+                                                                          data-equip-id="subEquipmentNo"
+                                                                          id="equipmentContainer"></span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+
+                                                <!-- Second Section -->
+                                                <div class="col-md-9">
+                                                    <div class="right-equipment-container" id="rightEquipment"
+                                                         style="display: none;">
+
+                                                        <div class="row">
+                                                            <!-- Right Container: Table -->
+                                                            <div class="equipment-table-container"
+                                                                 style="margin-top: 6px;">
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="wizard_Details" class="tab-pane" role="tabpanel">
+                                            <h4>Add Sub Vendor</h4>
+                                            <div id="table-container">
+                                                <table id="sub-vendor-table" class="table">
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Vendor Name</th>
+                                                        <th>Equipment Name</th>
+                                                        <th>Quantity</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <!-- Rows will be dynamically added here -->
+                                                    </tbody>
+                                                </table>
+                                                <button id="add-sub-vendor-row-btn" class="btn btn-primary"
+                                                        style="margin-top: 9px;">Add
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="wizard_Crew" class="tab-pane" role="tabpanel">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h4>Crew Allocation</h4>
+                                                <input type="text" class="form-control" id="searchCrew"
+                                                       placeholder="Search...."
+                                                       style="width: 200px;margin-bottom: 7px;">
+                                            </div>
+                                            <div class="table-responsive" id="crew-allocation-quotation">
+                                                <table class="table table-bordered table-responsive-sm">
+                                                    <thead>
+                                                    <tr>
+                                                        <th style="background-color: #170c0c; border-bottom: 2px solid #dee2e6;color: #ffffff;">
+                                                            <span class="plus-icon" id="addCrewAllocationRow"
+                                                                  style="cursor: pointer;">+</span>
+                                                        </th>
+                                                        <th style="width: 18%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            Crew Type
+                                                        </th>
+                                                        <th style="width: 10%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            No of Days
+                                                        </th>
+                                                        <th style="width: 11%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            Per Day
+                                                        </th>
+                                                        <th style="width: 12%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            Total
+                                                        </th>
+                                                        <th style="background-color: #170c0c; border-bottom: 2px solid #dee2e6;color: #ffffff;">
+                                                            Notes
+                                                        </th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody id="crew-allocation-table-body">
+                                                    <!-- Master Category rows will be appended here by JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="table-responsive" id="crew-allocation-delivery-challan">
+                                                <table class="table table-bordered table-responsive-sm">
+                                                    <thead>
+                                                    <tr>
+                                                        <th style="background-color: #170c0c; border-bottom: 2px solid #dee2e6;color: #ffffff;">
+                                                            <span class="plus-icon"
+                                                                  id="addCrewAllocationDeliveryRow">+</span>
+                                                        </th>
+                                                        <th style="width: 11%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            Crew Type
+                                                        </th>
+                                                        <th style="width: 16%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            Employee
+                                                        </th>
+                                                        <th style="width: 10%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            No of Days
+                                                        </th>
+                                                        <th style="width: 11%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            Per Day
+                                                        </th>
+                                                        <th style="width: 12%; background-color: #170c0c; border-bottom: 2px solid #dee2e6; color: #ffffff;">
+                                                            Total
+                                                        </th>
+                                                        <th style="background-color: #170c0c; border-bottom: 2px solid #dee2e6;color: #ffffff;">
+                                                            Notes
+                                                        </th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody id="crew-allocation-delivery-table-body">
+                                                    <!-- Master Category rows will be appended here by JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div id="wizard_Transportation" class="tab-pane" role="tabpanel">
+                                            <h4>Transportation Allocation</h4>
+                                            <div class="mb-3">
+                                                <div class="d-flex">
+                                                    <div class="form-check me-3">
+                                                        <input class="form-check-input" type="radio"
+                                                               name="transportation_type" id="onVehicle"
+                                                               value="on_vehicle">
+                                                        <label class="form-check-label" for="onVehicle">Own
+                                                            Vehicle</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio"
+                                                               name="transportation_type" id="outsideVehicle"
+                                                               value="outside_vehicle">
+                                                        <label class="form-check-label" for="outsideVehicle">Outside
+                                                            Vehicle</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Fields for "On Vehicle" option -->
+                                            <div id="onVehicleFields" class="transportation-fields"></div>
+
+                                            <!-- Fields for "Outside Vehicle" option -->
+                                            <div id="outsideVehicleFields" class="transportation-fields"></div>
+
+                                            <div>
+                                                <button class="btn btn-primary light ms-1" id="addTransportation">Add
+                                                    More
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--**********************************
+            Content body end
+        ***********************************-->
+
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        {% include 'product_tracking/footer.html' %}
+        <!--**********************************
+            Footer end
+        ***********************************-->
+
+        <!--**********************************
+           Support ticket button start
+        ***********************************-->
+
+        <!--**********************************
+           Support ticket button end
+        ***********************************-->
+
+
+    </div>
+    <!--**********************************
+        Main wrapper end
+    ***********************************-->
+
+    <!--**********************************
+        Scripts
+    ***********************************-->
+    <!-- Required vendors -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    </body>
+{% endblock %}
