@@ -24950,7 +24950,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
       position: relative; }
       .form-wizard .nav-wizard li .nav-link span {
         border-radius: 3.125rem;
-        width: 3rem;
+
         height: 3rem;
         border: 0.125rem solid var(--primary);
         display: block;
