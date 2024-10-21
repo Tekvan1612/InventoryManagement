@@ -133,32 +133,29 @@
                 console.log("CSRF Token:", csrftoken); // Debugging - Ensure CSRF token is correct
 
                 $.ajax({
-                    url: '{% url "add_user" %}', // URL for the form submission
-                    type: 'POST', // Ensure that the request is POST
+                    url: '{% url "add_user" %}',  // Ensure this URL is correctly routed on the server
+                    type: 'POST',  // Ensure that the request is POST
                     data: formData,
-                    headers: {'X-CSRFToken': csrftoken}, // Include the CSRF token in the request header
+                    headers: {'X-CSRFToken': csrftoken},  // Include the CSRF token in the request header
                     success: function (response) {
-                        console.log("AJAX Response:", response);
+                        console.log("AJAX Success Response:", response);  // Log the success response
                         if (response.success) {
                             alert(response.message);
-                            $('#addUserForm')[0].reset(); // Reset the form
-
+                            $('#addUserForm')[0].reset();  // Reset the form after successful submission
                             location.reload();
-                            // Manually hide the offcanvas modal
-                            $('#offcanvasExample').removeClass('show');
-                            $('body').removeClass('offcanvas-open');
-                            $('.offcanvas-backdrop').remove();
-
-                            fetchUserList(currentPage); // Refresh the user list
                         } else {
-                            alert('Error: ' + response.message);
+                            console.error("AJAX Success Error Message:", response.message);  // Log error from success
+                            alert('Error: ' + response.message);  // Show the error message
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error('AJAX Error:', xhr.responseText); // Log the entire response for debugging
-                        alert('An error occurred: ' + xhr.responseText);
+                        console.error("AJAX Error Response:", xhr.responseText);  // Log full error response
+                        console.error("Status:", status);  // Log the status (e.g., 500, 404)
+                        console.error("Error:", error);  // Log the specific error message
+                        alert('An error occurred: ' + xhr.responseText);  // Show the error message
                     }
                 });
+
             });
 
             function updateModulesArray() {
