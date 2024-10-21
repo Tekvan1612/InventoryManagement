@@ -350,8 +350,6 @@ def add_user(request):
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
 
 
-
-
 def user_list(request):
     user_listing = []
     try:
