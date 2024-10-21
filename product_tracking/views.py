@@ -3748,6 +3748,23 @@ def search_equipment(request):
 
         return JsonResponse(equipment_data, safe=False)
 
+def get_sub_categories(request):
+    with connection.cursor() as cursor:
+        # Call the PostgreSQL function to get active sub-categories with their category names
+        cursor.execute("SELECT * FROM get_active_subcategories()")
+        sub_categories = cursor.fetchall()
+
+    # Prepare the data to be returned as JSON
+    sub_category_list = []
+    for sub in sub_categories:
+        sub_category_list.append({
+            "id": sub[0],
+            "name": sub[1],
+            "category_name": sub[2]
+        })
+        print('Fetch the DETAILS:', sub_category_list)
+
+    return JsonResponse(sub_category_list, safe=False)
 
 def fetch_all_subcategories(request):
     with connection.cursor() as cursor:
