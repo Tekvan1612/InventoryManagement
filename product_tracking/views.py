@@ -3297,16 +3297,30 @@ def fetch_job_reference_no(request):
 
 def fetch_equipment_data(request):
     query = """
+    WITH active_jobs AS (
+        SELECT id
+        FROM public.temp
+        WHERE status = 'Delivery Challan' AND completion_flag = false
+    ),
+    assigned_quantities AS (
+        SELECT ted.equipment_name, SUM(CAST(ted.quantity AS INTEGER)) AS total_assigned
+        FROM public.temp_equipment_details ted
+        JOIN active_jobs aj ON ted.temp_id = aj.id
+        GROUP BY ted.equipment_name
+    )
     SELECT
         e.equipment_name,
-        COUNT(s.id) FILTER (WHERE s.scan_flag IS NULL OR s.scan_flag = FALSE) AS available_quantity,
-        AVG(s.rental_price) AS rental_price
+        COUNT(s.id) AS available_quantity,
+        COALESCE(SUM(s.rental_price), 0) / NULLIF(COUNT(s.id), 0) AS rental_price,  -- Calculate average price
+        COALESCE(aq.total_assigned, 0) AS assigned_quantity
     FROM
         public.equipment_list e
     LEFT JOIN
         public.stock_details s ON e.id = s.equipment_id
+    LEFT JOIN
+        assigned_quantities aq ON e.equipment_name = aq.equipment_name
     GROUP BY
-        e.id, e.equipment_name
+        e.id, e.equipment_name, aq.total_assigned
     ORDER BY
         e.equipment_name
     """
@@ -3321,12 +3335,13 @@ def fetch_equipment_data(request):
     equipment_data = [
         {
             'equipment_name': row[0],
-            'available_quantity': row[1],
-            'rental_price': int(row[2]) if row[2] is not None else 0  # Convert rental_price to integer
+            'available_quantity': row[1] - (row[3] if row[3] is not None else 0),  # Subtract assigned quantity
+            'rental_price': int(row[2]) if row[2] is not None else 0,  # Convert rental_price to integer
+            'assigned_quantity': row[3] if row[3] is not None else 0  # Assigned quantity from temp_equipment_details
         }
         for row in rows
     ]
-    print('Fetch the Equipment DATa of Eq:', equipment_data)
+    print('Fetch the Equipment Data of Eq:', equipment_data)
     return JsonResponse({'data': equipment_data})
 
 
