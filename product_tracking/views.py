@@ -4,7 +4,7 @@ import os
 import traceback
 from datetime import datetime
 from datetime import timedelta, timezone
-
+from django.utils import timezone
 import cloudinary
 import cloudinary.api
 import cloudinary.uploader
