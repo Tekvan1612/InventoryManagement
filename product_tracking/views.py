@@ -326,18 +326,30 @@ def add_user(request):
         password = request.POST.get('password')
         status = request.POST.get('status') == '1'
         modules = request.POST.getlist('modules')  # This gets a list of modules
-        created_by = int(request.session.get('user_id'))  # Assuming user_id is stored in the session
-        created_date = datetime.now()
+
+        # Check if 'user_id' exists in session
+        created_by = request.session.get('user_id')
+        if not created_by:
+            return JsonResponse({'success': False, 'message': "Error: User session is not valid."})
+
+        created_date = now()  # Using Django's timezone-aware now()
 
         if not username:
             return JsonResponse({'success': False, 'message': "Error: Username is required."})
 
+        if not emp_id:
+            return JsonResponse({'success': False, 'message': "Error: Employee ID is required."})
+
         try:
             # Format the modules list into a PostgreSQL array literal
-            modules_array = '{' + ','.join('"' + module + '"' for module in modules) + '}'
+            if modules:
+                modules_array = '{' + ','.join('"' + module + '"' for module in modules) + '}'
+            else:
+                modules_array = '{}'
 
             with transaction.atomic():  # Ensures atomicity
                 with connection.cursor() as cursor:
+                    logger.info(f"Attempting to add user: {username} with modules: {modules_array}")
                     cursor.execute(
                         "SELECT add_user(%s, %s, %s, %s, %s, %s, %s);",
                         [username, password, status, modules_array, created_by, created_date, emp_id]
@@ -345,14 +357,18 @@ def add_user(request):
                     user_id = cursor.fetchone()[0]
 
                     if user_id == -1:
+                        logger.error(f"Failed to add user: {username}")
                         return JsonResponse(
                             {'success': False, 'message': "Error: An issue occurred while adding the user."})
                     elif user_id:
+                        logger.info(f"User {username} added successfully with ID: {user_id}")
                         return JsonResponse(
                             {'success': True, 'message': f"User {username} added successfully with ID: {user_id}"})
                     else:
+                        logger.error("Undefined user ID after adding the user.")
                         return JsonResponse({'success': False, 'message': "Error: User ID is undefined."})
         except Exception as e:
+            logger.error(f"Exception occurred while adding user: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
 
     else:
@@ -366,6 +382,7 @@ def add_user(request):
             return render(request, 'product_tracking/user.html', {'employee_data': employee_data})
 
         except Exception as e:
+            logger.error(f"Exception occurred while fetching employees: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"Error fetching employees: {e}"})
 
 
