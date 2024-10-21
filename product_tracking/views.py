@@ -3929,14 +3929,28 @@ def add_subcategory(request):
             name = data.get('subcategory_name').upper() if data.get('subcategory_name') else None
             status = data.get('status')
             created_by = request.session.get('user_id') or 1  # Fetch user_id from session, fallback to 1 if missing
-            created_date = timezone.now()
+            created_date = timezone.now()  # Correct usage of timezone.now()
 
             # Validate required fields
             if not category_id or not name or status is None:
                 logger.warning('Missing required fields')
                 return JsonResponse({'success': False, 'message': 'Missing required fields.'})
 
-            logger.info('Validated data: category_id=%s, name=%s, status=%s, created_by=%s, created_date=%s', category_id, name, status, created_by, created_date)
+            # Check if the subcategory already exists in the given category
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM public.sub_category
+                    WHERE category_id = %s AND name = %s
+                """, [category_id, name])
+
+                subcategory_count = cursor.fetchone()[0]
+
+            if subcategory_count > 0:
+                logger.warning('Duplicate subcategory found')
+                return JsonResponse({'success': False, 'message': 'Subcategory already exists.'})
+
+            logger.info('Validated data: category_id=%s, name=%s, status=%s, created_by=%s, created_date=%s',
+                        category_id, name, status, created_by, created_date)
 
             # Insert data into sub_category table
             with connection.cursor() as cursor:
