@@ -320,78 +320,48 @@ def update_subcategory(request, id):
 
 
 def add_user(request):
+    username = request.session.get('username')
     if request.method == 'POST':
         # Initialize variables from POST data
         username = request.POST.get('username')
         emp_id = request.POST.get('emp_id')
         password = request.POST.get('password')
         status = request.POST.get('status') == '1'
-        modules = request.POST.getlist('modules')  # This gets a list of modules
-
-        # Check if 'user_id' exists in session
-        created_by = request.session.get('user_id')
-        if not created_by:
-            return JsonResponse({'success': False, 'message': "Error: User session is not valid."})
-
-        created_date = now().replace(tzinfo=None)  # Remove timezone info to match 'timestamp without time zone'
+        modules = request.POST.getlist('modules')
+        created_by = int(request.session.get('user_id'))
+        created_date = datetime.now()
 
         if not username:
             return JsonResponse({'success': False, 'message': "Error: Username is required."})
 
-        if not emp_id:
-            return JsonResponse({'success': False, 'message': "Error: Employee ID is required."})
-
         try:
-            # Ensure emp_id is passed as an integer
-            emp_id = int(emp_id)
-
-            # Format the modules list into a PostgreSQL array
-            if modules:
-                modules_array = '{' + ','.join('"' + module + '"' for module in modules) + '}'
-            else:
-                modules_array = '{}'
-
             with transaction.atomic():  # Ensures atomicity
                 with connection.cursor() as cursor:
-                    logger.info(f"Attempting to add user: {username} with modules: {modules_array}")
                     cursor.execute(
-                        """
-                        SELECT add_user(%s, %s, %s, %s::varchar[], %s::integer, %s::timestamp, %s::integer);
-                        """,
-                        [username, password, status, modules_array, created_by, created_date, emp_id]
+                        "SELECT add_user(%s, %s, %s, %s, %s, %s, %s);",
+                        [username, password, status, modules, created_by, created_date, emp_id]
                     )
                     user_id = cursor.fetchone()[0]
 
                     if user_id == -1:
-                        logger.error(f"Failed to add user: {username}")
                         return JsonResponse(
                             {'success': False, 'message': "Error: An issue occurred while adding the user."})
                     elif user_id:
-                        logger.info(f"User {username} added successfully with ID: {user_id}")
                         return JsonResponse(
                             {'success': True, 'message': f"User {username} added successfully with ID: {user_id}"})
                     else:
-                        logger.error("Undefined user ID after adding the user.")
                         return JsonResponse({'success': False, 'message': "Error: User ID is undefined."})
-        except ValueError:
-            return JsonResponse({'success': False, 'message': "Error: Employee ID must be an integer."})
         except Exception as e:
-            logger.error(f"Exception occurred while adding user: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
 
     else:
         # Handle GET request: Fetch employee names from the employee table
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT id, name FROM employee")
-                employees = cursor.fetchall()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, name FROM employee")
+            employees = cursor.fetchall()
 
-            employee_data = [{'id': employee[0], 'name': employee[1]} for employee in employees]
-            return render(request, 'product_tracking/user.html', {'employee_data': employee_data})
-
-        except Exception as e:
-            logger.error(f"Exception occurred while fetching employees: {str(e)}", exc_info=True)
-            return JsonResponse({'success': False, 'message': f"Error fetching employees: {e}"})
+        employee_data = [{'id': employee[0], 'name': employee[1]} for employee in employees]
+        return render(request, 'product_tracking/user.html', {'employee_data': employee_data, 'username': username})
 
 def user_list(request):
     user_listing = []
@@ -3116,7 +3086,8 @@ def add_job_test(request):
 
 
 def job_addition(request):
-    return render(request, 'product_tracking/job-addition.html')
+    username = request.session.get('username')
+    return render(request, 'product_tracking/job-addition.html', {'username': username})
 
 
 def fetch_equipment_detail_id(request):
@@ -5974,6 +5945,8 @@ def insert_transportation(request):
 
 
 def edit_job(request, jobId):
+    username = request.session.get('username')
+
     job_details = None
 
     if jobId:
@@ -5982,7 +5955,8 @@ def edit_job(request, jobId):
             job_details = cursor.fetchone()
 
     context = {
-        'job': job_details
+        'job': job_details,
+        'username':username
     }
     return render(request, 'product_tracking/edit-job.html', context)
 
