@@ -350,6 +350,8 @@ def add_user(request):
                     else:
                         return JsonResponse({'success': False, 'message': "Error: User ID is undefined."})
         except Exception as e:
+            # Log full exception traceback
+            logger.error(f"Error adding user: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
 
     else:
@@ -360,6 +362,7 @@ def add_user(request):
 
         employee_data = [{'id': employee[0], 'name': employee[1]} for employee in employees]
         return render(request, 'product_tracking/user.html', {'employee_data': employee_data})
+
 
 
 def user_list(request):
