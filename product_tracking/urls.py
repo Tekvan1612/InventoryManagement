@@ -242,5 +242,6 @@ urlpatterns = [
                        name='save_crew_delivery_allocation'),
                   path('update-crew-allocation-delivery/', views.update_crew_allocation_delivery,
                        name='update_crew_allocation_delivery'),
+                  path('fetch-temp-crew-details/', views.fetch_temp_crew_details, name='fetch_temp_crew_details'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -4109,76 +4109,6 @@ def get_sub_categories(request):
     return JsonResponse(sub_category_list, safe=False)
 
 
-# @csrf_exempt
-# def submit_equipment(request):
-#     if request.method == 'POST':
-#         # Retrieve form data
-#         equipment_name = request.POST.get('equipmentName')
-#         equipment_SubCategory = request.POST.get('equipmentSubCategory')
-#         category_type = request.POST.get('equipmentCategory')
-#         dimension_h = request.POST.get('dimension_h')
-#         dimension_w = request.POST.get('dimension_w')
-#         dimension_l = request.POST.get('dimension_l')
-#         weight = request.POST.get('weight')
-#         volume = request.POST.get('volume')
-#         hsn_no = request.POST.get('hsn_no')
-#         country_origin = request.POST.get('country_origin')
-#         print('Fetch the details:', equipment_name, equipment_SubCategory)
-#
-#         # Fetch sub_category_id based on equipment_name
-#         with connection.cursor() as cursor:
-#             cursor.execute("""
-#                 SELECT id FROM public.sub_category
-#                 WHERE name = %s
-#             """, [equipment_SubCategory])
-#             sub_category_id_row = cursor.fetchone()
-#
-#             if not sub_category_id_row:
-#                 return JsonResponse({'status': 'error', 'message': 'Sub category not found'}, status=400)
-#             sub_category_id = sub_category_id_row[0]
-#
-#         # Save to equipment_list
-#         with connection.cursor() as cursor:
-#             cursor.execute("""
-#                 INSERT INTO public.equipment_list (
-#                     equipment_name, sub_category_id, category_type,
-#                     dimension_height, dimension_width, dimension_length,
-#                     weight, volume, hsn_no, country_origin, created_by, created_date
-#                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-#                 RETURNING id
-#             """, [equipment_name, sub_category_id, category_type, dimension_h, dimension_w, dimension_l, weight, volume,
-#                   hsn_no, country_origin, 1])  # Assuming `created_by` is 1
-#             equipment_list_id = cursor.fetchone()[0]
-#
-#         # Handle file uploads
-#         attachments_path = os.path.join(settings.MEDIA_ROOT, 'attachments')
-#         os.makedirs(attachments_path, exist_ok=True)
-#         image_paths = []
-#
-#         for field_name in ['image1[]', 'image2[]', 'image3[]']:
-#             for image in request.FILES.getlist(field_name):
-#                 if image:
-#                     image_path = os.path.join('attachments', image.name)
-#                     with open(os.path.join(settings.MEDIA_ROOT, image_path), 'wb+') as destination:
-#                         for chunk in image.chunks():
-#                             destination.write(chunk)
-#                     image_paths.append(image_path)
-#
-#         # Save to equipment_list_attachments
-#         with connection.cursor() as cursor:
-#             cursor.execute("""
-#                 INSERT INTO public.equipment_list_attachments (
-#                     equipment_list_id, image_1, image_2, image_3
-#                 ) VALUES (%s, %s, %s, %s)
-#             """, [equipment_list_id, image_paths[0] if len(image_paths) > 0 else None,
-#                   image_paths[1] if len(image_paths) > 1 else None,
-#                   image_paths[2] if len(image_paths) > 2 else None])
-#
-#         return JsonResponse({'status': 'success'})
-#
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
-
-# Cloudinary insert for image
 @csrf_exempt
 def submit_equipment(request):
     if request.method == 'POST':
@@ -5863,6 +5793,35 @@ def fetch_crew_allocation(request):
         return JsonResponse({'data': crew_data})
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+def fetch_temp_crew_details(request):
+    temp_id = request.GET.get('tempId')  # Get the temp_id from the AJAX request
+
+    # Query the database using temp_id
+    with connection.cursor() as cursor:
+        query = """
+            SELECT id, crew_type, emp_id, crew_no_of_days, perday_charges, total, crew_notes
+            FROM temp_crew_allocation
+            WHERE temp_id = %s
+        """
+        cursor.execute(query, [temp_id])
+        crew_details = cursor.fetchall()
+
+    # Prepare the response data
+    data = []
+    for row in crew_details:
+        data.append({
+            'id': row[0],
+            'crew_type': row[1],
+            'emp_id': row[2],
+            'crew_no_of_days': row[3],
+            'perday_charges': row[4],
+            'total': row[5],
+            'crew_notes': row[6],
+        })
+
+    # Return the data as a JSON response
+    return JsonResponse({'status': 'success', 'data': data})
 
 
 @csrf_exempt
