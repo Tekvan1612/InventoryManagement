@@ -1,27 +1,24 @@
 import json
-import traceback
-from datetime import datetime, timedelta, timezone
-from django.conf import settings
-from django.contrib.auth import login, logout
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
-from django.db import connection, transaction
-from django.contrib.auth.models import User
 import logging
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseBadRequest
 import os
+import traceback
+from datetime import datetime
+from datetime import timedelta, timezone
+
+import cloudinary
+import cloudinary.api
+import cloudinary.uploader
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import logout
+from django.core.paginator import Paginator
+from django.db import connection, transaction
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from psycopg2 import IntegrityError
-from django.shortcuts import get_object_or_404
-from django.core.files.storage import default_storage
-from datetime import datetime
-from django.utils import timezone
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +363,6 @@ def add_user(request):
 
 
 def user_list(request):
-
     user_listing = []
     try:
         with connection.cursor() as cursor:
@@ -401,6 +397,7 @@ def user_list(request):
     }
 
     return JsonResponse(response)
+
 
 def update_user(request, user_id):  # noqa
     if request.method == 'POST':
@@ -494,7 +491,8 @@ def add_employee(request):
                 duplicate_count = cursor.fetchone()[0]
 
             if duplicate_count > 0:
-                return JsonResponse({'error': 'Employee with this ID, email, or mobile number already exists.'}, status=400)
+                return JsonResponse({'error': 'Employee with this ID, email, or mobile number already exists.'},
+                                    status=400)
 
             # Fetch reporting name
             with connection.cursor() as cursor:
@@ -533,8 +531,12 @@ def get_all_employees():
 
 
 def employee_dropdown(request):
+    search_query = request.GET.get('query', '')  # Capture search query from frontend
     with connection.cursor() as cursor:
-        cursor.execute("SELECT id, name FROM employee")
+        if search_query:
+            cursor.execute("SELECT id, name FROM employee WHERE name ILIKE %s", ['%' + search_query + '%'])
+        else:
+            cursor.execute("SELECT id, name FROM employee")
         employees = cursor.fetchall()
         employee_list = [{'id': emp[0], 'name': emp[1]} for emp in employees]
 
@@ -548,10 +550,10 @@ def employee_list(request):
             # Fetch employee details
             cursor.execute("SELECT * FROM get_employee_details()")
             rows = cursor.fetchall()
-            print('Check the employee Details:', rows)
+            # print('Check the employee Details:', rows)
 
             for index, row in enumerate(rows):
-                print('Check the for loop')
+                # print('Check the for loop')
                 # Log row structure for debugging
                 logger.debug(f"Row data: {row}")
 
@@ -575,8 +577,8 @@ def employee_list(request):
                 created_date = row[17].strftime('%Y-%m-%d') if row[17] else None  # Format created_date
                 profile_pic = row[18]  # Profile picture path
                 attachments = row[19] or []  # Attachments array
-                print('Fetch the Form DATA:', employee_id,name,email, designation,mobile_no, gender, joining_date, dob, reporting_name, p_address, c_address, country,
-                      profile_pic, attachments)
+                # print('Fetch the Form DATA:', employee_id,name,email, designation,mobile_no, gender, joining_date, dob, reporting_name, p_address, c_address, country,
+                # profile_pic, attachments)
 
                 # Handle profile picture URL
                 if profile_pic:
@@ -621,7 +623,7 @@ def employee_list(request):
                     'profile_pic': image_url,
                     'attachments': attachment_urls  # List of attachment URLs
                 })
-                print('Check the Employee Listing:', employee_listing)
+            # print('Check the Employee Listing:', employee_listing)
 
     except Exception as e:
         logger.error("An error occurred while fetching the employee list: %s", str(e), exc_info=True)
@@ -643,7 +645,6 @@ def employee_list(request):
     return JsonResponse(response)
 
 
-
 @csrf_exempt
 def delete_attachment(request):
     if request.method == 'POST':
@@ -660,7 +661,7 @@ def delete_attachment(request):
             return JsonResponse({'error': 'Invalid attachment ID'}, status=400)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-@csrf_exempt
+
 def modify_employee(request):
     if request.method == 'POST':
         operation = request.POST.get('operation')
@@ -691,11 +692,12 @@ def modify_employee(request):
             removed_profile_pic = request.POST.get('removed_profile_pic') == 'true'
 
             try:
+                # Process removed attachments from the request
                 removed_attachments = request.POST.get('removed_attachments')
                 removed_attachments = json.loads(removed_attachments) if removed_attachments else []
 
                 with transaction.atomic():
-                    # Update employee details in the database
+                    # Update employee details in the database using a stored procedure or SQL
                     with connection.cursor() as cursor:
                         cursor.execute(
                             """
@@ -727,41 +729,48 @@ def modify_employee(request):
                     # Handle profile photo upload to Cloudinary or local
                     profile_photo = request.FILES.get('profile_photo')
                     if profile_photo:
-                        # Upload new profile photo to Cloudinary
-                        upload_result = cloudinary.uploader.upload(profile_photo, folder="profilepic/")
-                        profile_pic_url = upload_result['secure_url']
+                        try:
+                            # Upload new profile photo to Cloudinary
+                            upload_result = cloudinary.uploader.upload(profile_photo, folder="profilepic/")
+                            profile_pic_url = upload_result['secure_url']
 
-                        # Insert or update profile photo URL in the database
-                        with connection.cursor() as cursor:
-                            # Check if the profile photo exists
-                            cursor.execute("SELECT id FROM employee_images WHERE employee_id = %s AND images LIKE %s", [emp_id, '%profilepic%'])
-                            existing_image = cursor.fetchone()
+                            # Insert or update profile photo URL in the database
+                            with connection.cursor() as cursor:
+                                cursor.execute(
+                                    "SELECT id FROM employee_images WHERE employee_id = %s AND images LIKE %s",
+                                    [emp_id, '%profilepic%'])
+                                existing_image = cursor.fetchone()
 
-                            if existing_image:
-                                # Update profile photo if it exists
-                                cursor.execute(
-                                    "UPDATE employee_images SET images = %s WHERE employee_id = %s AND images LIKE %s",
-                                    [profile_pic_url, emp_id, '%profilepic%']
-                                )
-                            else:
-                                # Insert new profile photo if it doesn't exist
-                                cursor.execute(
-                                    "INSERT INTO employee_images (employee_id, images) VALUES (%s, %s)",
-                                    [emp_id, profile_pic_url]
-                                )
+                                if existing_image:
+                                    # Update profile photo if it exists
+                                    cursor.execute(
+                                        "UPDATE employee_images SET images = %s WHERE employee_id = %s AND images LIKE %s",
+                                        [profile_pic_url, emp_id, '%profilepic%']
+                                    )
+                                else:
+                                    # Insert new profile photo if it doesn't exist
+                                    cursor.execute(
+                                        "INSERT INTO employee_images (employee_id, images) VALUES (%s, %s)",
+                                        [emp_id, profile_pic_url]
+                                    )
+                        except Exception as e:
+                            return JsonResponse({'error': 'Error uploading profile photo: ' + str(e)}, status=400)
 
                     # Handle attachment uploads (new attachments)
                     attachments = request.FILES.getlist('attachments')
                     for attachment in attachments:
-                        upload_result = cloudinary.uploader.upload(attachment, folder="uploads/")
-                        attachment_url = upload_result['secure_url']
+                        try:
+                            upload_result = cloudinary.uploader.upload(attachment, folder="uploads/")
+                            attachment_url = upload_result['secure_url']
 
-                        # Insert new attachments in the database
-                        with connection.cursor() as cursor:
-                            cursor.execute(
-                                "INSERT INTO employee_images (employee_id, images) VALUES (%s, %s)",
-                                [emp_id, attachment_url]
-                            )
+                            # Insert new attachments in the database
+                            with connection.cursor() as cursor:
+                                cursor.execute(
+                                    "INSERT INTO employee_images (employee_id, images) VALUES (%s, %s)",
+                                    [emp_id, attachment_url]
+                                )
+                        except Exception as e:
+                            return JsonResponse({'error': 'Error uploading attachment: ' + str(e)}, status=400)
 
                     # Remove profile picture if requested
                     if removed_profile_pic:
@@ -786,7 +795,7 @@ def modify_employee(request):
 
         elif operation == 'delete':
             try:
-                # Delete employee
+                # Delete employee using a stored procedure or SQL
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT delete_employee(%s)",
@@ -1817,22 +1826,22 @@ def get_status_counts(request):
     with connection.cursor() as cursor:
         # cursor.execute("SELECT COUNT(*) FROM public.jobs WHERE status = 'Perfoma';")
         cursor.execute(
-            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.jobs WHERE status = 'Perfoma' GROUP BY  job_reference_no, status) AS unique_perfoma;")
+            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.temp WHERE status = 'Perfoma' GROUP BY  job_reference_no, status) AS unique_perfoma;")
         perfoma_count = cursor.fetchone()[0]
         print('Perfoma status count:', perfoma_count)
 
         cursor.execute(
-            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.jobs WHERE status = 'Prepsheet' GROUP BY job_reference_no, status) AS unique_prepsheets;")
+            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.temp WHERE status = 'Prepsheet' GROUP BY job_reference_no, status) AS unique_prepsheets;")
         prepsheet_count = cursor.fetchone()[0]
         print('Prepsheet Status count:', prepsheet_count)
 
         cursor.execute(
-            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.jobs WHERE status = 'Quotation' GROUP BY job_reference_no, status) AS unique_quats;")
+            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.temp WHERE status = 'Quotation' GROUP BY job_reference_no, status) AS unique_quats;")
         quatation_count = cursor.fetchone()[0]
         print('Quatation Status count:', quatation_count)
 
         cursor.execute(
-            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.jobs WHERE status = 'Delivery Challan' GROUP BY job_reference_no, status) AS unique_deliveries;")
+            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.temp WHERE status = 'Delivery Challan' GROUP BY job_reference_no, status) AS unique_deliveries;")
         deliveryChallan_count = cursor.fetchone()[0]
         print('Delivery Challan Status count:', deliveryChallan_count)
 
@@ -3074,8 +3083,10 @@ def job_form(request):
 def add_job_test(request):
     return render(request, 'product_tracking/add-job.html')
 
+
 def job_addition(request):
     return render(request, 'product_tracking/job-addition.html')
+
 
 def fetch_equipment_detail_id(request):
     job_id = request.GET.get('jobId')
@@ -3138,6 +3149,7 @@ def fetch_crew_allocation_details(request, job_id):
 
     return JsonResponse(crew_details, safe=False)
 
+
 def update_transportation_details(request, job_id):
     if request.method == 'POST':
         with connection.cursor() as cursor:
@@ -3152,6 +3164,7 @@ def update_transportation_details(request, job_id):
             ])
         return JsonResponse({'status': 'success', 'message': 'Details updated successfully'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
 
 def fetch_inserted_row(request):
     temp_id = request.GET.get('temp_id')
@@ -3179,6 +3192,7 @@ def fetch_inserted_row(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
 
+
 @csrf_exempt
 def update_quantity(request):
     if request.method == 'POST':
@@ -3198,6 +3212,7 @@ def update_quantity(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
+
 @csrf_exempt
 def fetch_employee_names(request):
     query = request.GET.get('query', '').strip()
@@ -3216,6 +3231,7 @@ def fetch_employee_names(request):
 
     return JsonResponse({'employee_names': employee_names})
 
+
 def fetch_job_reference_no(request):
     temp_id = request.GET.get('temp_id')  # Get the temp_id from the request
 
@@ -3225,8 +3241,9 @@ def fetch_job_reference_no(request):
     try:
         with connection.cursor() as cursor:
             # Execute raw SQL query to fetch job_reference_no from temp table
-            cursor.execute("SELECT job_reference_no, title, setup_date, event_date, dismantle_date FROM temp WHERE id = %s",
-                           [temp_id])
+            cursor.execute(
+                "SELECT job_reference_no, title, setup_date, event_date, dismantle_date FROM temp WHERE id = %s",
+                [temp_id])
             row = cursor.fetchone()
             print('Fetch the row of JOB REFERENCE NO:', row)
 
@@ -3242,6 +3259,7 @@ def fetch_job_reference_no(request):
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'error': str(e)})
+
 
 def fetch_equipment_data(request):
     query = """
@@ -3276,6 +3294,7 @@ def fetch_equipment_data(request):
     ]
     print('Fetch the Equipment DATa of Eq:', equipment_data)
     return JsonResponse({'data': equipment_data})
+
 
 @csrf_exempt
 def insert_equipment_details_test(request):
@@ -3366,9 +3385,11 @@ def insert_equipment_details_test(request):
         all_ids = existing_ids + equipment_detail_ids
         print('Fetch the all IDS:', all_ids)
 
-        return JsonResponse({'message': 'Equipment details inserted successfully', 'equipment_detail_ids': all_ids}, status=200)
+        return JsonResponse({'message': 'Equipment details inserted successfully', 'equipment_detail_ids': all_ids},
+                            status=200)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 def fetch_equipment_details_multiple(request):
     if request.method == "GET":
@@ -3416,6 +3437,7 @@ def fetch_equipment_details_multiple(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
+
 def fetch_employee_names_equipment(request):
     query = request.GET.get('query', '')
 
@@ -3438,6 +3460,7 @@ def fetch_employee_names_equipment(request):
 
     return JsonResponse([], safe=False)
 
+
 def delete_equipment_id(request):
     print('Check the delete equipment id is working.')
     if request.method == 'POST':
@@ -3455,6 +3478,7 @@ def delete_equipment_id(request):
                 print('Delete successfully equipment')
             except Exception as e:
                 return JsonResponse({'status': 'error', 'message': str(e)})
+
 
 def update_equipment_id(request):
     if request.method == 'POST':
@@ -3493,6 +3517,7 @@ def update_equipment_id(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
 
 @csrf_exempt
 def insert_equipment_details_id(request):
@@ -3575,6 +3600,7 @@ def insert_equipment_details_id(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+
 def save_crew_allocation(request):
     if request.method == 'POST':
         temp_id = request.POST.get('temp_id')
@@ -3617,6 +3643,7 @@ def save_crew_allocation(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
+
 @csrf_exempt
 def delete_crew_allocation_row(request):
     if request.method == 'POST':
@@ -3629,6 +3656,7 @@ def delete_crew_allocation_row(request):
         return JsonResponse({'status': 'success'})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
 
 @csrf_exempt
 def update_crew_allocation_row(request):
@@ -3983,7 +4011,8 @@ def update_sub_category(request, subcategory_id):
             result = cursor.fetchone()[0]
 
             if not result:
-                return JsonResponse({'success': False, 'message': 'No subcategory found with the given ID.'}, status=404)
+                return JsonResponse({'success': False, 'message': 'No subcategory found with the given ID.'},
+                                    status=404)
 
             return JsonResponse({'success': True, 'message': 'Subcategory updated successfully!'})
 
@@ -4079,7 +4108,7 @@ def get_sub_categories(request):
 #
 #     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
-#Cloudinary insert for image
+# Cloudinary insert for image
 @csrf_exempt
 def submit_equipment(request):
     if request.method == 'POST':
@@ -4100,7 +4129,8 @@ def submit_equipment(request):
             created_by = request.session.get('user_id')  # Assuming user_id is stored in the session
 
             if not created_by:
-                return JsonResponse({'status': 'error', 'message': 'User not authenticated. Please log in.'}, status=403)
+                return JsonResponse({'status': 'error', 'message': 'User not authenticated. Please log in.'},
+                                    status=403)
 
             # Check if equipment name already exists
             with connection.cursor() as cursor:
@@ -4110,7 +4140,9 @@ def submit_equipment(request):
                 existing_count = cursor.fetchone()[0]
 
             if existing_count > 0:
-                return JsonResponse({'status': 'error', 'message': 'Equipment name already exists. Please choose a different name.'}, status=400)
+                return JsonResponse(
+                    {'status': 'error', 'message': 'Equipment name already exists. Please choose a different name.'},
+                    status=400)
 
             # Handle file uploads to Cloudinary
             # Handle file uploads to Cloudinary
@@ -4159,7 +4191,6 @@ def submit_equipment(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
-
 
 
 def fetch_equipment_list(request):
@@ -4321,6 +4352,7 @@ def update_equipment(request):
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+
 @csrf_exempt
 def update_equipment_details(request, equipment_id):
     try:
@@ -4447,6 +4479,7 @@ def update_stock_details(request, equipment_id):
     except Exception as e:
         print("Error during stock details update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 @csrf_exempt
 def insert_stock_details(request):
@@ -4603,7 +4636,6 @@ def get_equipment_details(request, equipment_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-
 def get_serial_details(request, equipment_id):
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -4618,6 +4650,7 @@ def get_serial_details(request, equipment_id):
         return JsonResponse({'serial_details': serial_data})
     else:
         return JsonResponse({'serial_details': []})
+
 
 def get_stock_details(request, equipment_id):
     try:
@@ -4670,6 +4703,7 @@ def get_stock_details(request, equipment_id):
         logger.error("Error fetching stock details for equipment_id: %s, error: %s", equipment_id, str(e))
         return JsonResponse({'error': str(e)}, status=500)
 
+
 def get_categories(request):
     with connection.cursor() as cursor:
         # Fetch categories ordered by category_name in ascending order
@@ -4684,6 +4718,7 @@ def get_categories(request):
     default_category = category_list[0] if category_list else None
 
     return JsonResponse({'categories': category_list, 'default_category': default_category})
+
 
 def stock_details_view(request, equipment_id):
     print("stock_details_view called")
@@ -4720,7 +4755,8 @@ def update_stock_details(request):
             serial_no = request.POST.get('serial_no')
             barcode_no = request.POST.get('barcode_no')
 
-            print(f"Received data: id={stock_id}, vender_name={vender_name}, purchase_date={purchase_date}, unit_price={unit_price}, rental_price={rental_price}, serial_no={serial_no}, barcode_no={barcode_no}")
+            print(
+                f"Received data: id={stock_id}, vender_name={vender_name}, purchase_date={purchase_date}, unit_price={unit_price}, rental_price={rental_price}, serial_no={serial_no}, barcode_no={barcode_no}")
 
             if not stock_id:
                 return JsonResponse({'success': False, 'message': 'Stock ID is missing'})
@@ -4845,6 +4881,7 @@ def insert_transportation_data(request):
 
     return JsonResponse({'status': 'error', 'error': 'Invalid request method'})
 
+
 def fetch_all_subcategories(request):
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -4863,6 +4900,7 @@ def fetch_all_subcategories(request):
         })
 
     return JsonResponse(subcategory_list, safe=False)
+
 
 def add_row(request):
     username = request.session.get('username')
@@ -4945,6 +4983,7 @@ def add_row(request):
             cursor.close()
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
 
 def fetch_company_data(request):
     if request.method == 'GET':
@@ -5109,8 +5148,6 @@ def update_individual_data(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
 
-
-
 @csrf_exempt
 def update_venue_data(request):
     if request.method == 'POST':
@@ -5129,6 +5166,8 @@ def update_venue_data(request):
 
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
 def fetch_venue_address(request):
     print('Inside the venue address')
     venue_name = request.GET.get('venue_name', '').strip()
@@ -5256,6 +5295,7 @@ def insert_equipment_details(request):
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'failed'}, status=400)
 
+
 def search_equipment(request):
     if request.method == 'GET':
         query = request.GET.get('query', '')
@@ -5286,6 +5326,7 @@ def search_equipment(request):
             ]
 
         return JsonResponse(equipment_data, safe=False)
+
 
 def fetch_all_subcategories(request):
     with connection.cursor() as cursor:
@@ -5354,6 +5395,7 @@ def fetch_equipment_with_barcodes(request):
         ]
 
     return JsonResponse(equipment_names, safe=False)
+
 
 @csrf_exempt
 def insert_sub_vendor_details(request):
@@ -5444,6 +5486,7 @@ def fetch_crew_allocation(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+
 @csrf_exempt
 def insert_crew_allocation(request):
     if request.method == 'POST':
@@ -5489,6 +5532,7 @@ def delete_crew_allocation(request):
         return JsonResponse({'success': True})
     return JsonResponse({'success': False})
 
+
 @csrf_exempt
 def insert_transportation(request):
     if request.method == 'POST':
@@ -5514,6 +5558,7 @@ def insert_transportation(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
+
 def get_temp_details(request, jobId):
     try:
         with connection.cursor() as cursor:
@@ -5535,6 +5580,7 @@ def get_temp_details(request, jobId):
                 return JsonResponse({'error': 'No data found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 def update_temp_details(request, jobId):
     if request.method == 'POST':
@@ -5631,6 +5677,7 @@ def fetch_edit_equipment_details(request, job_id):
 
     return JsonResponse(data, safe=False)
 
+
 @csrf_exempt
 def update_equipment_quantity(request):
     if request.method == 'POST':
@@ -5643,6 +5690,7 @@ def update_equipment_quantity(request):
         return JsonResponse({'success': True})
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 def fetch_sub_vendor_details(request, job_id):
     with connection.cursor() as cursor:
@@ -5659,6 +5707,7 @@ def fetch_sub_vendor_details(request, job_id):
     ]
 
     return JsonResponse(data, safe=False)
+
 
 @csrf_exempt
 def update_sub_vendor_details(request):
@@ -5682,6 +5731,7 @@ def update_sub_vendor_details(request):
 
     return JsonResponse({'status': 'failed', 'error': 'Invalid request method'}, status=400)
 
+
 def delete_sub_vendor(request, id):
     try:
         with connection.cursor() as cursor:
@@ -5692,6 +5742,7 @@ def delete_sub_vendor(request, id):
     except Exception as e:
         print(f"Error deleting sub-vendor: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 @csrf_exempt
 def fetch_crew_allocation(request):
@@ -5743,6 +5794,7 @@ def delete_crew_allocation(request, id):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+
 def get_transportation_allocation(request):
     job_id = request.GET.get('jobId')
     if not job_id:
@@ -5778,6 +5830,7 @@ def get_transportation_allocation(request):
         })
 
     return JsonResponse(result, safe=False)
+
 
 @csrf_exempt
 def delete_transportation_allocation(request):
@@ -5833,6 +5886,7 @@ def update_transportation_allocation(request):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 @csrf_exempt
 def insert_transportation(request):
@@ -6085,5 +6139,149 @@ def print_jobs(request):
     print('Fetch the response DATA:', response_data)
 
     return JsonResponse(response_data)
+def fetch_crew_allocation_edit(request):
+    print('Check the fetch crew allocation edit function')
+    job_id = request.GET.get('jobId')  # Get jobId from the request
+    print('Check the jobId of fetch crew allocation:', job_id)
+
+    with connection.cursor() as cursor:
+        print('Check the cursor connection..')
+        # Query the temp_crew_allocation table based on jobId
+        cursor.execute("""
+            SELECT 
+                tca.id,  -- Assuming crew_allocation_id exists in the table
+                tca.crew_type, 
+                COALESCE(e.name, '') AS employee_name,  -- Use COALESCE to handle NULL values 
+                tca.crew_no_of_days, 
+                tca.perday_charges, 
+                tca.total, 
+                tca.crew_notes
+            FROM 
+                public.temp_crew_allocation tca
+            LEFT JOIN 
+                public.employee e ON CAST(tca.emp_id AS integer) = e.id
+            WHERE 
+                tca.temp_id = %s
+        """, [job_id])
+
+        rows = cursor.fetchall()
+        print('Check the rows of fetch crew allocation:', rows)
+
+    # Prepare the response data
+    crew_allocations = []
+    print('check the crew allocation details working []', crew_allocations)
+    for row in rows:
+        crew_allocations.append({
+            'crewId': row[0],
+            'crewType': row[1],
+            'employeeName': row[2] if row[2] else '',  # Set a default value if employee_name is empty
+            'noOfDays': row[3],
+            'perDayCharges': row[4],
+            'total': row[5],
+            'crewNotes': row[6],
+        })
+        print('Check the crew allocation:', crew_allocations)
+        print('Check the row allocation:', row)
+        print('Check the rows allocation:', rows)
+
+    return JsonResponse(crew_allocations, safe=False)
 
 
+def search_employee_crew(request):
+    if request.method == 'GET':
+        query = request.GET.get('query', '')
+
+        if query:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT id, name FROM employee WHERE name ILIKE %s LIMIT 10", [f'%{query}%']
+                )
+                employees = cursor.fetchall()
+
+            # Prepare the data to be sent as JSON
+            employee_list = [{'id': emp[0], 'name': emp[1]} for emp in employees]
+            return JsonResponse({'employees': employee_list})
+
+        return JsonResponse({'employees': []})
+
+
+def save_crew_delivery_allocation(request):
+    if request.method == 'POST':
+        temp_id = request.POST.get('temp_id')
+        crew_type = request.POST.get('crew_type')
+        employee_name = request.POST.get('employee_name')  # Changed to employee_name for clarity
+        crew_no_of_days = request.POST.get('crew_no_of_days')
+        perday_charges = request.POST.get('perday_charges')
+        total = request.POST.get('total')
+        crew_notes = request.POST.get('crew_notes')
+
+        print('Check the form data:', temp_id, crew_type, employee_name, crew_no_of_days, perday_charges, total,
+              crew_notes)
+
+        # Call the PostgreSQL function
+        call_function_query = """
+        SELECT * FROM insert_temp_crew_delivery_allocation(%s, %s, %s, %s, %s, %s, %s);
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(call_function_query, [
+                temp_id,
+                crew_type,
+                employee_name,  # Pass the employee name (as emp_id in the query)
+                crew_no_of_days,
+                perday_charges,
+                total,
+                crew_notes
+            ])
+            result = cursor.fetchone()
+            print('Check the result of search employee crew:', result)
+
+        if result:
+            data = {
+                'status': 'success',
+                'crew_allocation_id': result[0],  # ID returned by the function
+                'temp_id': result[1],
+                'crew_type': result[2],
+                'emp_name': result[3],  # Changed to emp_name to return the employee name
+                'crew_no_of_days': result[4],
+                'perday_charges': result[5],
+                'total': result[6],
+                'crew_notes': result[7]
+            }
+            print('fetch the data:', data)
+            return JsonResponse(data)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Crew allocation not found'}, status=404)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+def update_crew_allocation_delivery(request):
+    print('check the update crew allcation delivery challen working.')
+    if request.method == 'POST':
+        print('check the post method is working.')
+        # Retrieve data from the request
+        crew_allocation_id = request.POST.get('id')
+        crew_type = request.POST.get('crew_type')
+        emp_id = request.POST.get('employee_name')
+        no_of_days = request.POST.get('no_of_days')
+        perday_charges = request.POST.get('perday_charges')
+        total = request.POST.get('total')
+        crew_notes = request.POST.get('crew_notes')
+        print('check the form data:', crew_allocation_id, crew_type, emp_id, no_of_days, perday_charges, total, crew_notes)
+
+        try:
+            print('check the try block is working')
+            # Call the PostgreSQL function to update the crew allocation
+            with connection.cursor() as cursor:
+                print('check the cursor connection object is working..')
+                cursor.execute("""
+                    SELECT manage_temp_crew_delivery(%s, %s, %s, %s, %s, %s, %s, %s);
+                """, ['update', crew_allocation_id, crew_type, emp_id, no_of_days, perday_charges, total, crew_notes])
+            print('Updated successfully..')
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'})

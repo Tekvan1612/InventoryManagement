@@ -138,7 +138,7 @@ urlpatterns = [
                   path('get_categories/', views.get_categories, name='get_categories'),
                   path('stock_details_view/<int:equipment_id>/', views.stock_details_view, name='stock_details_view'),
                   path('update_stock_details/', views.update_stock_details, name='update_stock_details'),
-              #    path('insert-equipment-details/', views.insert_equipment_details, name='insert_equipment_details'),
+                  #    path('insert-equipment-details/', views.insert_equipment_details, name='insert_equipment_details'),
                   path('fetch_job_list/', views.fetch_job_list, name='fetch_job_list'),
                   path('insert-crew-allocation/', views.insert_crew_allocation, name='insert-crew-allocation'),
                   path('insert-transportation-data/', views.insert_transportation_data,
@@ -161,7 +161,7 @@ urlpatterns = [
                   path('update-individual-data/', views.update_individual_data, name='update_individual_data'),
                   path('fetch_individual_names/', views.fetch_individual_names, name='fetch_individual_names'),
                   path('insert-temp-data/', views.insert_temp_data, name='insert_temp_data'),
-                #  path('insert-equipment-details/', views.insert_equipment_details, name='insert_equipment_details'),
+                  #  path('insert-equipment-details/', views.insert_equipment_details, name='insert_equipment_details'),
                   path('search-equipment/', views.search_equipment, name='search_equipment'),
                   path('fetch-all-subcategories/', views.fetch_all_subcategories, name='fetch_all_subcategories'),
                   path('fetch-equipment-with-barcodes/', views.fetch_equipment_with_barcodes,
@@ -235,5 +235,12 @@ urlpatterns = [
                        name='update_crew_allocation_row'),
 
                   path('fetch-equipment-detail-id/', views.fetch_equipment_detail_id, name='fetch_equipment_detail_id'),
+                  path('fetch-crew-allocation-edit/', views.fetch_crew_allocation_edit,
+                       name='fetch_crew_allocation_edit'),
+                  path('search-employee-crew/', views.search_employee_crew, name='search_employee_crew'),
+                  path('save_crew_delivery_allocation/', views.save_crew_delivery_allocation,
+                       name='save_crew_delivery_allocation'),
+                  path('update-crew-allocation-delivery/', views.update_crew_allocation_delivery,
+                       name='update_crew_allocation_delivery'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

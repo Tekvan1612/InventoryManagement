@@ -8,6 +8,52 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <style>
+    .modal-dialog {
+        max-width: 75%; /* Ensures the modal doesn't exceed screen width */
+        margin: 1.75rem auto; /* Centers the modal with some margin on top and bottom */
+    }
+
+    .modal-content {
+        padding: 15px;
+    }
+
+    .modal-body {
+        padding-bottom: 10px;
+        overflow-y: scroll; /* Enables scrolling if content overflows */
+        max-height: 85vh; /* Limits the modal height to 70% of the viewport height */
+    }
+
+    @media (min-width: 768px) {
+        .modal-lg {
+            max-width: 80%; /* Adjusts for larger screens */
+        }
+
+        .modal-body {
+            max-height: 80vh; /* Increases max height for larger screens */
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .modal-dialog {
+            max-width: 100%; /* Ensures modal fits within small screens */
+            margin: 10px; /* Adds some margin for extra small devices */
+        }
+
+        .modal-body {
+            max-height: 60vh; /* Reduces max height for smaller screens */
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .modal-content {
+            padding: 10px; /* Reduces padding for small screens */
+        }
+
+        .modal-body {
+            max-height: 50vh; /* Further reduces max height for extra small screens */
+        }
+    }
+
     .plus-icon {
         cursor: pointer;
         color: #ffffff;
@@ -350,6 +396,7 @@
                                     </div>
                                 </div>
 
+
                                 <div class="tab-content p-3 border border-top-0 rounded-bottom"
                                      id="contactTabContent">
                                     <!-- Company Tab Content -->
@@ -436,6 +483,383 @@
         </div>
         <!-- Content body end -->
 
+        <div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-md"> <!-- Use modal-lg for a larger modal -->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="categoryModalLabel">Company Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="company-information" role="tabpanel"
+                                 aria-labelledby="company-information-tab">
+
+                                <!-- Equipment Details Form -->
+                                <form id="companyInformationForm" method="POST">
+                                    {% csrf_token %}
+                                    <!-- Grouped Form Elements in a Single Row -->
+                                    <div class="row custom-margin">
+                                        <!-- Input Box -->
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="companyName" class="form-label">Company Name</label>
+                                            <input type="text" class="form-control" id="companyName"
+                                                   placeholder="Company Name" required>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="gstNo" class="form-label">GST No</label>
+                                            <input type="text" class="form-control" id="gstNo" placeholder="GST No"
+                                                   required>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="panNo" class="form-label">PAN No</label>
+                                            <input type="text" class="form-control" id="panNo" placeholder="PAN No"
+                                                   required>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="companyEmail" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="companyEmail"
+                                                   placeholder="Email" required>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="officeAddress" class="form-label">Office Address</label>
+                                            <textarea class="form-control" id="officeAddress"
+                                                      placeholder="Office Address" required rows="3"></textarea>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="billingAddress" class="form-label">Billing Address</label>
+                                            <textarea class="form-control" id="billingAddress"
+                                                      placeholder="Billing Address" required rows="3"></textarea>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="country" class="form-label">Country</label>
+                                            <select class="form-control" id="country">
+                                                <option value="India" selected>India</option>
+                                                <!-- Add more countries if needed -->
+                                            </select>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="state" class="form-label">State</label>
+                                            <select class="form-control state" id="state">
+                                                <option value="">Please select</option>
+                                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                                <option value="Assam">Assam</option>
+                                                <option value="Bihar">Bihar</option>
+                                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                                <option value="Goa">Goa</option>
+                                                <option value="Gujarat">Gujarat</option>
+                                                <option value="Haryana">Haryana</option>
+                                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                                <option value="Jharkhand">Jharkhand</option>
+                                                <option value="Karnataka">Karnataka</option>
+                                                <option value="Kerala">Kerala</option>
+                                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                                <option value="Maharashtra">Maharashtra</option>
+                                                <option value="Manipur">Manipur</option>
+                                                <option value="Meghalaya">Meghalaya</option>
+                                                <option value="Mizoram">Mizoram</option>
+                                                <option value="Nagaland">Nagaland</option>
+                                                <option value="Odisha">Odisha</option>
+                                                <option value="Punjab">Punjab</option>
+                                                <option value="Rajasthan">Rajasthan</option>
+                                                <option value="Sikkim">Sikkim</option>
+                                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                                <option value="Telangana">Telangana</option>
+                                                <option value="Tripura">Tripura</option>
+                                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                                <option value="Uttarakhand">Uttarakhand</option>
+                                                <option value="West Bengal">West Bengal</option>
+                                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar
+                                                    Islands
+                                                </option>
+                                                <option value="Chandigarh">Chandigarh</option>
+                                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar
+                                                    Haveli and Daman and Diu
+                                                </option>
+                                                <option value="Lakshadweep">Lakshadweep</option>
+                                                <option value="Delhi">Delhi</option>
+                                                <option value="Puducherry">Puducherry</option>
+                                                <option value="Ladakh">Ladakh</option>
+                                                <option value="Jammu & Kashmir">Jammu & Kashmir</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="city" class="form-label">City</label>
+                                            <input type="text" class="form-control" id="city" placeholder="City"
+                                                   required>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="postcode" class="form-label">Postcode</label>
+                                            <input type="text" class="form-control" id="postcode" placeholder="Postcode"
+                                                   required>
+                                        </div>
+                                        <!-- Buttons Section -->
+                                        <div class="d-flex justify-content-end">
+                                            <button type="button" class="btn btn-secondary me-2" id="closeFormBtn"
+                                                    data-bs-dismiss="modal">Close
+                                            </button>
+                                            <button type="submit" class="btn btn-primary" id="saveCompanyChanges">Submit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="venueModal" tabindex="-1" aria-labelledby="venueModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-md"> <!-- Use modal-lg for a larger modal -->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="venueModalLabel">Venue Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="venue-information" role="tabpanel"
+                                 aria-labelledby="venue-information-tab">
+
+                                <!-- Equipment Details Form -->
+                                <form id="venueInformationForm" method="POST">
+                                    {% csrf_token %}
+                                    <!-- Grouped Form Elements in a Single Row -->
+                                    <div class="row custom-margin">
+                                        <!-- Input Box -->
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="companyName" class="form-label">Venue Name</label>
+                                            <input type="text" class="form-control venue-name" id="venueName"
+                                                   placeholder="Venue Name">
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="gstNo" class="form-label">Venue Address</label>
+                                            <input type="text" class="form-control venue-address" id="venueAddress"
+                                                   placeholder="Venue Address">
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="country" class="form-label">Country</label>
+                                            <select class="form-control" id="venueCountry">
+                                                <option value="India" selected>India</option>
+                                                <!-- Add more countries if needed -->
+                                            </select>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="state" class="form-label">State</label>
+                                            <select class="form-control state" id="venueState">
+                                                <option value="">Please select</option>
+                                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                                <option value="Assam">Assam</option>
+                                                <option value="Bihar">Bihar</option>
+                                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                                <option value="Goa">Goa</option>
+                                                <option value="Gujarat">Gujarat</option>
+                                                <option value="Haryana">Haryana</option>
+                                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                                <option value="Jharkhand">Jharkhand</option>
+                                                <option value="Karnataka">Karnataka</option>
+                                                <option value="Kerala">Kerala</option>
+                                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                                <option value="Maharashtra">Maharashtra</option>
+                                                <option value="Manipur">Manipur</option>
+                                                <option value="Meghalaya">Meghalaya</option>
+                                                <option value="Mizoram">Mizoram</option>
+                                                <option value="Nagaland">Nagaland</option>
+                                                <option value="Odisha">Odisha</option>
+                                                <option value="Punjab">Punjab</option>
+                                                <option value="Rajasthan">Rajasthan</option>
+                                                <option value="Sikkim">Sikkim</option>
+                                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                                <option value="Telangana">Telangana</option>
+                                                <option value="Tripura">Tripura</option>
+                                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                                <option value="Uttarakhand">Uttarakhand</option>
+                                                <option value="West Bengal">West Bengal</option>
+                                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar
+                                                    Islands
+                                                </option>
+                                                <option value="Chandigarh">Chandigarh</option>
+                                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar
+                                                    Haveli and Daman and Diu
+                                                </option>
+                                                <option value="Lakshadweep">Lakshadweep</option>
+                                                <option value="Delhi">Delhi</option>
+                                                <option value="Puducherry">Puducherry</option>
+                                                <option value="Ladakh">Ladakh</option>
+                                                <option value="Jammu & Kashmir">Jammu & Kashmir</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="city" class="form-label">City</label>
+                                            <input type="text" class="form-control" id="venueCity" placeholder="City"
+                                                   required>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="postcode" class="form-label">Postcode</label>
+                                            <input type="text" class="form-control" id="venuePostcode"
+                                                   placeholder="Postcode"
+                                                   required>
+                                        </div>
+
+                                        <!-- Buttons Section -->
+                                        <div class="d-flex justify-content-end">
+                                            <button type="button" class="btn btn-secondary me-2" id="closeFormBtn"
+                                                    data-bs-dismiss="modal">Close
+                                            </button>
+                                            <button type="submit" class="btn btn-primary" id="saveVenueChanges">Submit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="individualModal" tabindex="-1" aria-labelledby="individualModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-md"> <!-- Use modal-lg for a larger modal -->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="individualModalLabel">Individual Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="individual-information" role="tabpanel"
+                                 aria-labelledby="individual-information-tab">
+
+                                <!-- Equipment Details Form -->
+                                <form id="individualInformationForm" method="POST">
+                                    {% csrf_token %}
+                                    <!-- Grouped Form Elements in a Single Row -->
+                                    <div class="row custom-margin">
+                                        <!-- Input Box -->
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="companyName" class="form-label">Name</label>
+                                            <input type="text" class="form-control individual-name" id="individualName"
+                                                   placeholder="Name">
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="gstNo" class="form-label">Mobile No</label>
+                                            <input type="text" class="form-control individual-mobile"
+                                                   id="individualMobileNo"
+                                                   placeholder="Mobile No">
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="panNo" class="form-label">Social No</label>
+                                            <input type="text" class="form-control individual-social"
+                                                   id="individualSocialNo"
+                                                   placeholder="Social No">
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="companyEmail" class="form-label">Email</label>
+                                            <input type="email" class="form-control individual-email"
+                                                   id="individualEmail"
+                                                   placeholder="Email">
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="officeAddress" class="form-label">Company</label>
+                                            <select class="form-control individual-company"
+                                                    id="individualCompanyName"></select>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="billingAddress" class="form-label">Address</label>
+                                            <textarea class="form-control" id="individualAddress"
+                                                      placeholder="Billing Address" required rows="3"></textarea>
+                                        </div>
+
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="country" class="form-label">Country</label>
+                                            <select class="form-control" id="individualCountry">
+                                                <option value="India" selected>India</option>
+                                                <!-- Add more countries if needed -->
+                                            </select>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="state" class="form-label">State</label>
+                                            <select class="form-control state" id="individualState">
+                                                <option value="">Please select</option>
+                                                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                                <option value="Assam">Assam</option>
+                                                <option value="Bihar">Bihar</option>
+                                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                                <option value="Goa">Goa</option>
+                                                <option value="Gujarat">Gujarat</option>
+                                                <option value="Haryana">Haryana</option>
+                                                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                                <option value="Jharkhand">Jharkhand</option>
+                                                <option value="Karnataka">Karnataka</option>
+                                                <option value="Kerala">Kerala</option>
+                                                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                                <option value="Maharashtra">Maharashtra</option>
+                                                <option value="Manipur">Manipur</option>
+                                                <option value="Meghalaya">Meghalaya</option>
+                                                <option value="Mizoram">Mizoram</option>
+                                                <option value="Nagaland">Nagaland</option>
+                                                <option value="Odisha">Odisha</option>
+                                                <option value="Punjab">Punjab</option>
+                                                <option value="Rajasthan">Rajasthan</option>
+                                                <option value="Sikkim">Sikkim</option>
+                                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                                <option value="Telangana">Telangana</option>
+                                                <option value="Tripura">Tripura</option>
+                                                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                                <option value="Uttarakhand">Uttarakhand</option>
+                                                <option value="West Bengal">West Bengal</option>
+                                                <option value="Andaman and Nicobar Islands">Andaman and Nicobar
+                                                    Islands
+                                                </option>
+                                                <option value="Chandigarh">Chandigarh</option>
+                                                <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar
+                                                    Haveli and Daman and Diu
+                                                </option>
+                                                <option value="Lakshadweep">Lakshadweep</option>
+                                                <option value="Delhi">Delhi</option>
+                                                <option value="Puducherry">Puducherry</option>
+                                                <option value="Ladakh">Ladakh</option>
+                                                <option value="Jammu & Kashmir">Jammu & Kashmir</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="city" class="form-label">City</label>
+                                            <input type="text" class="form-control" id="individualCity"
+                                                   placeholder="City"
+                                                   required>
+                                        </div>
+                                        <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
+                                            <label for="postcode" class="form-label">Postcode</label>
+                                            <input type="text" class="form-control" id="individualPostcode"
+                                                   placeholder="Postcode"
+                                                   required>
+                                        </div>
+
+                                        <!-- Buttons Section -->
+                                        <div class="d-flex justify-content-end">
+                                            <button type="button" class="btn btn-secondary me-2" id="closeFormBtn"
+                                                    data-bs-dismiss="modal">Close
+                                            </button>
+                                            <button type="submit" class="btn btn-primary" id="saveIndividualChanges">
+                                                Submit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer start -->
         {% include 'product_tracking/footer.html' %}
         <!-- Footer end -->
@@ -445,7 +869,26 @@
     <!-- Scripts -->
     <script>
 
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('addCompanyRow').addEventListener('click', function () {
+                var myModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+                myModal.show();
+            });
+
+            document.getElementById('addVenueRow').addEventListener('click', function () {
+                console.log('Venue Row clicked');
+                var myModal1 = new bootstrap.Modal(document.getElementById('venueModal'));
+                myModal1.show();
+            });
+
+            document.getElementById('addIndividualRow').addEventListener('click', function () {
+                var myModal2 = new bootstrap.Modal(document.getElementById('individualModal'));
+                myModal2.show();
+            });
+        });
+
         $(document).ready(function () {
+
             // Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
 
@@ -465,239 +908,50 @@
                 });
             });
 
-            // Add a new row to Company, Venue, or Individual table
-            $('#addCompanyRow, #addVenueRow, #addIndividualRow').on('click', function () {
-                const type = $(this).attr('id').replace('add', '').replace('Row', '').toLowerCase();
-                let newRow = '';
-
-                if (type === 'company') {
-                    newRow = `
-                        <tr>
-                            <td>
-                                <button class="btn btn-sm btn-primary save-btn-company me-2"><i class="fa fa-save"></i></button>
-                                <button class="btn btn-sm btn-danger delete-row"><i class="fa fa-trash"></i></button>
-                            </td>
-                            <td><input type="text" class="form-control company-name" placeholder="Company Name" name="company_name"></td>
-                            <td><input type="text" class="form-control gst-no" placeholder="GST No" name="gst_no"></td>
-                            <td><input type="text" class="form-control pan-no" placeholder="PAN No" name="pan_no"></td>
-                            <td><input type="email" class="form-control company-email" placeholder="Email" name="company_email"></td>
-                            <td><input type="text" class="form-control office-address" placeholder="Office Address" name="office_address"></td>
-                            <td><input type="text" class="form-control billing-address" placeholder="Billing Address" name="billing_address"></td>
-                           <td>
-                                <select class="form-control country">
-                                    <option value="India" selected>India</option>
-                                </select>
-                            </td>
-                           <td>
-                                <select class="form-control state">
-                                    <option value="">Please select</option>
-                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                                    <option value="Assam">Assam</option>
-                                    <option value="Bihar">Bihar</option>
-                                    <option value="Chhattisgarh">Chhattisgarh</option>
-                                    <option value="Goa">Goa</option>
-                                    <option value="Gujarat">Gujarat</option>
-                                    <option value="Haryana">Haryana</option>
-                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
-                                    <option value="Jharkhand">Jharkhand</option>
-                                    <option value="Karnataka">Karnataka</option>
-                                    <option value="Kerala">Kerala</option>
-                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
-                                    <option value="Maharashtra">Maharashtra</option>
-                                    <option value="Manipur">Manipur</option>
-                                    <option value="Meghalaya">Meghalaya</option>
-                                    <option value="Mizoram">Mizoram</option>
-                                    <option value="Nagaland">Nagaland</option>
-                                    <option value="Odisha">Odisha</option>
-                                    <option value="Punjab">Punjab</option>
-                                    <option value="Rajasthan">Rajasthan</option>
-                                    <option value="Sikkim">Sikkim</option>
-                                    <option value="Tamil Nadu">Tamil Nadu</option>
-                                    <option value="Telangana">Telangana</option>
-                                    <option value="Tripura">Tripura</option>
-                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                                    <option value="Uttarakhand">Uttarakhand</option>
-                                    <option value="West Bengal">West Bengal</option>
-                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                                    <option value="Chandigarh">Chandigarh</option>
-                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                                    <option value="Lakshadweep">Lakshadweep</option>
-                                    <option value="Delhi">Delhi</option>
-                                    <option value="Puducherry">Puducherry</option>
-                                    <option value="Ladakh">Ladakh</option>
-                                    <option value="Jammu & Kashmir">Jammu & Kashmir</option>
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control city" placeholder="City"></td>
-                            <td><input type="text" class="form-control post-code" placeholder="Postcode"></td>
-                        </tr>`;
-                    $('#company-table-body').prepend(newRow);
-                } else if (type === 'venue') {
-                    newRow = `
-                        <tr>
-                            <td>
-                                <button class="btn btn-sm btn-primary save-btn-venue me-2"><i class="fa fa-save"></i></button>
-                                <button class="btn btn-sm btn-danger delete-row1"><i class="fa fa-trash"></i></button>
-                            </td>
-                            <td><input type="text" class="form-control venue-name" placeholder="Venue Name"></td>
-                            <td><input type="text" class="form-control venue-address" placeholder="Venue Address"></td>
-                            <td><input type="text" class="form-control venue-country" placeholder="Country"></td>
-                            <td>
-                                <select class="form-control venue-state">
-                                    <option value="">Please select</option>
-                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                                    <option value="Assam">Assam</option>
-                                    <option value="Bihar">Bihar</option>
-                                    <option value="Chhattisgarh">Chhattisgarh</option>
-                                    <option value="Goa">Goa</option>
-                                    <option value="Gujarat">Gujarat</option>
-                                    <option value="Haryana">Haryana</option>
-                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
-                                    <option value="Jharkhand">Jharkhand</option>
-                                    <option value="Karnataka">Karnataka</option>
-                                    <option value="Kerala">Kerala</option>
-                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
-                                    <option value="Maharashtra">Maharashtra</option>
-                                    <option value="Manipur">Manipur</option>
-                                    <option value="Meghalaya">Meghalaya</option>
-                                    <option value="Mizoram">Mizoram</option>
-                                    <option value="Nagaland">Nagaland</option>
-                                    <option value="Odisha">Odisha</option>
-                                    <option value="Punjab">Punjab</option>
-                                    <option value="Rajasthan">Rajasthan</option>
-                                    <option value="Sikkim">Sikkim</option>
-                                    <option value="Tamil Nadu">Tamil Nadu</option>
-                                    <option value="Telangana">Telangana</option>
-                                    <option value="Tripura">Tripura</option>
-                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                                    <option value="Uttarakhand">Uttarakhand</option>
-                                    <option value="West Bengal">West Bengal</option>
-                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                                    <option value="Chandigarh">Chandigarh</option>
-                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                                    <option value="Lakshadweep">Lakshadweep</option>
-                                    <option value="Delhi">Delhi</option>
-                                    <option value="Puducherry">Puducherry</option>
-                                    <option value="Ladakh">Ladakh</option>
-                                    <option value="Jammu & Kashmir">Jammu & Kashmir</option>
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control venue-city" placeholder="City"></td>
-                            <td><input type="text" class="form-control venue-postcode" placeholder="Postcode"></td>
-                        </tr>`;
-                    $('#venue-table-body').prepend(newRow);
-                } else if (type === 'individual') {
-                    newRow = `
-                        <tr>
-                            <td>
-                                <button class="btn btn-sm btn-primary save-btn-individual me-2"><i class="fa fa-save"></i></button>
-                                <button class="btn btn-sm btn-danger delete-row2"><i class="fa fa-trash"></i></button>
-                            </td>
-                            <td><input type="text" class="form-control individual-name" placeholder="Name"></td>
-                            <td><input type="text" class="form-control individual-mobile" placeholder="Mobile No"></td>
-                            <td><input type="text" class="form-control individual-social" placeholder="Social No"></td>
-                            <td><input type="email" class="form-control individual-email" placeholder="Email"></td>
-                            <td>
-                                <select class="form-control individual-company">
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control individual-address" placeholder="Address"></td>
-                            <td><input type="text" class="form-control individual-country" placeholder="Country"></td>
-                            <td>
-                                <select class="form-control individual-state">
-                                    <option value="">Please select</option>
-                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                                    <option value="Assam">Assam</option>
-                                    <option value="Bihar">Bihar</option>
-                                    <option value="Chhattisgarh">Chhattisgarh</option>
-                                    <option value="Goa">Goa</option>
-                                    <option value="Gujarat">Gujarat</option>
-                                    <option value="Haryana">Haryana</option>
-                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
-                                    <option value="Jharkhand">Jharkhand</option>
-                                    <option value="Karnataka">Karnataka</option>
-                                    <option value="Kerala">Kerala</option>
-                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
-                                    <option value="Maharashtra">Maharashtra</option>
-                                    <option value="Manipur">Manipur</option>
-                                    <option value="Meghalaya">Meghalaya</option>
-                                    <option value="Mizoram">Mizoram</option>
-                                    <option value="Nagaland">Nagaland</option>
-                                    <option value="Odisha">Odisha</option>
-                                    <option value="Punjab">Punjab</option>
-                                    <option value="Rajasthan">Rajasthan</option>
-                                    <option value="Sikkim">Sikkim</option>
-                                    <option value="Tamil Nadu">Tamil Nadu</option>
-                                    <option value="Telangana">Telangana</option>
-                                    <option value="Tripura">Tripura</option>
-                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                                    <option value="Uttarakhand">Uttarakhand</option>
-                                    <option value="West Bengal">West Bengal</option>
-                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                                    <option value="Chandigarh">Chandigarh</option>
-                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                                    <option value="Lakshadweep">Lakshadweep</option>
-                                    <option value="Delhi">Delhi</option>
-                                    <option value="Puducherry">Puducherry</option>
-                                    <option value="Ladakh">Ladakh</option>
-                                    <option value="Jammu & Kashmir">Jammu & Kashmir</option>
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control individual-city" placeholder="City"></td>
-                            <td><input type="text" class="form-control individual-postcode" placeholder="Postcode"></td>
-                        </tr>`;
-                    $('#individual-table-body').prepend(newRow);
-
-                    fetchCompanyNames();
-                }
-            });
-
             // Save Company, Venue or Individual Row
-            $(document).on('click', '.save-btn-company, .save-btn-venue, .save-btn-individual', function () {
+            $(document).on('click', '#saveCompanyChanges, #saveVenueChanges, #saveIndividualChanges', function () {
                 let data = {};
-                const row = $(this).closest('tr');  // Find the closest table row
+                let formId = $(this).closest('form').attr('id');  // Get the closest form ID
 
-                if ($(this).hasClass('save-btn-company')) {
+                if (formId === 'companyInformationForm') {
                     data = {
                         type: 'company',
-                        company_name: row.find('.company-name').val(),
-                        gst_no: row.find('.gst-no').val(),
-                        pan_no: row.find('.pan-no').val(),
-                        company_email: row.find('.company-email').val(),
-                        office_address: row.find('.office-address').val(),
-                        billing_address: row.find('.billing-address').val(),
-                        country: row.find('.country').val(),
-                        state: row.find('.state').val(),
-                        city: row.find('.city').val(),
-                        post_code: row.find('.post-code').val(),
+                        company_name: $('#companyName').val(),
+                        gst_no: $('#gstNo').val(),
+                        pan_no: $('#panNo').val(),
+                        company_email: $('#companyEmail').val(),
+                        office_address: $('#officeAddress').val(),
+                        billing_address: $('#billingAddress').val(),
+                        country: $('#country').val(),
+                        state: $('#state').val(),
+                        city: $('#city').val(),
+                        post_code: $('#postcode').val(),
                     };
-                } else if ($(this).hasClass('save-btn-venue')) {
+                } else if (formId === 'venueInformationForm') {
                     data = {
                         type: 'venue',
-                        venue_name: row.find('.venue-name').val(),
-                        venue_address: row.find('.venue-address').val(),
-                        venue_country: row.find('.venue-country').val(),
-                        venue_state: row.find('.venue-state').val(),
-                        venue_city: row.find('.venue-city').val(),
-                        venue_postcode: row.find('.venue-postcode').val(),
+                        venue_name: $('#venueName').val(),
+                        venue_address: $('#venueAddress').val(),
+                        venue_country: $('#venueCountry').val(),
+                        venue_state: $('#venueState').val(),
+                        venue_city: $('#venueCity').val(),
+                        venue_postcode: $('#venuePostcode').val(),
                     };
-                } else if ($(this).hasClass('save-btn-individual')) {
+                } else if (formId === 'individualInformationForm') {
                     data = {
                         type: 'individual',
-                        individual_name: row.find('.individual-name').val(),
-                        individual_mobile: row.find('.individual-mobile').val(),
-                        individual_social: row.find('.individual-social').val(),
-                        individual_email: row.find('.individual-email').val(),
-                        individual_company: row.find('.individual-company').val(),
-                        individual_address: row.find('.individual-address').val(),
-                        individual_country: row.find('.individual-country').val(),
-                        individual_state: row.find('.individual-state').val(),
-                        individual_city: row.find('.individual-city').val(),
-                        individual_postcode: row.find('.individual-postcode').val(),
+                        individual_name: $('#individualName').val(),
+                        individual_mobile: $('#individualMobileNo').val(),
+                        individual_social: $('#individualSocialNo').val(),
+                        individual_email: $('#individualEmail').val(),
+                        individual_company: $('#individualCompanyName').val(),
+                        individual_address: $('#individualAddress').val(),
+                        individual_country: $('#individualCountry').val(),
+                        individual_state: $('#individualState').val(),
+                        individual_city: $('#individualCity').val(),
+                        individual_postcode: $('#individualPostcode').val(),
                     };
+
                 }
 
                 $.ajax({
@@ -711,9 +965,6 @@
                         if (response.status === 'success') {
                             alert('Data saved successfully!');
                             location.reload();
-                            // Optionally, you can remove the save button or make the row read-only after saving
-                            row.find('.save-btn-company, .save-btn-venue, .save-btn-individual').remove();
-                            // You could also disable the input fields here if needed
                         } else {
                             alert('Failed to save data: ' + response.message);
                         }
@@ -828,12 +1079,17 @@
                 });
             }
 
+            // Fetch company names when the modal is shown
+            $('#individualModal').on('shown.bs.modal', function () {
+                fetchCompanyNames();
+            });
+
             // Function to fetch and populate venue data
             function fetchCompanyNames() {
                 $.ajax({
                     url: '{% url "fetch_company_names" %}',
                     success: function (data) {
-                        const dropdown = $('.individual-company'); // Select the dropdown element
+                        const dropdown = $('#individualCompanyName'); // Select the dropdown element
 
                         // Clear existing options
                         dropdown.empty();

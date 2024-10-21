@@ -143,6 +143,7 @@
                             alert(response.message);
                             $('#addUserForm')[0].reset(); // Reset the form
 
+                            location.reload();
                             // Manually hide the offcanvas modal
                             $('#offcanvasExample').removeClass('show');
                             $('body').removeClass('offcanvas-open');
@@ -227,7 +228,7 @@
 
                 console.log('User ID:', userId);
                 // Display confirmation dialog before deleting
-                if (confirm('Are you sure you want to delete this category?')) {
+                if (confirm('Are you sure you want to delete this User?')) {
                     // Get CSRF token from the cookie
                     var csrftoken = getCookie('csrftoken');
 
@@ -474,7 +475,7 @@
 
                 <div class="container-fluid">
 
-                   <form id="addUserForm" method="POST">
+                    <form id="addUserForm" method="POST">
 
                         {% csrf_token %}
 
