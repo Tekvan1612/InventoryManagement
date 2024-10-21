@@ -4604,7 +4604,7 @@ def get_equipment_details(request, equipment_id):
 
             # Fetch total stock quantity (sum of units)
             cursor.execute("""
-                SELECT COUNT(s.serial_no) FROM stock_details s WHERE s.equipment_id = %s
+                SELECT COUNT(s.serial_no) FROM stock_details s WHERE s.equipment_id = %s AND scan_flag = FALSE
             """, [equipment_id])
             total_units = cursor.fetchone()[0]
 
@@ -4634,6 +4634,7 @@ def get_equipment_details(request, equipment_id):
     except Exception as e:
         print("Error:", str(e))  # Debugging print
         return JsonResponse({'error': str(e)}, status=500)
+
 
 
 def get_serial_details(request, equipment_id):
