@@ -355,6 +355,18 @@ def add_user(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
 
+    else:
+        # Handle GET request: Fetch employee names from the employee table
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT id, name FROM employee")
+                employees = cursor.fetchall()
+
+            employee_data = [{'id': employee[0], 'name': employee[1]} for employee in employees]
+            return render(request, 'product_tracking/user.html', {'employee_data': employee_data})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Error fetching employees: {e}"})
 
 
 def user_list(request):
