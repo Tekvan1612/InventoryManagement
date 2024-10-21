@@ -4960,6 +4960,11 @@ def add_row(request):
                     if not all([company_name, gst_no, pan_no, company_email, office_address]):
                         return JsonResponse({'status': 'error', 'message': 'All fields are required'})
 
+                    # Check for duplicate company name
+                    cursor.execute("SELECT COUNT(*) FROM connects WHERE company_name = %s", [company_name])
+                    if cursor.fetchone()[0] > 0:
+                        return JsonResponse({'status': 'error', 'message': 'Company name already exists'})
+
                     query = "SELECT add_company(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     cursor.execute(query, (
                         row_type, company_name, gst_no, pan_no, company_email, office_address, billing_address, country,
@@ -4975,6 +4980,11 @@ def add_row(request):
 
                     if not all([venue_name, venue_address]):
                         return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+
+                    # Check for duplicate venue name
+                    cursor.execute("SELECT COUNT(*) FROM connects WHERE venue_name = %s", [venue_name])
+                    if cursor.fetchone()[0] > 0:
+                        return JsonResponse({'status': 'error', 'message': 'Venue name already exists'})
 
                     query = "SELECT add_venue(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     cursor.execute(query, (
@@ -4996,6 +5006,12 @@ def add_row(request):
                     if not all([individual_name, individual_mobile, individual_email]):
                         return JsonResponse({'status': 'error', 'message': 'All fields are required'})
 
+                    # Check for duplicate mobile number or email
+                    cursor.execute("SELECT COUNT(*) FROM connects WHERE mobile_no = %s OR individual_email = %s",
+                                   [individual_mobile, individual_email])
+                    if cursor.fetchone()[0] > 0:
+                        return JsonResponse({'status': 'error', 'message': 'Mobile number or email already exists'})
+
                     query = "SELECT add_individual(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                     cursor.execute(query, (
                         row_type, individual_name, individual_mobile, individual_social, individual_email,
@@ -5015,6 +5031,7 @@ def add_row(request):
             cursor.close()
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
 
 
 def fetch_company_data(request):
