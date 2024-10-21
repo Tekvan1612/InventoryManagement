@@ -129,11 +129,8 @@ def performance(request):
 
 
 def task(request):
-    username = None
-    if request.user.is_authenticated:
-        username = request.user.username
+    username = request.session.get('username')
     return render(request, 'product_tracking/jobs.html', {'username': username})
-
 
 # Master Category Module
 def add_category(request):
