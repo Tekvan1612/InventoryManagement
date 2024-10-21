@@ -333,7 +333,7 @@ def add_user(request):
         if not created_by:
             return JsonResponse({'success': False, 'message': "Error: User session is not valid."})
 
-        created_date = now()  # Using Django's timezone-aware now()
+        created_date = now().replace(tzinfo=None)  # Remove timezone info to match 'timestamp without time zone'
 
         if not username:
             return JsonResponse({'success': False, 'message': "Error: Username is required."})
@@ -342,15 +342,23 @@ def add_user(request):
             return JsonResponse({'success': False, 'message': "Error: Employee ID is required."})
 
         try:
-            # No need to manually format the modules array. Pass it as a list, and Psycopg2 will handle the array conversion.
+            # Ensure emp_id is passed as an integer
+            emp_id = int(emp_id)
+
+            # Format the modules list into a PostgreSQL array
+            if modules:
+                modules_array = '{' + ','.join('"' + module + '"' for module in modules) + '}'
+            else:
+                modules_array = '{}'
+
             with transaction.atomic():  # Ensures atomicity
                 with connection.cursor() as cursor:
-                    logger.info(f"Attempting to add user: {username} with modules: {modules}")
+                    logger.info(f"Attempting to add user: {username} with modules: {modules_array}")
                     cursor.execute(
                         """
-                        SELECT add_user(%s, %s, %s, %s::varchar[], %s, %s, %s);
+                        SELECT add_user(%s, %s, %s, %s::varchar[], %s::integer, %s::timestamp, %s::integer);
                         """,
-                        [username, password, status, modules, created_by, created_date, emp_id]
+                        [username, password, status, modules_array, created_by, created_date, emp_id]
                     )
                     user_id = cursor.fetchone()[0]
 
@@ -365,6 +373,8 @@ def add_user(request):
                     else:
                         logger.error("Undefined user ID after adding the user.")
                         return JsonResponse({'success': False, 'message': "Error: User ID is undefined."})
+        except ValueError:
+            return JsonResponse({'success': False, 'message': "Error: Employee ID must be an integer."})
         except Exception as e:
             logger.error(f"Exception occurred while adding user: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
@@ -382,7 +392,6 @@ def add_user(request):
         except Exception as e:
             logger.error(f"Exception occurred while fetching employees: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"Error fetching employees: {e}"})
-
 
 def user_list(request):
     user_listing = []
