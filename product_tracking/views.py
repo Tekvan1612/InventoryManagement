@@ -140,7 +140,8 @@ def add_category(request):
     username = request.session.get('username')
     if request.method == 'POST':
         category_name = request.POST.get('category_name').upper()
-        description = request.POST.get('description')
+        description = request.P_user
+        OST.get('description')
         status = request.POST.get('status') == '1'
         created_by = request.session.get('user_id')
         created_date = datetime.now()
@@ -341,18 +342,15 @@ def add_user(request):
             return JsonResponse({'success': False, 'message': "Error: Employee ID is required."})
 
         try:
-            # Format the modules list into a PostgreSQL array literal
-            if modules:
-                modules_array = '{' + ','.join('"' + module + '"' for module in modules) + '}'
-            else:
-                modules_array = '{}'
-
+            # No need to manually format the modules array. Pass it as a list, and Psycopg2 will handle the array conversion.
             with transaction.atomic():  # Ensures atomicity
                 with connection.cursor() as cursor:
-                    logger.info(f"Attempting to add user: {username} with modules: {modules_array}")
+                    logger.info(f"Attempting to add user: {username} with modules: {modules}")
                     cursor.execute(
-                        "SELECT add_user(%s, %s, %s, %s, %s, %s, %s);",
-                        [username, password, status, modules_array, created_by, created_date, emp_id]
+                        """
+                        SELECT add_user(%s, %s, %s, %s::varchar[], %s, %s, %s);
+                        """,
+                        [username, password, status, modules, created_by, created_date, emp_id]
                     )
                     user_id = cursor.fetchone()[0]
 
