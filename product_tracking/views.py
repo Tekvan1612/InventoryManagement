@@ -320,7 +320,6 @@ def update_subcategory(request, id):
 
 def add_user(request):
     if request.method == 'POST':
-        # Initialize variables from POST data
         username = request.POST.get('username')
         emp_id = request.POST.get('emp_id')
         password = request.POST.get('password')
@@ -329,39 +328,27 @@ def add_user(request):
         created_by = int(request.session.get('user_id'))
         created_date = datetime.now()
 
-        if not username:
-            return JsonResponse({'success': False, 'message': "Error: Username is required."})
-
         try:
-            with transaction.atomic():  # Ensures atomicity
+            with transaction.atomic():
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT add_user(%s, %s, %s, %s, %s, %s, %s);",
-                        [username, password, status, modules, created_by, created_date, emp_id]
+                        [username, password, status, ','.join(modules), created_by, created_date, emp_id]
                     )
                     user_id = cursor.fetchone()[0]
 
-                    if user_id == -1:
-                        return JsonResponse(
-                            {'success': False, 'message': "Error: An issue occurred while adding the user."})
-                    elif user_id:
-                        return JsonResponse(
-                            {'success': True, 'message': f"User {username} added successfully with ID: {user_id}"})
-                    else:
-                        return JsonResponse({'success': False, 'message': "Error: User ID is undefined."})
+            if user_id == -1:
+                # Log the specific error details
+                logger.error(f"Error adding user. Username: {username}, Employee ID: {emp_id}, Modules: {modules}")
+                return JsonResponse({'success': False, 'message': "Error: An issue occurred while adding the user."})
+
+            return JsonResponse({'success': True, 'message': f"User {username} added successfully with ID: {user_id}"})
+
         except Exception as e:
-            # Log full exception traceback
-            logger.error(f"Error adding user: {str(e)}", exc_info=True)
+            # Log the exact exception to track the cause
+            logger.error(f"Exception occurred while adding user: {e}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
 
-    else:
-        # Handle GET request: Fetch employee names from the employee table
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id, name FROM employee")
-            employees = cursor.fetchall()
-
-        employee_data = [{'id': employee[0], 'name': employee[1]} for employee in employees]
-        return render(request, 'product_tracking/user.html', {'employee_data': employee_data})
 
 
 
