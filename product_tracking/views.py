@@ -16,7 +16,7 @@ from django.db import connection, transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.utils import timezone
+from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from psycopg2 import IntegrityError
 
