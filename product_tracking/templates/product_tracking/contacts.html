@@ -946,21 +946,21 @@
                         individual_city: $('#individualCity').val(),
                         individual_postcode: $('#individualPostcode').val(),
                     };
-
                 }
 
                 $.ajax({
-                    url: '/add_row/',
+                    url: '/add_row/',  // Assuming /add_row/ is the endpoint
                     type: 'POST',
                     data: data,
                     headers: {
-                        'X-CSRFToken': '{{ csrf_token }}' // Add this line to include CSRF token
+                        'X-CSRFToken': '{{ csrf_token }}' // Add CSRF token
                     },
                     success: function (response) {
                         if (response.status === 'success') {
                             alert('Data saved successfully!');
                             location.reload();
                         } else {
+                            // Display error message for duplicate entry or any other error
                             alert('Failed to save data: ' + response.message);
                         }
                     },
@@ -969,6 +969,7 @@
                     }
                 });
             });
+
 
             // Fetch data on page load
             fetchCompanyData();
