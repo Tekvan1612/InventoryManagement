@@ -3917,25 +3917,26 @@ def fetch_categories(request):
 
 @csrf_exempt
 def add_subcategory(request):
-    print('inside the add sub test')
+    logger.info('Entering the add_subcategory function')
+
     if request.method == 'POST':
-        print('Inside the post')
         try:
-            print('Inside the try block')
-            data = json.loads(request.body)  # Parse JSON body
-            print('inside the data', data)
+            # Parse JSON body
+            data = json.loads(request.body)
+            logger.info('Received data: %s', data)
 
             category_id = data.get('category_id')
-            name = data.get('subcategory_name').upper()
+            name = data.get('subcategory_name').upper() if data.get('subcategory_name') else None
             status = data.get('status')
-            created_by = 1  # Replace with actual user ID
+            created_by = request.session.get('user_id') or 1  # Fetch user_id from session, fallback to 1 if missing
             created_date = timezone.now()
-            print('Fetch the DATA:', category_id, name, status, created_by, created_date)
 
+            # Validate required fields
             if not category_id or not name or status is None:
+                logger.warning('Missing required fields')
                 return JsonResponse({'success': False, 'message': 'Missing required fields.'})
 
-            print('Data Received:', category_id, name, status, created_by, created_date)
+            logger.info('Validated data: category_id=%s, name=%s, status=%s, created_by=%s, created_date=%s', category_id, name, status, created_by, created_date)
 
             # Insert data into sub_category table
             with connection.cursor() as cursor:
@@ -3944,13 +3945,17 @@ def add_subcategory(request):
                     VALUES (%s, %s, %s, %s, %s)
                 """, [category_id, name, status, created_by, created_date])
 
+            logger.info('Subcategory added successfully.')
             return JsonResponse({'success': True, 'message': 'Subcategory added successfully!'})
 
         except json.JSONDecodeError:
+            logger.error('Invalid JSON data received', exc_info=True)
             return JsonResponse({'success': False, 'message': 'Invalid JSON data.'})
         except Exception as e:
+            logger.error('An error occurred while adding subcategory: %s', str(e), exc_info=True)
             return JsonResponse({'success': False, 'message': str(e)})
 
+    logger.warning('Invalid request method')
     return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
 
