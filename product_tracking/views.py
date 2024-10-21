@@ -325,7 +325,7 @@ def add_user(request):
         emp_id = request.POST.get('emp_id')
         password = request.POST.get('password')
         status = request.POST.get('status') == '1'
-        modules = request.POST.getlist('modules')
+        modules = request.POST.getlist('modules')  # This gets a list of modules
         created_by = int(request.session.get('user_id'))  # Assuming user_id is stored in the session
         created_date = datetime.now()
 
@@ -333,11 +333,14 @@ def add_user(request):
             return JsonResponse({'success': False, 'message': "Error: Username is required."})
 
         try:
+            # Format the modules list into a PostgreSQL array literal
+            modules_array = '{' + ','.join('"' + module + '"' for module in modules) + '}'
+
             with transaction.atomic():  # Ensures atomicity
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT add_user(%s, %s, %s, %s, %s, %s, %s);",
-                        [username, password, status, ','.join(modules), created_by, created_date, emp_id]
+                        [username, password, status, modules_array, created_by, created_date, emp_id]
                     )
                     user_id = cursor.fetchone()[0]
 
@@ -352,19 +355,6 @@ def add_user(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': f"Error occurred: {e}"})
 
-    else:  # Handle GET request: Render the user form with employee data
-        try:
-            # Fetch employee names from the employee table to show in the form
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT id, name FROM employee")
-                employees = cursor.fetchall()
-
-            employee_data = [{'id': employee[0], 'name': employee[1]} for employee in employees]
-            return render(request, 'product_tracking/user.html', {'employee_data': employee_data})
-
-        except Exception as e:
-            # In case of any database-related issues
-            return JsonResponse({'success': False, 'message': f"Error fetching employee data: {e}"})
 
 
 def user_list(request):
