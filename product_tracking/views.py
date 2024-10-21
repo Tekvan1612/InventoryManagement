@@ -140,8 +140,7 @@ def add_category(request):
     username = request.session.get('username')
     if request.method == 'POST':
         category_name = request.POST.get('category_name').upper()
-        description = request.P_user
-        OST.get('description')
+        description = request.POST.get('description')  # Fixed typo
         status = request.POST.get('status') == '1'
         created_by = request.session.get('user_id')
         created_date = datetime.now()
@@ -155,17 +154,21 @@ def add_category(request):
                 if category_count > 0:
                     return JsonResponse({'success': False, 'message': 'Category Already Exists!'})
 
-                # If the category doesn't exist, insert it
+                # Insert the new category using the function
                 cursor.execute(
                     "SELECT add_category(%s, %s, %s, %s, %s);",
                     [category_name, description, status, created_by, created_date]
                 )
-            return JsonResponse({'success': True})
+
+            return JsonResponse({'success': True, 'message': 'Category added successfully!'})
+
         except Exception as e:
             print("An unexpected error occurred:", e)
-            return JsonResponse({'success': False, 'message': 'An unexpected error occurred'})
+            return JsonResponse({'success': False, 'message': 'An unexpected error occurred: {}'.format(str(e))})
+
     else:
         return render(request, 'product_tracking/performance1.html', {'username': username})
+
 
 
 def category_list(request):
