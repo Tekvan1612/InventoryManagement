@@ -4380,35 +4380,29 @@ def update_equipment_details(request, equipment_id):
             cursor.execute("""
                 SELECT image_1, image_2, image_3 FROM public.equipment_list_attachments WHERE equipment_list_id = %s
             """, [equipment_id])
-            current_attachments = cursor.fetchone()
-
-            image_urls = list(current_attachments) if current_attachments else [None, None, None]
+            current_attachments = cursor.fetchone() or [None, None, None]
+            image_urls = list(current_attachments)
 
             if image1:
                 try:
                     result = cloudinary.uploader.upload(image1)
                     image_urls[0] = result.get('secure_url')
-                    print("Uploaded Image 1 URL:", image_urls[0])
                 except Exception as e:
-                    print("Error uploading Image 1:", str(e))
+                    return JsonResponse({'success': False, 'error': f"Error uploading Image 1: {str(e)}"})
 
             if image2:
                 try:
                     result = cloudinary.uploader.upload(image2)
                     image_urls[1] = result.get('secure_url')
-                    print("Uploaded Image 2 URL:", image_urls[1])
                 except Exception as e:
-                    print("Error uploading Image 2:", str(e))
+                    return JsonResponse({'success': False, 'error': f"Error uploading Image 2: {str(e)}"})
 
             if image3:
                 try:
                     result = cloudinary.uploader.upload(image3)
                     image_urls[2] = result.get('secure_url')
-                    print("Uploaded Image 3 URL:", image_urls[2])
                 except Exception as e:
-                    print("Error uploading Image 3:", str(e))
-
-            print("Final Image URLs:", image_urls)
+                    return JsonResponse({'success': False, 'error': f"Error uploading Image 3: {str(e)}"})
 
             # Update the equipment_list table
             cursor.execute("""
@@ -4416,7 +4410,7 @@ def update_equipment_details(request, equipment_id):
             """, [
                 equipment_id,
                 equipment_name,
-                sub_category_name,
+                sub_category_id,  # Correct ID being passed
                 category_type,
                 dimension_height,
                 dimension_width,
@@ -4439,6 +4433,7 @@ def update_equipment_details(request, equipment_id):
     except Exception as e:
         print("Error during equipment update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 
 def update_stock_details(request, equipment_id):
