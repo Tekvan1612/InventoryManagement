@@ -9,7 +9,6 @@
             border: 1px solid #ddd;
             padding: 30px;
             border-radius: 8px;
-            background-color: #f9f9f9;
             margin: 10px;
         }
 
@@ -22,145 +21,139 @@
             border: 1px solid #ddd;
             padding: 10px;
             border-radius: 8px;
-            background-color: #f9f9f9;
             margin: 10px;
         }
-
-
     </style>
     <script>
-
-        let currentPage = 1;
-        const pageSize = 10;
-        let totalItems1 = 0;
-
-        // Company Section Script Code Start
-        function fetchAndPopulateCompanyData() {
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = startIndex + pageSize;
-            $.ajax({
-                url: '/company_master_list/',
-                type: 'GET',
-                success: function (data) {
-                    totalItems = data.length;
-                    const currentPageData = data.slice(startIndex, endIndex);
-                    $('#company-table-body').empty();
-                    $.each(currentPageData, function (index, company) {
-                         var logoUrl = '/uploads/' + company.company_logo;
-                        var row = '<tr>' +
-                            '<td>' + (index + 1) + '</td>' +
-                            '<td style="display: none;">' + company.id + '</td>' +
-                            '<td><img src="/Project/wms2/media/uploads//uploads/${equipment.attachment}' + company.company_logo + '" alt="Equipment Image" width="30" height="30"></td>' +
-                            '<td>' + company.name + '</td>' +
-                            '<td>' + company.gst_no + '</td>' +
-                            '<td>' + company.email + '</td>' +
-                            '<td>' + company.address + '</td>' +
-                            '<td>' +
-                            '<button class="btn btn-sm btn-primary edit-company-btn"><i class="fa fa-pencil"></i>Edit</button>' +
-                            '<button class="btn btn-sm btn-danger delete-company-btn"><i class="fa fa-trash"></i>Remove</button>' +
-                            '</td>' +
-                            '</tr>';
-                        $('#company-table-body').append(row);
-                    });
-                    updatePaginationCountCompany(data.length);
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error fetching company data:', error);
-                }
-            });
-        }
-
         $(document).ready(function () {
+            let currentPage = 1;
+            const pageSize = 10;
+            let totalItems1 = 0;
+
             fetchAndPopulateCompanyData();
             fetchAndPopulateWarehouseData();
-        });
 
-        $(document).on('click', '.edit-company-btn', function () {
-            var row = $(this).closest('tr');
-            var editCompanyId = row.find('td:eq(1)').text().trim();
-            var companyName = row.find('td:eq(3)').text().trim();
-            var jobMail = row.find('td:eq(4)').text().trim();
-            var companyEmailId = row.find('td:eq(5)').text().trim();
-            var companyAddress = row.find('td:eq(6)').text().trim();
-
-            $('#editCompanyId').val(editCompanyId);
-            $('#editCompanyCompanyName').val(companyName);
-            $('#editCompanyGstNo').val(jobMail);
-            $('#editCompanyEmail').val(companyEmailId);
-            $('#editCompanyAddress').val(companyAddress);
-
-            $('#editCompanyModal').modal('show');
-        });
-
-        $(document).on('click', '#saveChangesCompanyBtn', function () {
-            updateCompanyInDatabase();
-        });
-
-        function updateCompanyInDatabase() {
-            var editCompanyId = $('#editCompanyId').val();
-            var companyName = $('#editCompanyCompanyName').val().trim();
-            var jobMail = $('#editCompanyGstNo').val().trim();
-            var companyEmailId = $('#editCompanyEmail').val().trim();
-            var companyAddress = $('#editCompanyAddress').val().trim();
-
-            var formData = new FormData();
-            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-            formData.append('companyId', editCompanyId);
-            formData.append('companyName', companyName);
-            formData.append('jobMail', jobMail);
-            formData.append('companyEmailId', companyEmailId);
-            formData.append('companyAddress', companyAddress);
-
-            $.ajax({
-                url: '/update_company/' + editCompanyId + '/',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    fetchAndPopulateCompanyData();
-                    $('#editCompanyModal').modal('hide');
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error updating company:', error);
-                }
-            });
-        }
-
-        function updatePaginationCountCompany(totalItems) {
-            const totalPages = Math.ceil(totalItems / pageSize);
-            $('#pagination-count-company').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
-
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-        }
-
-        $(document).on('click', '.delete-company-btn', function () {
-            var row = $(this).closest('tr');
-            var companyId = row.find('td:eq(1)').text().trim();
-
-            if (confirm('Are you sure you want to delete this Company?')) {
-                var csrftoken = getCookie('csrftoken');
-
+            // Company Section Script Code Start
+            function fetchAndPopulateCompanyData() {
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
                 $.ajax({
-                    url: '/delete_company_master/' + companyId + '/',
-                    type: 'POST',
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                    },
-                    success: function (response) {
-                        fetchAndPopulateCompanyData();
+                    url: '/company_master_list/',
+                    type: 'GET',
+                    success: function (data) {
+                        totalItems = data.length;
+                        const currentPageData = data.slice(startIndex, endIndex);
+                        $('#company-table-body').empty();
+                        $.each(currentPageData, function (index, company) {
+                            var logoUrl = '/uploads/' + company.company_logo;
+                            var row = '<tr>' +
+                                '<td>' + (index + 1) + '</td>' +
+                                '<td style="display: none;">' + company.id + '</td>' +
+                                '<td><img src="' + company.company_logo + '" alt="Company Image" width="50"></td>' +
+                                '<td>' + company.name + '</td>' +
+                                '<td>' + company.gst_no + '</td>' +
+                                '<td>' + company.email + '</td>' +
+                                '<td>' + company.address + '</td>' +
+                                '<td>' +
+                                '<button class="btn btn-sm btn-primary edit-company-btn me-2"><i class="fa fa-pencil"></i></button>' +
+                                '<button class="btn btn-sm btn-danger delete-company-btn"><i class="fa fa-trash"></i></button>' +
+                                '</td>' +
+                                '</tr>';
+                            $('#company-table-body').append(row);
+                        });
+                        updatePaginationCountCompany(data.length);
                     },
                     error: function (xhr, status, error) {
-                        console.error('Error deleting company:', error);
+                        console.error('Error fetching company data:', error);
                     }
                 });
             }
-        });
 
-        $(document).ready(function () {
-            fetchAndPopulateCompanyData();
+            $(document).on('click', '.edit-company-btn', function () {
+                var row = $(this).closest('tr');
+                var editCompanyId = row.find('td:eq(1)').text().trim();
+                var companyName = row.find('td:eq(3)').text().trim();
+                var jobMail = row.find('td:eq(4)').text().trim();
+                var companyEmailId = row.find('td:eq(5)').text().trim();
+                var companyAddress = row.find('td:eq(6)').text().trim();
+
+                $('#editCompanyId').val(editCompanyId);
+                $('#editCompanyCompanyName').val(companyName);
+                $('#editCompanyGstNo').val(jobMail);
+                $('#editCompanyEmail').val(companyEmailId);
+                $('#editCompanyAddress').val(companyAddress);
+
+                $('#editCompanyModal').modal('show');
+            });
+
+            $(document).on('click', '#saveChangesCompanyBtn', function () {
+                updateCompanyInDatabase();
+            });
+
+            function updateCompanyInDatabase() {
+                var editCompanyId = $('#editCompanyId').val();
+                var companyName = $('#editCompanyCompanyName').val().trim();
+                var jobMail = $('#editCompanyGstNo').val().trim();
+                var companyEmailId = $('#editCompanyEmail').val().trim();
+                var companyAddress = $('#editCompanyAddress').val().trim();
+
+                var formData = new FormData();
+                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+                formData.append('companyId', editCompanyId);
+                formData.append('companyName', companyName);
+                formData.append('jobMail', jobMail);
+                formData.append('companyEmailId', companyEmailId);
+                formData.append('companyAddress', companyAddress);
+
+                $.ajax({
+                    url: '/update_company/' + editCompanyId + '/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        location.reload();
+                        fetchAndPopulateCompanyData();
+                        $('#editCompanyModal').modal('hide');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error updating company:', error);
+                    }
+                });
+            }
+
+            function updatePaginationCountCompany(totalItems) {
+                const totalPages = Math.ceil(totalItems / pageSize);
+                $('#pagination-count-company').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+            }
+
+            $(document).on('click', '.delete-company-btn', function () {
+                var row = $(this).closest('tr');
+                var companyId = row.find('td:eq(1)').text().trim();
+
+                if (confirm('Are you sure you want to delete this Company?')) {
+                    var csrftoken = getCookie('csrftoken');
+
+                    $.ajax({
+                        url: '/delete_company_master/' + companyId + '/',
+                        type: 'POST',
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                        },
+                        success: function (response) {
+                            location.reload();
+                            fetchAndPopulateCompanyData();
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error deleting company:', error);
+                        }
+                    });
+                }
+            });
 
             $('#prev-page-btn').click(function () {
                 if (currentPage > 1) {
@@ -178,12 +171,9 @@
                     fetchAndPopulateCompanyData();
                 }
             });
-        });
-        // Company Section Script Code End
+            // Company Section Script Code End
 
-
-        // Warehouse Section Script Code Start
-        $(document).ready(function () {
+            // Warehouse Section Script Code Start
             $.ajax({
                 url: '/company_name_dropdown/',
                 type: 'GET',
@@ -200,126 +190,124 @@
                     console.error('Error fetching company data:', error);
                 }
             });
-        });
 
-        function fetchAndPopulateWarehouseData() {
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = startIndex + pageSize;
-            $.ajax({
-                url: '/warehouse_master_list/',
-                type: 'GET',
-                success: function (data) {
-                    totalItems = data.length;
-                    const currentPageData = data.slice(startIndex, endIndex);
-                    $('#warehouse-table-body').empty();
-                    $.each(currentPageData, function (index, warehouse) {
-                        var row = '<tr>' +
-                            '<td>' + (index + 1) + '</td>' +
-                            '<td style="display: none;">' + warehouse.id + '</td>' +
-                            '<td>' + warehouse.company_name + '</a></td>' +
-                            '<td>' + warehouse.phone_no + '</td>' +
-                            '<td>' + warehouse.address + '</td>' +
-                            '<td>' +
-                            '<button class="btn btn-sm btn-primary edit-warehouse-btn"><i class="fa fa-pencil"></i>Edit</button>' +
-                            '<button class="btn btn-sm btn-danger delete-warehouse-btn"><i class="fa fa-trash"></i>Remove</button>' +
-                            '</td>' +
-                            '</tr>';
-                        $('#warehouse-table-body').append(row);
-                    });
-                    updatePaginationCount(data.length);
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error fetching equipment data:', error);
-                }
-            });
-        }
-
-        $(document).on('click', '.edit-warehouse-btn', function () {
-            var row = $(this).closest('tr');
-            var jobId = row.find('td:eq(1)').text().trim();
-            var jobReferenceNo = row.find('td:eq(2)').text().trim();
-            var title = row.find('td:eq(3)').text().trim();
-            var valuesShow = row.find('td:eq(4)').text().trim();
-
-            $('#editJobsId').val(jobId);
-            $('#editJobsReferenceNo').val(jobReferenceNo);
-            $('#editJobsTitle').val(title);
-            $('#editJobsAddress').val(valuesShow);
-
-            $('#editJobsModal').modal('show');
-        });
-
-        $(document).on('click', '#saveChangesWarehouseBtn', function () {
-            updateWarehouseInDatabase();
-        });
-
-        function updateWarehouseInDatabase() {
-            var jobId = $('#editJobsId').val();
-            var jobReferenceNo = $('#editJobsReferenceNo').val().trim();
-            var title = $('#editJobsTitle').val().trim();
-            var valuesShow = $('#editJobsAddress').val().trim();
-
-            var formData = new FormData();
-            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-            formData.append('jobId', jobId);
-            formData.append('jobReferenceNo', jobReferenceNo);
-            formData.append('title', title);
-            formData.append('valuesShow', valuesShow);
-
-            $.ajax({
-                url: '/update_warehouse/' + jobId + '/',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    console.log(response);
-                    fetchAndPopulateWarehouseData();
-
-                    $('#editJobsModal').modal('hide');
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error updating category:', error);
-                }
-            });
-        }
-
-        function updatePaginationCount(totalItems) {
-            const totalPages = Math.ceil(totalItems / pageSize);
-            $('#pagination-count').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
-
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-        }
-
-        $(document).on('click', '.delete-warehouse-btn', function () {
-            var row = $(this).closest('tr');
-            var warehouseId = row.find('td:eq(1)').text().trim();
-
-            console.log('Warehouse ID:', warehouseId);
-            if (confirm('Are you sure you want to delete this Warehouse?')) {
-                var csrftoken = getCookie('csrftoken');
-
+            function fetchAndPopulateWarehouseData() {
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
                 $.ajax({
-                    url: '/delete_warehouse_master/' + warehouseId + '/',
-                    type: 'POST',
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                    },
-                    success: function (response) {
-                        console.log(response);
-                        fetchAndPopulateWarehouseData();
+                    url: '/warehouse_master_list/',
+                    type: 'GET',
+                    success: function (data) {
+                        totalItems = data.length;
+                        const currentPageData = data.slice(startIndex, endIndex);
+                        $('#warehouse-table-body').empty();
+                        $.each(currentPageData, function (index, warehouse) {
+                            var row = '<tr>' +
+                                '<td>' + (index + 1) + '</td>' +
+                                '<td style="display: none;">' + warehouse.id + '</td>' +
+                                '<td>' + warehouse.company_name + '</a></td>' +
+                                '<td>' + warehouse.phone_no + '</td>' +
+                                '<td>' + warehouse.address + '</td>' +
+                                '<td>' +
+                                '<button class="btn btn-sm btn-primary edit-warehouse-btn me-2"><i class="fa fa-pencil"></i></button>' +
+                                '<button class="btn btn-sm btn-danger delete-warehouse-btn"><i class="fa fa-trash"></i></button>' +
+                                '</td>' +
+                                '</tr>';
+                            $('#warehouse-table-body').append(row);
+                        });
+                        updatePaginationCount(data.length);
                     },
                     error: function (xhr, status, error) {
-                        console.error('Error deleting Equipment:', error);
+                        console.error('Error fetching equipment data:', error);
                     }
                 });
             }
-        });
 
-        $(document).ready(function () {
-            fetchAndPopulateWarehouseData();
+            $(document).on('click', '.edit-warehouse-btn', function () {
+                var row = $(this).closest('tr');
+                var jobId = row.find('td:eq(1)').text().trim();
+                var jobReferenceNo = row.find('td:eq(2)').text().trim();
+                var title = row.find('td:eq(3)').text().trim();
+                var valuesShow = row.find('td:eq(4)').text().trim();
+
+                $('#editJobsId').val(jobId);
+                $('#editJobsReferenceNo').val(jobReferenceNo);
+                $('#editJobsTitle').val(title);
+                $('#editJobsAddress').val(valuesShow);
+
+                $('#editJobsModal').modal('show');
+            });
+
+            $(document).on('click', '#saveChangesWarehouseBtn', function () {
+                updateWarehouseInDatabase();
+            });
+
+            function updateWarehouseInDatabase() {
+                var jobId = $('#editJobsId').val();
+                var jobReferenceNo = $('#editJobsReferenceNo').val().trim();
+                var title = $('#editJobsTitle').val().trim();
+                var valuesShow = $('#editJobsAddress').val().trim();
+
+                var formData = new FormData();
+                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+                formData.append('jobId', jobId);
+                formData.append('jobReferenceNo', jobReferenceNo);
+                formData.append('title', title);
+                formData.append('valuesShow', valuesShow);
+
+                $.ajax({
+                    url: '/update_warehouse/' + jobId + '/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        console.log(response);
+                        location.reload();
+                        fetchAndPopulateWarehouseData();
+
+                        $('#editJobsModal').modal('hide');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error updating category:', error);
+                    }
+                });
+            }
+
+            function updatePaginationCount(totalItems) {
+                const totalPages = Math.ceil(totalItems / pageSize);
+                $('#pagination-count').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+            }
+
+            $(document).on('click', '.delete-warehouse-btn', function () {
+                var row = $(this).closest('tr');
+                var warehouseId = row.find('td:eq(1)').text().trim();
+
+                console.log('Warehouse ID:', warehouseId);
+                if (confirm('Are you sure you want to delete this Warehouse?')) {
+                    var csrftoken = getCookie('csrftoken');
+
+                    $.ajax({
+                        url: '/delete_warehouse_master/' + warehouseId + '/',
+                        type: 'POST',
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                        },
+                        success: function (response) {
+                            console.log(response);
+                            location.reload();
+                            fetchAndPopulateWarehouseData();
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error deleting Equipment:', error);
+                        }
+                    });
+                }
+            });
 
             $('#prev-page-btn1').click(function () {
                 if (currentPage > 1) {
@@ -337,29 +325,29 @@
                     fetchAndPopulateWarehouseData();
                 }
             });
-        });
 
-        function getCookie(name) {
-            var cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
                     }
                 }
+                return cookieValue;
             }
-            return cookieValue;
-        }
 
-        $(document).on('click', '#closeCompanyFormBtn', function () {
-            $('#editCompanyModal').modal('hide');
-        });
+            $(document).on('click', '#closeCompanyFormBtn', function () {
+                $('#editCompanyModal').modal('hide');
+            });
 
-        $(document).on('click', '#closeFormBtn', function () {
-            $('#editJobsModal').modal('hide');
+            $(document).on('click', '#closeFormBtn', function () {
+                $('#editJobsModal').modal('hide');
+            });
         });
     </script>
     <body>
@@ -435,7 +423,7 @@
                     <!-- First Form -->
                     <div class="col-md-6">
                         <div class="form-container">
-                            <label for="companyLabel" class="form-header">Company</label>
+                            <label for="companyLabel" class="form-header" style="color: #FFFFFF">Company</label>
                             <form action="{% url 'company_master' %}" method="POST" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <div class="row">
@@ -454,6 +442,12 @@
                                     <div class="col-xl-6 mb-3">
                                         <label for="companyEmail" class="form-label">Email:</label>
                                         <input type="email" class="form-control" id="companyEmail" name="companyEmail"
+                                               required>
+                                    </div>
+                                    <div class="col-xl-6 mb-3">
+                                        <label for="companyPhoneNo" class="form-label">Phone No:</label>
+                                        <input type="text" class="form-control" id="companyPhoneNo"
+                                               name="companyPhoneNo" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                                                required>
                                     </div>
                                     <div class="col-xl-6 mb-3">
@@ -477,7 +471,7 @@
                     <!-- Second Form -->
                     <div class="col-md-6">
                         <div class="form-container">
-                            <label for="warehouseLabel" class="form-header">Warehouse</label>
+                            <label for="warehouseLabel" class="form-header" style="color: #FFFFFF">Warehouse</label>
                             <form action="{% url 'add_warehouse_master' %}" method="POST">
                                 {% csrf_token %}
                                 <div class="row">
@@ -489,8 +483,8 @@
                                     </div>
                                     <div class="col-xl-6 mb-3">
                                         <label for="warehousePhoneNo" class="form-label">Phone No:</label>
-                                        <input type="number" class="form-control" id="warehousePhoneNo"
-                                               name="warehousePhoneNo" required>
+                                        <input type="text" class="form-control" id="warehousePhoneNo"
+                                               name="warehousePhoneNo" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
