@@ -1827,9 +1827,9 @@ def get_status_counts(request):
     with connection.cursor() as cursor:
         # cursor.execute("SELECT COUNT(*) FROM public.jobs WHERE status = 'Perfoma';")
         cursor.execute(
-            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.temp WHERE status = 'Perfoma' GROUP BY  job_reference_no, status) AS unique_perfoma;")
+            "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.temp WHERE status = 'Porforma' GROUP BY  job_reference_no, status) AS unique_perfoma;")
         perfoma_count = cursor.fetchone()[0]
-        print('Perfoma status count:', perfoma_count)
+        print('Porforma status count:', perfoma_count)
 
         cursor.execute(
             "SELECT COUNT(*) FROM (SELECT job_reference_no, status FROM public.temp WHERE status = 'Prepsheet' GROUP BY job_reference_no, status) AS unique_prepsheets;")
@@ -2384,24 +2384,33 @@ def company_name_dropdown(request):
 
 def company_master(request):
     if request.method == 'POST':
+        # Log data for debugging
+        print("Received POST data:", request.POST)
+        print("Received FILES data:", request.FILES)
+
         name = request.POST.get('companyName')
         gst_no = request.POST.get('companyGstNo')
         email = request.POST.get('companyEmail')
         company_logo = request.FILES.get('companyLogo')
         address = request.POST.get('companyAddress')
 
-        company_logo_attachment = None
+        # Assuming you're using Cloudinary, adjust the size limits as needed
+        company_logo_attachment_url = None
         if company_logo:
-            company_logo_attachment = 'C:/Users/admin/PycharmProjects/Project/wms2/media/uploads/{}'.format(
-                company_logo.name)
-            with open(company_logo_attachment, 'wb') as f:
-                for chunk in company_logo.chunks():
-                    f.write(chunk)
+            # Check file size (adjust as per your requirement)
+            if company_logo.size < 4000 or company_logo.size > 12288:  # Example: 5KB to 12KB
+                return JsonResponse({'error': 'Company logo size must be between 5KB and 12KB.'}, status=400)
+
+            # Upload the file to Cloudinary (folder path can be customized)
+            upload_result = cloudinary.uploader.upload(company_logo, folder="company_logos/")
+
+            # Get the URL of the uploaded file
+            company_logo_attachment_url = upload_result['secure_url']
 
         try:
             with connection.cursor() as cursor:
                 cursor.callproc('company_master',
-                                ['CREATE', None, name, gst_no, email, company_logo_attachment, address])
+                                ['CREATE', None, name, gst_no, email, company_logo_attachment_url, address])
                 company = cursor.fetchall()
                 print('Inserted values are:', company)
                 return redirect('warehouse_master')
@@ -2655,201 +2664,6 @@ def fetch_client_contact_number(request):
     return JsonResponse(
         {'contact_person_name': contact_person_name, 'contact_person_no': contact_person_no})  # Update this line
 
-
-# @csrf_exempt
-# def print_jobs(request):
-#     job_id = request.GET.get('jobId')
-#     print('Fetch the jobId in print jobs:', job_id)
-#
-#     if not job_id:
-#         return JsonResponse({'error': 'Job ID is required'}, status=400)
-#
-#     # Query to fetch job details from the `temp` table
-#     job_query = '''
-#         SELECT id, job_reference_no, title, client_name, contact_person_name, contact_person_number,
-#                status, venue_name, venue_address, notes, crew_type, employee, setup_date, rehearsal_date,
-#                event_date, dismantle_date, total_days, amount_row, discount, amount_after_discount,
-#                total_amount, created_by, created_date
-#         FROM temp
-#         WHERE id = %s
-#     '''
-#     print('Fetch the job Query:', job_query)
-#
-#     # Updated query to fetch the first row of each equipment_id including rental_price as integer
-#     equipment_query = '''
-#         SELECT DISTINCT ON (e.id)
-#                te.id AS temp_equipment_id,
-#                e.id AS equipment_id,
-#                te.equipment_name,
-#                te.quantity,
-#                COALESCE(CAST(s.rental_price AS INTEGER), 0) AS rental_price
-#         FROM temp_equipment_details te
-#         JOIN equipment_list e ON e.equipment_name = te.equipment_name
-#         LEFT JOIN stock_details s ON s.equipment_id = e.id
-#         WHERE te.temp_id = %s
-#         ORDER BY e.id, s.purchase_date DESC
-#     '''
-#     print('Fetch the Equipment_Query', equipment_query)
-#
-#     # Query to fetch connects details with billing or individual address based on client type
-#     connects_query = '''
-#         SELECT
-#             CASE
-#                 WHEN company_name IS NOT NULL THEN 'Company'
-#                 WHEN individual_name IS NOT NULL THEN 'Individual'
-#                 ELSE NULL
-#             END AS match_type,
-#             billing_address,
-#             individual_address,
-#             country,
-#             state,
-#             city,
-#             post_code
-#         FROM connects
-#         WHERE company_name = %s OR individual_name = %s
-#         LIMIT 1
-#     '''
-#     print('Check the Connects Query:', connects_query)
-#
-#     # Query to fetch company details from the `company_master` table
-#     company_query = '''
-#         SELECT name, gst_no, email, company_logo, address
-#         FROM company_master
-#     '''
-#     print('Fetch the Company Query:', company_query)
-#
-#     with connection.cursor() as cursor:
-#         print('Inside the cursor connection')
-#         cursor.execute(job_query, [job_id])
-#         job = cursor.fetchone()
-#         print('Check the Job:', job)
-#
-#         if not job:
-#             return JsonResponse({'error': 'Job not found'}, status=404)
-#
-#         client_name = job[3]  # Extract client_name from the job
-#         print('Fetch the Client Name of Job:', client_name)
-#
-#         cursor.execute(connects_query, [client_name, client_name])
-#         connects_details = cursor.fetchone()
-#         print('Fetch the connects Details:', connects_details)
-#
-#         cursor.execute(company_query, [client_name])
-#         company_details = cursor.fetchone()
-#         print('Fetch the company Details:', company_details)
-#
-#         cursor.execute(equipment_query, [job_id])
-#         equipment_details = cursor.fetchall()
-#         print('Fetch the equipment Details:', equipment_details)
-#
-#         # Determine the match type and address to include
-#         match_type = connects_details[0] if connects_details else None
-#         billing_address = connects_details[1] if connects_details else None
-#         individual_address = connects_details[2] if connects_details else None
-#         country = connects_details[3] if connects_details else None
-#         state = connects_details[4] if connects_details else None
-#         city = connects_details[5] if connects_details else None
-#         post_code = connects_details[6] if connects_details else None
-#
-#         # Prepare job data with merged connects details
-#         job_data = {
-#             'id': job[0],
-#             'job_reference_no': job[1],
-#             'title': job[2],
-#             'client_name': job[3],
-#             'contact_person_name': job[4],
-#             'contact_person_number': job[5],
-#             'status': job[6],
-#             'venue_name': job[7],
-#             'venue_address': job[8],
-#             'notes': job[9] if job[9] is not None else "",
-#             'crew_type': job[10],
-#             'employee': job[11],
-#             'setup_date': job[12].strftime('%d-%m-%Y') if job[12] else None,
-#             'rehearsal_date': job[13].strftime('%d-%m-%Y') if job[13] else None,
-#             'event_date': job[14].strftime('%d-%m-%Y') if job[14] else None,
-#             'dismantle_date': job[15].strftime('%d-%m-%Y') if job[15] else None,
-#             'total_days': job[16],
-#             'amount_row': job[17],
-#             'discount': job[18],
-#             'amount_after_discount': job[19],
-#             'total_amount': job[20],
-#             'created_by': job[21],
-#             'created_date': job[22].strftime('%d-%m-%Y') if job[22] else None,
-#             'match_type': match_type,
-#             'address': billing_address if match_type == 'Company' else individual_address,
-#             'country': country,
-#             'state': state,
-#             'city': city,
-#             'post_code': post_code
-#
-#         }
-#
-#         # Prepare company details if available
-#         company_data = {
-#             'company_name': company_details[0] if company_details else None,
-#             'gst_no': company_details[1] if company_details else None,
-#             'email': company_details[2] if company_details else None,
-#             'company_logo': default_storage.url(company_details[3]) if company_details else None,
-#             'address': company_details[4] if company_details else None
-#         } if company_details else None
-#         print('Fetch the company DATA:', company_data)
-#
-#         # Initialize total rental sum and list for equipment data
-#
-#     total_rental_sum = 0
-#     equipment_data = []
-#     # Process each equipment detail
-#     for detail in equipment_details:
-#         print('Processing Equipment Details:', equipment_details)
-#         print('Processing Detail:', detail)
-#
-#         rental_price = int(detail[4]) if detail[4] is not None else 0
-#         total_days_price = int(detail[3]) * rental_price if rental_price else 'Not Available'
-#         total_rental_price = int(detail[3]) * int(
-#             job_data['total_days']) * rental_price if rental_price else 'Not Available'
-#
-#         if isinstance(total_rental_price, int):
-#             total_rental_sum += total_rental_price
-#
-#         equipment_data.append({
-#             'temp_equipment_id': detail[0],
-#             'equipment_id': detail[1],
-#             'equipment_name': detail[2],
-#             'quantity': detail[3],
-#             'rental_price': rental_price if rental_price else 'Not Available',
-#             'total_days_price': total_days_price,
-#             'total_rental_price': total_rental_price
-#         })
-#
-#     print('Final Equipment Data:', equipment_data)
-#
-#     # Fetch the discount and calculate the total after discount
-#     discount = float(job_data['discount']) if job_data['discount'] else 0
-#     print('Fetch the DISCOUNT:', discount)
-#     total_after_discount = total_rental_sum - (total_rental_sum * (discount / 100))
-#     print('Fetch the TOTAL AFTER DISCOUNT:', total_after_discount)
-#
-#     # Add 18% GST to the total_after_discount
-#     gst_percentage = 18
-#     gst_amount = total_after_discount * (gst_percentage / 100)
-#     total_with_gst = total_after_discount + gst_amount
-#     # Prepare the final response data including the total sum of rental prices
-#     response_data = {
-#         'job': job_data,
-#         'company': company_data,
-#         'equipment_details': equipment_data,
-#         'total_days': job_data['total_days'],
-#         'total_rental_sum': total_rental_sum,  # Include the sum of all total_rental_price
-#         'discount': discount,  # The discount percentage
-#         'total_after_discount': total_after_discount,
-#         'gst_percentage': gst_percentage,  # GST percentage applied
-#         'gst_amount': gst_amount,  # GST amount
-#         'total_with_gst': total_with_gst  # Final total after applying GST
-#     }
-#     print('Fetch the response DATA:', response_data)
-#
-#     return JsonResponse(response_data)
 
 
 @csrf_exempt
@@ -4243,17 +4057,18 @@ def fetch_equipment_details(request):
 
     try:
         with connection.cursor() as cursor:
-            # Fetch equipment details including attachment
+            # Fetch equipment details, including subcategory name and attachment details
             cursor.execute("""
-                SELECT el.id, el.equipment_name, el.sub_category_id, el.category_type, el.dimension_height,
-                       el.dimension_width, el.dimension_length, el.weight, el.volume, el.hsn_no, el.country_origin,
-                       el.status, el.created_by, el.created_date,
+                SELECT el.id, el.equipment_name, el.sub_category_id, sc.name as sub_category_name, el.category_type,
+                       el.dimension_height, el.dimension_width, el.dimension_length, el.weight, el.volume,
+                       el.hsn_no, el.country_origin, el.status, el.created_by, el.created_date,
                        ea.image_1, ea.image_2, ea.image_3,
                        sd.vender_name, sd.purchase_date, sd.unit_price, sd.rental_price, sd.reference_no,
                        sd.unit, sd.serial_no, sd.barcode_no, sd.attchment  -- Fetch `attchment` field
                 FROM public.equipment_list el
                 LEFT JOIN public.equipment_list_attachments ea ON el.id = ea.equipment_list_id
                 LEFT JOIN public.stock_details sd ON el.id = sd.equipment_id
+                LEFT JOIN public.sub_category sc ON el.sub_category_id = sc.id
                 WHERE el.id = %s
             """, [equipment_id])
             row = cursor.fetchone()
@@ -4261,53 +4076,42 @@ def fetch_equipment_details(request):
             if not row:
                 return JsonResponse({'error': 'Equipment not found'}, status=404)
 
-            sub_category_id = row[2]
-
-            # Fetch sub-category name
-            cursor.execute("""
-                SELECT name
-                FROM public.sub_category
-                WHERE id = %s
-            """, [sub_category_id])
-            sub_category_row = cursor.fetchone()
-            sub_category_name = sub_category_row[0] if sub_category_row else 'Unknown'
-
             # Extract data from the row
             response_data = {
                 'equipment': {
                     'id': row[0],
                     'equipment_name': row[1],
-                    'sub_category_name': sub_category_name,
-                    'category_type': row[3],
-                    'dimension_height': row[4],
-                    'dimension_width': row[5],
-                    'dimension_length': row[6],
-                    'weight': row[7],
-                    'volume': row[8],
-                    'hsn_no': row[9],
-                    'country_origin': row[10],
-                    'status': row[11],
-                    'created_by': row[12],
-                    'created_date': row[13],
+                    'sub_category_name': row[3],  # Subcategory name from JOIN
+                    'category_type': row[4],
+                    'dimension_height': row[5],
+                    'dimension_width': row[6],
+                    'dimension_length': row[7],
+                    'weight': row[8],
+                    'volume': row[9],
+                    'hsn_no': row[10],
+                    'country_origin': row[11],
+                    'status': row[12],
+                    'created_by': row[13],
+                    'created_date': row[14],
                 },
                 'attachments': {
-                    'image_1': row[14],
-                    'image_2': row[15],
-                    'image_3': row[16],
+                    'image_1': row[15],
+                    'image_2': row[16],
+                    'image_3': row[17],
                 },
                 'stock_details': {
-                    'vendor_name': row[17],
-                    'purchase_date': row[18],
-                    'unit_price': row[19],
-                    'rental_price': row[20],
-                    'reference_no': row[21],
-                    'unit': row[22],
-                    'serial_no': row[23],
-                    'barcode_no': row[24],
-                    'attachment': row[25].split('/')[-1] if row[25] else None,  # Extract filename or path
+                    'vendor_name': row[18],
+                    'purchase_date': row[19],
+                    'unit_price': row[20],
+                    'rental_price': row[21],
+                    'reference_no': row[22],
+                    'unit': row[23],
+                    'serial_no': row[24],
+                    'barcode_no': row[25],
+                    'attachment': row[26].split('/')[-1] if row[26] else None,  # Extract filename or path
                 }
             }
-            print('FETCH THE DATA:', response_data)
+            print('FETCH THE DATA:', response_data)  # Debugging purpose
             return JsonResponse(response_data)
 
     except Exception as e:
@@ -4434,8 +4238,6 @@ def update_equipment_details(request, equipment_id):
         print("Error during equipment update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
 
-
-
 def update_stock_details(request, equipment_id):
     try:
         # Extract stock details data
@@ -4457,7 +4259,6 @@ def update_stock_details(request, equipment_id):
     except Exception as e:
         print("Error during stock details update:", str(e))
         return JsonResponse({'success': False, 'error': str(e)})
-
 
 @csrf_exempt
 def insert_stock_details(request):
@@ -4506,7 +4307,6 @@ def insert_stock_details(request):
             return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
-
 
 def equipment_by_category(request):
     category_id = request.GET.get('category_id')
@@ -6106,6 +5906,7 @@ def print_jobs(request):
             'company_name': company_details[0] if company_details else None,
             'gst_no': company_details[1] if company_details else None,
             'email': company_details[2] if company_details else None,
+            'company_logo': company_details[3] if company_details else None,
             # 'company_logo': default_storage.url(company_details[3]) if company_details else None,
             'address': company_details[4] if company_details else None
         } if company_details else None
