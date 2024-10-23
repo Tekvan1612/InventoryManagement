@@ -505,7 +505,6 @@
             fetchClientName();
             fetchVenueAddress();
             fetchVenueName();
-            {#fetchMasterCategories();#}
 
             // General Details Section
             // Call this function on page load with the initial status value
@@ -639,6 +638,14 @@
                 });
             }
 
+            $('#clientNameDropdown').on('input', function () {
+                var filter = $(this).val().toLowerCase();
+                $('#clientNameInputDropdown li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    $(this).toggle(text.indexOf(filter) > -1);
+                });
+            });
+
             function fetchIndividualNames(clientName) {
                 $.ajax({
                     url: '/fetch_individual_names/',
@@ -757,7 +764,7 @@
                     $('#nav-crew_allocation').hide();
                     $('#nav-transportation_allocation').hide();
                     $('#nav-add_sub_vendor').hide();
-                } else if (status === "Perfoma") {
+                } else if (status === "Porforma") {
                     $('#quotation-fields1').show();
                     $('#crew-allocation-delivery-challan').hide();
                     $('#crew-allocation-quotation').show();
@@ -891,20 +898,11 @@
                 var status = $(this).val();
 
                 if (status === 'Quotation') {
-                    $('#step-1').on('input', 'input', function () {
-                        // Check if the input field is NOT the venueAddressDropdown
-                        if ($(this).attr('id') !== 'venueAddressDropdown') {
-                            updateTempDetails();
-                        }
-                    });
-                } else if (status === 'Perfoma') {
-                    $('#total_amount').on('input', function () {
-                        updateTempDetails();
-                    });
+                    updateTempDetails();
+                } else if (status === 'Porforma') {
+                    updateTempDetails();
                 } else if (status === 'Prepsheet') {
-                    $('#employeeName').on('input', function () {
-                        updateTempDetails();
-                    });
+                    updateTempDetails();
                 } else {
                     updateTempDetails();
                 }
@@ -928,7 +926,7 @@
                     $('#nav-crew_allocation').hide();
                     $('#nav-transportation_allocation').hide();
                     $('#nav-add_sub_vendor').hide();
-                } else if (selectedValue === "Perfoma") {
+                } else if (selectedValue === "Porforma") {
                     $('#quotation-fields1').show();
                     $('#crew-allocation-delivery-challan').hide();
                     $('#crew-allocation-quotation').show();
@@ -1166,7 +1164,7 @@
                             </div>
                         </div>
                         <div class="equipment-table-container">
-                            <button class="btn btn-primary add-equipment-btn" id="insertUpdatedForm">+</button>
+                            <button class="btn btn-primary add-equipment-btn btn-sm" id="insertUpdatedForm"><i class="fa-solid fa-plus"></i></button>
                             <table id="selectedEquipmentTable" class="table custom-table">
                                 <thead class="thead-dark">
                                     <tr>
@@ -1294,8 +1292,8 @@
                 </div>
             </div>
             <div class="equipment-table-container">
-                <button class="btn btn-primary add-equipment-btn" id="addNewEquipmentForm">+</button>
-                <button class="btn btn-success insert-details-btn" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
+                <button class="btn btn-primary add-equipment-btn btn-sm" id="addNewEquipmentForm"><i class="fa-solid fa-plus"></i></button>
+                <button class="btn btn-success insert-details-btn btn-sm" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
                 <table id="selectedEquipmentTable" class="table custom-table">
                     <thead>
                         <tr>
@@ -1951,7 +1949,7 @@
             function fetchCrewDetails(jobId) {
                 console.log('Check the crew job ID:', jobId)
                 $.ajax({
-                    url: '/fetch-temp-crew-details/',  // Django view URL
+                    url: '/fetch-temp-crew-details/',
                     type: 'GET',
                     data: {tempId: jobId},  // Pass the temp_id to fetch the data
                     success: function (response) {
@@ -2265,7 +2263,7 @@
                             <button class="btn btn-sm btn-danger delete-crew-btn me-2" data-toggle="tooltip" title="Delete"><i class="fa fa-trash"></i></button>
                         </td>
                         <td style="font-size: 14px;">${item.crewType}</td>
-                        <td style="font-size: 14px;">${item.employeeName}</td>
+                        <td style="font-size: 14px;">${item.employeeName}<input type="hidden" name="empId" value="${item.empId}"></td>
                         <td style="font-size: 14px;">${item.noOfDays}</td>
                         <td style="font-size: 14px;">${item.perDayCharges}</td>
                         <td style="font-size: 14px;">${item.total}</td>
@@ -2281,74 +2279,70 @@
                 });
             }
 
-
-
-
-            // today's add this script 17/10/2024
             // Adding new row for status Delivery challen and Prepsheet
             $(document).on('input', '.employee-name', function () {
-    console.log('check the employee name is working.');
-    const query = $(this).val();
-    console.log('Check the user Input:', query);
-    const $currentRow = $(this).closest('tr'); // Store the current row
-    $currentRow.find('#employeeId').val(''); // Clear the employeeId field
-    $currentRow.find('.employee-delivery-dropdown').remove(); // Remove existing dropdown
+                console.log('check the employee name is working.');
+                const query = $(this).val();
+                console.log('Check the user Input:', query);
+                const $currentRow = $(this).closest('tr'); // Store the current row
+                $currentRow.find('#employeeId').val(''); // Clear the employeeId field
+                $currentRow.find('.employee-delivery-dropdown').remove(); // Remove existing dropdown
 
-    if (query.length > 0) {
-        console.log('check the search char');
-        $.ajax({
-            url: '/search-employee-crew/', // URL to Django view
-            data: { 'query': query },
-            dataType: 'json',
-            success: function (data) {
-                console.log('check the Search DATA:', data);
+                if (query.length > 0) {
+                    console.log('check the search char');
+                    $.ajax({
+                        url: '/search-employee-crew/', // URL to Django view
+                        data: {'query': query},
+                        dataType: 'json',
+                        success: function (data) {
+                            console.log('check the Search DATA:', data);
 
-                // Create a Set to store unique employee names
-                const uniqueEmployees = new Set();
+                            // Create a Set to store unique employee names
+                            const uniqueEmployees = new Set();
 
-                // Populate the Set with employee names
-                data.employees.forEach(emp => {
-                    uniqueEmployees.add(emp.name);
-                });
+                            // Populate the Set with employee names
+                            data.employees.forEach(emp => {
+                                uniqueEmployees.add(emp.name);
+                            });
 
-                // Create the dropdown element
-                let dropdown = $('<ul class="employee-delivery-dropdown"></ul>');
-                console.log('check the fetch DATA:', dropdown);
-                $currentRow.find('.employee-name').after(dropdown); // Insert the dropdown after the input field
-                dropdown.empty(); // Clear previous results
-                console.log('check the dropdown empty is working.');
+                            // Create the dropdown element
+                            let dropdown = $('<ul class="employee-delivery-dropdown" style="cursor: pointer;"></ul>');
+                            console.log('check the fetch DATA:', dropdown);
+                            $currentRow.find('.employee-name').after(dropdown); // Insert the dropdown after the input field
+                            dropdown.empty(); // Clear previous results
+                            console.log('check the dropdown empty is working.');
 
-                // Append unique employee names to the dropdown
-                uniqueEmployees.forEach(empName => {
-                    dropdown.append(`<li class="employee-delivery-option">${empName}</li>`);
-                });
+                            // Append unique employee names to the dropdown
+                            uniqueEmployees.forEach(empName => {
+                                dropdown.append(`<li class="employee-delivery-option">${empName}</li>`);
+                            });
 
-                // Show the dropdown if there are results
-                if (uniqueEmployees.size > 0) {
-                    console.log('check the dropdown of employee delivery option is work:');
-                    dropdown.show(); // Ensure the dropdown is shown
+                            // Show the dropdown if there are results
+                            if (uniqueEmployees.size > 0) {
+                                console.log('check the dropdown of employee delivery option is work:');
+                                dropdown.show(); // Ensure the dropdown is shown
+                            }
+
+                            // Show dropdown and bind click event
+                            dropdown.on('click', '.employee-delivery-option', function () {
+                                const employeeName = $(this).text();
+                                console.log('check the employee name:', employeeName);
+                                const employeeId = data.employees.find(emp => emp.name === employeeName).id; // Get the corresponding ID
+                                console.log('check the id:', employeeId);
+
+                                // Set selected employee in input field
+                                $currentRow.find('.employee-name').val(employeeName);
+                                $currentRow.find('#employeeId').val(employeeId); // Set employee ID in hidden input field
+
+                                dropdown.remove(); // Remove dropdown after selection
+                            });
+                        },
+                        error: function () {
+                            console.error('Error fetching employees.');
+                        }
+                    });
                 }
-
-                // Show dropdown and bind click event
-                dropdown.on('click', '.employee-delivery-option', function () {
-                    const employeeName = $(this).text();
-                    console.log('check the employee name:', employeeName);
-                    const employeeId = data.employees.find(emp => emp.name === employeeName).id; // Get the corresponding ID
-                    console.log('check the id:', employeeId);
-
-                    // Set selected employee in input field
-                    $currentRow.find('.employee-name').val(employeeName);
-                    $currentRow.find('#employeeId').val(employeeId); // Set employee ID in hidden input field
-
-                    dropdown.remove(); // Remove dropdown after selection
-                });
-            },
-            error: function () {
-                console.error('Error fetching employees.');
-            }
-        });
-    }
-});
+            });
 
             function activateDeliveryEditMode(row) {
                 // Hide the Edit button and show Save/Cancel buttons
@@ -2402,15 +2396,20 @@
                 event.preventDefault();
                 const $row = $(this).closest('.editable-row');
 
+                // Get the crewId from the data attribute
+                const crewId = $row.data('crew-id');
+                console.log('Crew ID:', crewId);  // You can now use the crewId as needed
+
                 // Get current values
                 const crewType = $row.find('td').eq(1).text();
                 const Employee = $row.find('td').eq(2).text();
-                const employeeId = $row.find('input[name="employee_id"]').val(); // Get employee ID from hidden field
+                const employeeId = $row.find('input[name="empId"]').val(); // Get employee ID from hidden field
                 const noOfDays = $row.find('td').eq(3).text();
                 const perDayCharges = $row.find('td').eq(4).text();
                 const total = $row.find('td').eq(5).text();
                 const crewNotes = $row.find('td').eq(6).text();
                 console.log('check the employeeId:', employeeId)
+                console.log('check the employeeId:', crewType, Employee, employeeId)
 
                 // You should also get the stored employeeId from the hidden field (if already there)
 
@@ -2443,16 +2442,16 @@
 
                 // Get the data-category-id from the row
                 const $row = $(this).closest('.editable-row');
-                const categoryId = $row.data('category-id');
-                console.log('Check the job addition status delivery challen category ID:', $row, categoryId);
+                const crewId = $row.data('crew-id');
+                console.log('Check the job addition status delivery challen category ID:', crewId);
 
                 // Get values from input fields
                 const crewType = $row.find('select[name="crew_type"]').val();
-    const Employee = $row.find('input[name="employee_id"]').val(); // Get employee ID
-    const noOfDays = $row.find('input[name="no_of_days"]').val();
-    const perDayCharges = $row.find('input[name="perday_charges"]').val();
-    const total = $row.find('input[name="total"]').val();
-    const crewNotes = $row.find('input[name="crew_notes"]').val();
+                const Employee = $row.find('input[name="employee_id"]').val(); // Get employee ID
+                const noOfDays = $row.find('input[name="no_of_days"]').val();
+                const perDayCharges = $row.find('input[name="perday_charges"]').val();
+                const total = $row.find('input[name="total"]').val();
+                const crewNotes = $row.find('input[name="crew_notes"]').val();
 
                 console.log('check the status delivery challen crew Type:', crewType);
                 console.log('check the status delivery challen Employee:', Employee);
@@ -2466,7 +2465,7 @@
                     type: 'POST',
                     url: '/update-crew-allocation-delivery/',
                     data: {
-                        'id': categoryId,
+                        'id': crewId,
                         'crew_type': crewType,
                         'employee_name': Employee,
                         'no_of_days': noOfDays,
@@ -2485,6 +2484,8 @@
                             $row.find('td').eq(4).text(perDayCharges);
                             $row.find('td').eq(5).text(total);
                             $row.find('td').eq(6).text(crewNotes);
+
+                            fetchCrewAllocation(jobId);
 
                             // Hide save and cancel buttons, show edit and delete buttons
                             $row.find('.edit-save-delivery-btn, .edit-cancel-delivery-btn').hide();
@@ -2555,20 +2556,23 @@
 
                             // Replace the existing row with the new row HTML
                             $row.replaceWith(newRow);
+                        } else if (response.status === 'error' && response.message === 'Crew allocation already exists') {
+                            // Show alert if crew allocation already exists
+                            alert(response.message);  // Show the exact message returned from the server
                         } else {
                             alert('Failed to save crew allocation');
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error('Error:', error);
-                        alert('An error occurred while saving the crew allocation. Please try again.'); // Provide user feedback
+                        const response = xhr.responseJSON;
+                        if (response && response.status === 'error') {
+                            alert(response.message); // Handle error from server
+                        } else {
+                            alert('An error occurred while saving the crew allocation.');
+                        }
                     }
                 });
             });
-
-
-
-            // 17/10/2024
 
             // Crew Allocation Section End
 
@@ -2909,7 +2913,7 @@
                                         }
                                     });
 
-                                } else if (status === 'perfoma') {
+                                } else if (status === 'porforma') {
                                     handlePerfoma(response);
                                 } else if (status === 'prepsheet') {
                                     handlePrepsheet(response);
@@ -3026,8 +3030,7 @@
                                 .right {
                                     width: 150px;
                                     text-align: right;
-                                    padding-top: 5px;
-                                    margin-top: -60px;
+
                                 }
                                 .left p {
                                     margin-bottom: 4px;
@@ -3036,6 +3039,15 @@
                                     margin-bottom: -10px;
                                 }
                                 .left h5 {
+                                    margin-top: 5px;
+                                }
+                                .right p {
+                                    margin-bottom: 4px;
+                                }
+                                .right h3 {
+                                    margin-bottom: -10px;
+                                }
+                                .right h5 {
                                     margin-top: 5px;
                                 }
                                 .logo {
@@ -3158,9 +3170,9 @@
                                     </div>
                                     <div class="right">
                                         <h3><u>Warehouse Address:</u></h3>
-                                        <p>Parle Colony, Andheri, East, 567889</p>
-                                        <p>9768476574</p>
-{#                                        <p>${response.job.job_reference_no}</p>#}
+                                        <h3 style="font-size: 14px;">Echoes</h3>
+                                        <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                                        <p>9029884368</p>
                                     </div>
                                 </div>
                                 <div>
@@ -3224,12 +3236,12 @@
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Qty</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Per Unit</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Days</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Total</th>
-                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Qty</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Per Unit</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Days</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Total</th>
+                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -3275,29 +3287,36 @@
             .left {
                 width: 150px;
                 text-align: left;
-                padding-top: 20px;
+                margin-top: 20px;
                 color: black;
                 height: auto;
 
             }
-            .left h4 {
-                margin-bottom: 2px;
+            .left h4 u {
+                color: #0c0c0c;
             }
             .left p {
                 margin-bottom: 0px;
             }
+            .left p a {
+                color: #2881b5;
+            }
+
             .right {
                 width: 150px;
                 text-align: right;
-                padding-top: 1px;
+                margin-top: 20px;
                 color: black;
                 height: auto;
             }
             .right h4 {
                 margin-bottom: 2px;
             }
+            .right h4 u {
+                color: #0c0c0c;
+            }
             .right p {
-                margin-bottom: 2px;
+                margin-bottom: 0px;
             }
             .logo {
                 width: 145px;
@@ -3340,8 +3359,8 @@
                 width: 110px; /* Fixed width for labels to align values */
             }
             .equipment_left b{
-            font-size: 12px;
-            color: #0c0c0c;
+                font-size: 12px;
+                color: #0c0c0c;
             }
 
             .equipment_left p span {
@@ -3486,9 +3505,8 @@
             body {
                 margin: 0px;
                 font-size: 10pt;
-                background-color: #FFFFFF;
+                {#background-color: #FFFFFF;#}
                 padding: 0px;
-                font-family: "Times New Roman";
             }
             @media only screen and (max-width: 500px) {
                 .container {
@@ -3512,9 +3530,9 @@
             <div class="container">
                 <div class="left">
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
-                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <p style="font-size: 11px; font-weight: bold;">${response.company.company_name}</p>
                     <p style="font-size: 11px;">${response.company.address}</p>
-                    <p style="font-size: 11px; color: #56c5f5;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <p style="font-size: 11px;><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
                     <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
@@ -3522,13 +3540,13 @@
                 </div>
                 <div class="right">
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
-                    <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
-                    <p style="font-size: 11px;">9768476574</p>
-{#                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>#}
+                    <p style="font-size: 11px; font-weight: bold;">Echoes</p>
+                    <p style="font-size: 11px;">F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                    <p style="font-size: 11px;">9029884368</p>
                 </div>
             </div>
             <div>
-                <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+                <p style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</p>
             </div>
             <div class="job-details">
                 <div class="job_left" style="width: 400px;">
@@ -3551,7 +3569,7 @@
                         ${equipmentTableHtml}
             </div>
             <div style="height:30px;" class="color-amount">
-                                    <p style="background-color: #c5d9e1; text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
                                 </div>
                                 <div>
                                     <p style="text-align: right;">Total INR RS. ${response.total_rental_sum}</p>
@@ -3637,8 +3655,6 @@
                 .right {
                     width: 150px;
                     text-align: right;
-                    padding-top: 5px;
-                    margin-top: -60px;
                 }
                 .left p {
                     margin-bottom: 4px;
@@ -3647,6 +3663,15 @@
                     margin-bottom: -10px;
                 }
                 .left h5 {
+                    margin-top: 5px;
+                }
+                .right p {
+                    margin-bottom: 4px;
+                }
+                .right h3 {
+                    margin-bottom: -10px;
+                }
+                .right h5 {
                     margin-top: 5px;
                 }
                 .logo {
@@ -3772,9 +3797,9 @@
                     </div>
                     <div class="right">
                         <h3><u>Warehouse Address:</u></h3>
-                        <p>Parle Colony, Andheri, East, 567889</p>
-                        <p>9768476574</p>
-{#                        <p>${response.job.job_reference_no}</p>#}
+                        <h3 style="font-size: 14px;">Echoes</h3>
+                        <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                        <p>9029884368</p>
                     </div>
                 </div>
                 <div>
@@ -3838,10 +3863,10 @@
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Qty</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Per Unit</th>
-                    <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Qty</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Per Unit</th>
+                    <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -3885,29 +3910,36 @@
             .left {
                 width: 150px;
                 text-align: left;
-                padding-top: 20px;
+                margin-top: 20px;
                 color: black;
                 height: auto;
 
             }
-            .left h4 {
-                margin-bottom: 2px;
+            .left h4 u {
+                color: #0c0c0c;
             }
             .left p {
                 margin-bottom: 0px;
             }
+            .left p a {
+                color: #2881b5;
+            }
+
             .right {
                 width: 150px;
                 text-align: right;
-                padding-top: 1px;
+                margin-top: 20px;
                 color: black;
                 height: auto;
             }
             .right h4 {
                 margin-bottom: 2px;
             }
+            .right h4 u {
+                color: #0c0c0c;
+            }
             .right p {
-                margin-bottom: 2px;
+                margin-bottom: 0px;
             }
             .logo {
                 width: 145px;
@@ -3950,8 +3982,8 @@
                 width: 110px; /* Fixed width for labels to align values */
             }
             .equipment_left b{
-            font-size: 12px;
-            color: #0c0c0c;
+                font-size: 12px;
+                color: #0c0c0c;
             }
 
             .equipment_left p span {
@@ -4096,9 +4128,8 @@
             body {
                 margin: 0px;
                 font-size: 10pt;
-                background-color: #FFFFFF;
+                {#background-color: #FFFFFF;#}
                 padding: 0px;
-                font-family: "Times New Roman";
             }
             @media only screen and (max-width: 500px) {
                 .container {
@@ -4122,9 +4153,9 @@
             <div class="container">
                 <div class="left">
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
-                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <p style="font-size: 11px; font-weight: bold;">${response.company.company_name}</p>
                     <p style="font-size: 11px;">${response.company.address}</p>
-                    <p style="font-size: 11px; color: #56c5f5;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <p style="font-size: 11px;><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
                     <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
@@ -4132,9 +4163,9 @@
                 </div>
                 <div class="right">
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
-                    <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
-                    <p style="font-size: 11px;">9768476574</p>
-{#                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>#}
+                    <p style="font-size: 11px; font-weight: bold;">Echoes</p>
+                    <p style="font-size: 11px;">F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                    <p style="font-size: 11px;">9029884368</p>
                 </div>
             </div>
             <div>
@@ -4341,9 +4372,9 @@
                     </div>
                     <div class="right">
                         <h3><u>Warehouse Address:</u></h3>
-                        <p>Parle Colony, Andheri, East, 567889</p>
-                        <p>9768476574</p>
-                        <p>${response.job.job_reference_no}</p>
+                        <h3 style="font-size: 14px;">Echoes</h3>
+                        <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                        <p>9029884368</p>
                     </div>
                 </div>
                 <div>
@@ -4647,10 +4678,10 @@
                     <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
                 </div>
                 <div class="right">
-                    <h4><u>Warehouse Address:</u></h4>
-                    <p>Parle Colony, Andheri, East, 567889</p>
-                    <p>9768476574</p>
-                    <p>${response.job.job_reference_no}</p>
+                    <h3><u>Warehouse Address:</u></h3>
+                    <h3 style="font-size: 14px;">Echoes</h3>
+                    <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                    <p>9029884368</p>
                 </div>
             </div>
             <div>
@@ -4758,8 +4789,6 @@
                 justify-content: space-between;
                 align-items: center;
                 padding: 0px;
-                font-style: italic;
-                font-weight: bolder;
             }
             .left {
                 width: 150px;
@@ -4768,20 +4797,15 @@
             .right {
                 width: 150px;
                 text-align: right;
-                padding-top: 5px;
-                margin-top: -60px;
             }
             .right p {
-                margin-bottom: -8px;
+                margin-bottom: 4px;
             }
             .right h3 {
                 margin-bottom: -10px;
             }
-            .right h4 {
-                margin-bottom: -10px;
-            }
-            .left h4 {
-                margin-bottom: -10px;
+            .right h5 {
+                margin-top: 5px;
             }
             .left p {
                 margin-bottom: 4px;
@@ -4988,20 +5012,20 @@
         <div class="box">
             <div class="container">
                 <div class="left">
-                    <h4><u><i>Registered Address:</i></u></h4>
-                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <h3><u><i>Registered Address:</i></u></h3>
+                    <h3 style="font-size: 14px;">${response.company.company_name}</h3>
                     <p>${response.company.address}</p>
-                    <p style="margin-top:-4px;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <p><a href="mailto:${response.company.email}">${response.company.email}</a></p>
                     <h5>GST No: ${response.company.gst_no}</h5>
                 </div>
                 <div class="logo">
                     <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
                 </div>
                 <div class="right">
-                    <h4><u>Warehouse Address:</u></h4>
-                    <p>Parle Colony, Andheri, East, 567889</p>
-                    <p>9768476574</p>
-                    <p>${response.job.job_reference_no}</p>
+                    <h3><u>Warehouse Address:</u></h3>
+                    <h3 style="font-size: 14px;">Echoes</h3>
+                    <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                    <p>9029884368</p>
                 </div>
             </div>
             <div>
@@ -5066,9 +5090,9 @@
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Equipment Name</th>
-                    <th style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Quantity</th>
-                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">Notes</th>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #ffffff; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #ffffff; font-size: 12px;">Quantity</th>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #ffffff; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -5111,29 +5135,36 @@
             .left {
                 width: 150px;
                 text-align: left;
-                padding-top: 20px;
+                margin-top: 20px;
                 color: black;
                 height: auto;
 
             }
-            .left h4 {
-                margin-bottom: 2px;
+            .left h4 u {
+                color: #0c0c0c;
             }
             .left p {
                 margin-bottom: 0px;
             }
+            .left p a {
+                color: #2881b5;
+            }
+
             .right {
                 width: 150px;
                 text-align: right;
-                padding-top: 1px;
+                margin-top: 20px;
                 color: black;
                 height: auto;
             }
             .right h4 {
                 margin-bottom: 2px;
+             }
+            .right h4 u {
+                color: #0c0c0c;
             }
             .right p {
-                margin-bottom: 2px;
+                margin-bottom: 0px;
             }
             .logo {
                 width: 145px;
@@ -5176,8 +5207,8 @@
                 width: 110px; /* Fixed width for labels to align values */
             }
             .equipment_left b{
-            font-size: 12px;
-            color: #0c0c0c;
+                font-size: 12px;
+                color: #0c0c0c;
             }
 
             .equipment_left p span {
@@ -5322,9 +5353,8 @@
             body {
                 margin: 0px;
                 font-size: 10pt;
-                background-color: #FFFFFF;
+                {#background-color: #FFFFFF;#}
                 padding: 0px;
-                font-family: "Times New Roman";
             }
             @media only screen and (max-width: 500px) {
                 .container {
@@ -5348,23 +5378,23 @@
             <div class="container">
                 <div class="left">
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
-                    <h3 style="font-size: 12px;">${response.company.company_name}</h3>
+                    <p style="font-size: 11px; font-weight: bold;">${response.company.company_name}</p>
                     <p style="font-size: 11px;">${response.company.address}</p>
-                    <p style="font-size: 11px; color: #56c5f5;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <p style="font-size: 11px;><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
                     <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
-                    <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
+                    <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="${response.company.company_name} Logo" />
                 </div>
                 <div class="right">
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Warehouse Address:</u></h4>
-                    <p style="font-size: 11px;">Parle Colony, Andheri, East, 567889</p>
-                    <p style="font-size: 11px;">9768476574</p>
-                    <p style="font-size: 11px;">${response.job.job_reference_no}</p>
+                    <p style="font-size: 11px; font-weight: bold;">Echoes</p>
+                    <p style="font-size: 11px;">F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
+                    <p style="font-size: 11px;">9029884368</p>
                 </div>
             </div>
             <div>
-                <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+                <p style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</p>
             </div>
             <div class="job-details">
                 <div class="job_left" style="width: 400px;">
@@ -5390,7 +5420,7 @@
                     <p><b>Show Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
                     <p><b>Setup Date:</b><span> ${response.job.setup_date}</span></p>
                     <p><b>Show End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                    <p><b>Pack Up Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                    <p><b>PackUp Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                 </div>
             </div>
             <div class="job-details-description">
@@ -5417,7 +5447,6 @@
 
                 html2pdf().from(printContent).set(opt).save();
             }
-
         });
     </script>
     <body>
@@ -5550,7 +5579,8 @@
                                            data-bs-toggle="dropdown" aria-expanded="false"
                                            placeholder="Select Client Name" autocomplete="off"
                                            name="client_name">
-                                    <ul class="dropdown-menu" aria-labelledby="clientNameDropdown">
+                                    <ul class="dropdown-menu" id="clientNameInputDropdown"
+                                        aria-labelledby="clientNameDropdown">
                                         <!-- Dynamic options will be appended here -->
                                     </ul>
                                 </div>
@@ -5592,7 +5622,7 @@
                                 <select class="default-select form-control" id="statusType"
                                         name="status">
                                     <option value="Quotation">Quotation</option>
-                                    <option value="Perfoma">Perfoma</option>
+                                    <option value="Porforma">Porforma</option>
                                     <option value="Prepsheet">Prepsheet</option>
                                     <option value="Delivery Challan">Delivery Challan</option>
                                 </select>
@@ -5898,6 +5928,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
     <meta name="csrf-token" content="{{ csrf_token }}">
 

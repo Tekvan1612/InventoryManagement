@@ -238,6 +238,14 @@
                 });
             }
 
+            $('#clientNameDropdown').on('input', function () {
+                var filter = $(this).val().toLowerCase();
+                $('#clientNameInputDropdown li').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    $(this).toggle(text.indexOf(filter) > -1);
+                });
+            });
+
             function fetchIndividualNames(clientName) {
                 $.ajax({
                     url: '/fetch_individual_names/',
@@ -330,7 +338,7 @@
                 $('#nav-crew_allocation').hide();
                 $('#nav-transportation_allocation').hide();
                 $('#nav-add_sub_vendor').hide();
-            } else if (selectedValue === "Perfoma") {
+            } else if (selectedValue === "Porforma") {
                 $('#quotation-fields1').show();
                 $('#crew-allocation-delivery-challan').hide();
                 $('#crew-allocation-quotation').show();
@@ -383,7 +391,7 @@
                     $('#nav-crew_allocation').hide();
                     $('#nav-transportation_allocation').hide();
                     $('#nav-add_sub_vendor').hide();
-                } else if (selectedValue === "Perfoma") {
+                } else if (selectedValue === "Porforma") {
                     $('#quotation-fields1').show();
                     $('#crew-allocation-delivery-challan').hide();
                     $('#crew-allocation-quotation').show();
@@ -603,8 +611,8 @@
                             </div>
                         </div>
                         <div class="equipment-table-container">
-                            <button class="btn btn-primary add-equipment-btn" id="addNewEquipmentForm">+</button>
-                            <button class="btn btn-success insert-details-btn" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-primary add-equipment-btn btn-sm" id="addNewEquipmentForm"><i class="fa-solid fa-plus"></i></button>
+                            <button class="btn btn-success insert-details-btn btn-sm" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
                             <table id="selectedEquipmentTable" class="table custom-table">
                                 <thead>
                                     <tr>
@@ -661,7 +669,7 @@
                     var unitPrice = $(this).find('td:eq(3)').text(); // Get rental price
 
                     var quantity = quantityInput.val();
-                    if (quantity > 0) { // Only include items where quantity is entered
+                    if (quantity > 0 && parseInt(quantity) <= parseInt(availableQuantity)) { // Only include items where quantity is entered
                         // Check if the equipment name is already in the selected equipment table
                         var existingRow = selectedEquipmentBody.find('tr:contains("' + equipmentName + '")');
                         if (existingRow.length === 0) { // If it does not exist
@@ -891,7 +899,7 @@
                             </div>
                         </div>
                         <div class="equipment-table-container">
-                            <button class="btn btn-primary add-equipment-btn" id="insertUpdatedForm">+</button>
+                            <button class="btn btn-primary add-equipment-btn btn-sm" id="insertUpdatedForm"><i class="fa-solid fa-plus"></i></button>
                             <table id="selectedEquipmentTable" class="table custom-table">
                                 <thead class="thead-dark">
                                     <tr>
@@ -1045,8 +1053,8 @@
                             </div>
                         </div>
                         <div class="equipment-table-container">
-                            <button class="btn btn-primary add-equipment-btn" id="addNewEquipmentForm">+</button>
-                            <button class="btn btn-success insert-details-btn" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-primary add-equipment-btn btn-sm" id="addNewEquipmentForm"><i class="fa-solid fa-plus"></i></button>
+                            <button class="btn btn-success insert-details-btn btn-sm" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
                             <table id="selectedEquipmentTable" class="table custom-table">
                                 <thead class="thead-dark">
                                     <tr>
@@ -1155,8 +1163,8 @@
                             </div>
                         </div>
                         <div class="equipment-table-container">
-                            <button class="btn btn-primary add-equipment-btn" id="addNewEquipmentForm">+</button>
-                            <button class="btn btn-success insert-details-btn" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-primary add-equipment-btn btn-sm" id="addNewEquipmentForm"><i class="fa-solid fa-plus"></i></button>
+                            <button class="btn btn-success insert-details-btn btn-sm" id="insertDetailsBtn"><i class="fa fa-save"></i></button>
 
                             <table id="selectedEquipmentTable" class="table custom-table">
                                 <thead class="thead-dark">
@@ -1432,7 +1440,7 @@
                 row.find('.save-btn, .cancel-btn').hide();
             }
 
-            // Adding new row for Master Category
+            // Adding new row for Crew Allocation of status Quotation
             $(document).on('click', '#addCrewAllocationRow', function () {
                 const newRow = `
         <tr class="editable-row">
@@ -1646,8 +1654,55 @@
                 });
             });
 
-            // today's add this script 17/10/2024
-            // Adding new row for status Delivery challen and Prepsheet
+            // Content of Crew Allocation of status Delivery challen
+            $(document).on('click', '#addCrewAllocationDeliveryRow', function () {
+                const newRow = `
+                    <tr class="editable-row-delivery">
+                        <td>
+                            <button class="btn btn-success save-crew-delivery-btn"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-secondary cancel-crew-delivery-btn"><i class="fa fa-times"></i></button>
+                            <button class="btn btn-primary edit-crew-delivery-btn" style="display:none;"><i class="fa fa-pencil"></i></button>
+                            <button class="btn btn-danger delete-crew-delivery-btn" style="display:none;"><i class="fa fa-trash"></i></button>
+                        </td>
+                        <td data-editable-select="true">
+                            <select class="default-select form-control" id="crewType" name="crew_type">
+                                <option value="A1" selected>A1</option>
+                                <option value="A2">A2</option>
+                                <option value="A3">A3</option>
+                            </select>
+                        </td>
+                            <td data-editable="true">
+                                <input type="text" class="form-control" id="employeeName" name="employee" style="width: 140px;">
+                                <input type="hidden" id="employeeId" name="employee_id"> <!-- Hidden input for employee ID -->
+                                <ul class="employee-delivery-dropdown" style="display:none;"></ul>
+                            </td>
+                        <td data-editable="true"><input type="text" class="form-control" name="no_of_days"></td>
+                        <td data-editable="true"><input type="text" class="form-control" name="perday_charges"></td>
+                        <td data-editable="true"><input type="text" class="form-control" name="total"></td>
+                        <td data-editable="true"><input type="text" class="form-control" name="crew_notes"></td>
+                    </tr>
+                `;
+
+                const $newRow = $(newRow); // Wrap the string with jQuery to create a jQuery object
+                $('#crew-allocation-delivery-table-body').prepend($newRow); // Append the new row to the table
+
+                activateDeliveryEditMode($newRow); // Activate edit mode for the new row
+
+                // Set 'A1' as the default selected value when the row is added
+                $newRow.find('select').val('A1');
+            });
+
+            function activateDeliveryEditMode(row) {
+                // Hide the Edit button and show Save/Cancel buttons
+                row.find('.edit-delivery-btn, .delete-delivery-btn').hide();
+                row.find('.save-delivery-btn, .cancel-delivery-btn').show();
+
+                // Attach event handler to the Cancel button
+                row.find('.cancel-delivery-btn').on('click', function () {
+                    row.remove(); // Remove the row from the UI
+                });
+            }
+
             $(document).on('input', '#employeeName', function () {
                 const query = $(this).val();  // Get the user input
 
@@ -1691,54 +1746,7 @@
                 }
             });
 
-            function activateDeliveryEditMode(row) {
-                // Hide the Edit button and show Save/Cancel buttons
-                row.find('.edit-delivery-btn, .delete-delivery-btn').hide();
-                row.find('.save-delivery-btn, .cancel-delivery-btn').show();
-
-                // Attach event handler to the Cancel button
-                row.find('.cancel-delivery-btn').on('click', function () {
-                    row.remove(); // Remove the row from the UI
-                });
-            }
-
-            $(document).on('click', '#addCrewAllocationDeliveryRow', function () {
-                const newRow = `
-                    <tr class="editable-row-delivery">
-                        <td>
-                            <button class="btn btn-success save-crew-delivery-btn"><i class="fa fa-save"></i></button>
-                            <button class="btn btn-secondary cancel-crew-delivery-btn"><i class="fa fa-times"></i></button>
-                            <button class="btn btn-primary edit-crew-delivery-btn" style="display:none;"><i class="fa fa-pencil"></i></button>
-                            <button class="btn btn-danger delete-crew-delivery-btn" style="display:none;"><i class="fa fa-trash"></i></button>
-                        </td>
-                        <td data-editable-select="true">
-                            <select class="default-select form-control" id="crewType" name="crew_type">
-                                <option value="A1" selected>A1</option>
-                                <option value="A2">A2</option>
-                                <option value="A3">A3</option>
-                            </select>
-                        </td>
-                            <td data-editable="true">
-                                <input type="text" class="form-control" id="employeeName" name="employee" style="width: 140px;">
-                                <input type="hidden" id="employeeId" name="employee_id"> <!-- Hidden input for employee ID -->
-                                <ul class="employee-delivery-dropdown" style="display:none;"></ul>
-                            </td>
-                        <td data-editable="true"><input type="text" class="form-control" name="no_of_days"></td>
-                        <td data-editable="true"><input type="text" class="form-control" name="perday_charges"></td>
-                        <td data-editable="true"><input type="text" class="form-control" name="total"></td>
-                        <td data-editable="true"><input type="text" class="form-control" name="crew_notes"></td>
-                    </tr>
-                `;
-
-                const $newRow = $(newRow); // Wrap the string with jQuery to create a jQuery object
-                $('#crew-allocation-delivery-table-body').prepend($newRow); // Append the new row to the table
-
-                activateDeliveryEditMode($newRow); // Activate edit mode for the new row
-
-                // Set 'A1' as the default selected value when the row is added
-                $newRow.find('select').val('A1');
-            });
-
+            // 22/10/2024
             $(document).on('click', '.save-crew-delivery-btn', function (event) {
                 event.preventDefault();
 
@@ -1751,7 +1759,6 @@
                 const perDayCharges = $row.find('input[name="perday_charges"]').val();
                 const total = $row.find('input[name="total"]').val();
                 const crewNotes = $row.find('input[name="crew_notes"]').val();
-
                 const tempId = window.tempId;
 
                 // AJAX call to save the row data to the server
@@ -1772,56 +1779,80 @@
                         if (response.status === 'success') {
                             alert('Crew allocation saved successfully');
 
-                            // Use the employee name from the response instead of employee ID
-                            const employeeName = response.emp_name;
-
-                            // Create a new row in the desired format
-                            const newRow = `
-                                <tr class="editable-row-delivery" data-category-id="${response.crew_allocation_id}">
-                                    <td style="width: 40px;">
-                                        <button class="btn btn-sm btn-primary edit-crew-delivery-btn me-2" data-toggle="tooltip" title="Edit Delivery"><i class="fa fa-pencil"></i></button>
-                                        <button class="btn btn-sm btn-success edit-save-delivery-btn me-2" style="display:none;" data-toggle="tooltip" title="Save Delivery" id="save-crew-delivery-allocation"><i class="fa fa-save"></i></button>
-                                        <button class="btn btn-sm btn-secondary edit-cancel-delivery-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel Delivery" id="cancel-crew-allocation"><i class="fa fa-times"></i></button>
-                                        <button class="btn btn-sm btn-danger delete-crew-delivery-btn me-2" data-toggle="tooltip" title="Delete Delivery"><i class="fa fa-trash"></i></button>
-                                    </td>
-                                    <td style="font-size: 14px;">${crewType}</td>
-                                    <td style="font-size: 14px;">${employeeName}</td>
-                                    <td style="font-size: 14px;">${noOfDays}</td>
-                                    <td style="font-size: 14px;">${perDayCharges}</td>
-                                    <td style="font-size: 14px;">${total}</td>
-                                    <td style="font-size: 14px;">${crewNotes}</td>
-                                </tr>
-                            `;
-
+                            fetchCrewAllocation();
                             // Replace the existing row with the new row HTML
-                            $row.replaceWith(newRow);
+                            {#$row.replaceWith(newRow);#}
                         } else {
                             alert('Failed to save crew allocation');
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error('Error:', error);
-                        alert('An error occurred while saving the crew allocation. Please try again.'); // Provide user feedback
+                        const response = xhr.responseJSON;
+                        if (response && response.status === 'error') {
+                            alert(response.message); // Handle error from server
+                        } else {
+                            alert('An error occurred while saving the crew allocation.');
+                        }
                     }
                 });
             });
 
+            function fetchCrewAllocation() {
+                const jobId = window.tempId;
+                $.ajax({
+                    url: '/fetch-crew-allocation-edit/', // Update this with your URL pattern
+                    type: 'GET',
+                    data: {jobId: jobId},
+                    success: function (response) {
+                        // Clear existing rows
+                        $('#crew-allocation-delivery-table-body').empty();
+
+                        // Loop through response data and create table rows
+                        response.forEach(function (item) {
+                            const newRow = `
+                    <tr class="editable-row-delivery" data-crew-id="${item.crewId}">
+                        <td style="width: 40px;">
+                            <button class="btn btn-sm btn-primary edit-crew-delivery-btn me-2" data-toggle="tooltip" title="Edit Delivery Challen"><i class="fa fa-pencil"></i></button>
+                            <button class="btn btn-sm btn-success edit-save-delivery-btn me-2" style="display:none;" data-toggle="tooltip" title="Save" id="save-crew-delivery-allocation"><i class="fa fa-save"></i></button>
+                            <button class="btn btn-sm btn-secondary edit-cancel-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel" id="cancel-crew-allocation"><i class="fa fa-times"></i></button>
+                            <button class="btn btn-sm btn-danger delete-crew-btn me-2" data-toggle="tooltip" title="Delete"><i class="fa fa-trash"></i></button>
+                        </td>
+                        <td style="font-size: 14px;">${item.crewType}</td>
+                        <td style="font-size: 14px;">${item.employeeName}<input type="hidden" name="empIdEdit" value="${item.empId}"></td>
+                        <td style="font-size: 14px;">${item.noOfDays}</td>
+                        <td style="font-size: 14px;">${item.perDayCharges}</td>
+                        <td style="font-size: 14px;">${item.total}</td>
+                        <td style="font-size: 14px;">${item.crewNotes}</td>
+                    </tr>
+                `;
+                            $('#crew-allocation-delivery-table-body').append(newRow);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error fetching crew allocation data:", error);
+                    }
+                });
+            }
+
+            {#fetchCrewAllocation();#}
+            // Adding new row for status Delivery challen and Prepsheet
             $(document).on('click', '.edit-crew-delivery-btn', function (event) {
                 event.preventDefault();
                 const $row = $(this).closest('.editable-row-delivery');
 
+                // Get the crewId from the data attribute
+                const crewId = $row.data('crew-id');
+                console.log('Crew ID:', crewId);  // You can now use the crewId as needed
+
                 // Get current values
                 const crewType = $row.find('td').eq(1).text();
                 const Employee = $row.find('td').eq(2).text();
-                const employeeId = $row.find('input[name="employee_id"]').val(); // Get employee ID from hidden field
+                const employeeId = $row.find('input[name="empIdEdit"]').val(); // Get employee ID from hidden field
                 const noOfDays = $row.find('td').eq(3).text();
                 const perDayCharges = $row.find('td').eq(4).text();
                 const total = $row.find('td').eq(5).text();
                 const crewNotes = $row.find('td').eq(6).text();
-                console.log('check the employeeId:', employeeId)
-
-                // You should also get the stored employeeId from the hidden field (if already there)
-
+                console.log('check the employeeId:', crewType, Employee, employeeId)
 
                 // Replace text with input fields
                 $row.find('td').eq(1).html(`
@@ -1833,7 +1864,7 @@
                 `);
                 $row.find('td').eq(2).html(`
                     <input type="text" class="form-control" id="employeeName" name="employee" value="${Employee}" style="width: 83px;">
-                    <input type="hidden" id="employeeId" name="employee_id" value="${employeeId}"> <!-- Hidden input for employee ID -->
+                    <input type="hidden" id="employeeId" name="employeeIdEdit" value="${employeeId}"> <!-- Hidden input for employee ID -->
                 `);
                 $row.find('td').eq(3).html(`<input type="text" class="form-control" name="no_of_days" value="${noOfDays}" style="width: 83px;">`);
                 $row.find('td').eq(4).html(`<input type="text" class="form-control" name="perday_charges" value="${perDayCharges}">`);
@@ -1850,18 +1881,20 @@
 
                 // Get the data-category-id from the row
                 const $row = $(this).closest('.editable-row-delivery');
-                const categoryId = $row.data('category-id');
-                console.log('Check the job addition status delivery challen category ID:', $row, categoryId);
+                const crewId = $row.data('crew-id');
+                console.log('Check the job addition status delivery challen category ID:', $row, crewId);
 
                 // Get values from input fields
                 const crewType = $row.find('select[name="crew_type"]').val();
-                const Employee = $row.find('input[name="employee"]').val();
+                {#const EmployeeName = $row.find('input[name="employeeName"]').val(); // Fetch the employee name#}
+                const employeeId = $row.find('input[name="employeeIdEdit"]').val(); // Keep the employee ID for the AJAX request
                 const noOfDays = $row.find('input[name="no_of_days"]').val();
                 const perDayCharges = $row.find('input[name="perday_charges"]').val();
                 const total = $row.find('input[name="total"]').val();
                 const crewNotes = $row.find('input[name="crew_notes"]').val();
                 console.log('check the status delivery challen crew Type:', crewType);
-                console.log('check the status delivery challen Employee:', Employee);
+                {#console.log('check the status delivery challen Employee:', EmployeeName);#}
+                console.log('check the status delivery challen Employee:', employeeId);
                 console.log('check the status delivery challen No of days:', noOfDays);
                 console.log('check the status delivery challen per day charges:', perDayCharges);
                 console.log('check the status delivery challen total:', total);
@@ -1872,9 +1905,9 @@
                     type: 'POST',
                     url: '/update-crew-allocation-delivery/',
                     data: {
-                        'id': categoryId,
+                        'id': crewId,
                         'crew_type': crewType,
-                        'employee_name': Employee,
+                        'employee_name': employeeId,
                         'no_of_days': noOfDays,
                         'perday_charges': perDayCharges,
                         'total': total,
@@ -1884,13 +1917,16 @@
                     success: function (response) {
                         if (response.success) {
                             console.log('check the response:', response)
+
                             // Optionally, update the row text with new values
                             $row.find('td').eq(1).text(crewType);
-                            $row.find('td').eq(2).text(Employee);
+                            $row.find('td').eq(2).text(employeeId);
                             $row.find('td').eq(3).text(noOfDays);
                             $row.find('td').eq(4).text(perDayCharges);
                             $row.find('td').eq(5).text(total);
                             $row.find('td').eq(6).text(crewNotes);
+
+                            fetchCrewAllocation();
 
                             // Hide save and cancel buttons, show edit and delete buttons
                             $row.find('.edit-save-delivery-btn, .edit-cancel-delivery-btn').hide();
@@ -1907,12 +1943,11 @@
             });
             // 17/10/2024
 
-
             // Crew Allocation Section End
 
             //Transportation Allocation Section
 
-// Add event listener to 'Add More' button
+            // Add event listener to 'Add More' button
             $('#addTransportation').click(function (event) {
                 event.preventDefault(); // Prevent the default form submission
 
@@ -2201,7 +2236,7 @@
                                                                    data-bs-toggle="dropdown" aria-expanded="false"
                                                                    placeholder="Select Client Name" autocomplete="off"
                                                                    name="client_name">
-                                                            <ul class="dropdown-menu"
+                                                            <ul class="dropdown-menu" id="clientNameInputDropdown"
                                                                 aria-labelledby="clientNameDropdown">
                                                                 <!-- Dynamic options will be appended here -->
                                                             </ul>
@@ -2259,7 +2294,7 @@
                                                         <select class="default-select form-control" id="status"
                                                                 name="status">
                                                             <option value="Quotation">Quotation</option>
-                                                            <option value="Perfoma">Perfoma</option>
+                                                            <option value="Porforma">Porforma</option>
                                                             <option value="Prepsheet">Prepsheet</option>
                                                             <option value="Delivery Challan">Delivery Challan</option>
                                                         </select>
@@ -2317,7 +2352,6 @@
 
                                             </div>
                                         </div>
-                                        <!-- The Popup -->
                                         <!-- The Popup -->
                                         <div id="equipmentPopup" class="popup">
                                             <div class="popup-content">
@@ -2388,6 +2422,7 @@
                                                 </div>
                                             </div>
                                         </div>
+
                                         <div id="wizard_Time" class="tab-pane" role="tabpanel">
                                             <div class="row">
 
@@ -2396,16 +2431,15 @@
                                                         <div class="equipment">
                                                             <div class="job" id="job-J06240001">
                                                                 <span class="toggle-sign"
-                                                                      style="cursor: pointer;">+</span>
+                                                                      style="cursor: pointer; font-size: 16px;">+</span>
                                                                 <span class="job-name" id="jobReferenceNo"></span>
                                                             </div>
 
-
                                                             <!-- New div for Equipment List heading with toggle sign -->
                                                             <div class="equipment-heading" id="heading-J06240001"
-                                                                 style="display:none;">
+                                                                 style="display:none; margin-left: 10px;">
                                                                 <span class="toggle-sign" id="addNewEquipment"
-                                                                      style="cursor:pointer;">+</span>
+                                                                      style="cursor:pointer; font-size: 16px;">+</span>
                                                                 <h6 style="display:inline;">Equipment List</h6>
                                                             </div>
 
