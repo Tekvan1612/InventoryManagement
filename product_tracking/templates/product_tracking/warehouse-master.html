@@ -69,6 +69,27 @@
                 });
             }
 
+            $(document).on('click', '.edit-company-btn', function () {
+                var row = $(this).closest('tr');
+                var editCompanyId = row.find('td:eq(1)').text().trim();
+                var companyName = row.find('td:eq(3)').text().trim();
+                var jobMail = row.find('td:eq(4)').text().trim();
+                var companyEmailId = row.find('td:eq(5)').text().trim();
+                var companyAddress = row.find('td:eq(6)').text().trim();
+
+                $('#editCompanyId').val(editCompanyId);
+                $('#editCompanyCompanyName').val(companyName);
+                $('#editCompanyGstNo').val(jobMail);
+                $('#editCompanyEmail').val(companyEmailId);
+                $('#editCompanyAddress').val(companyAddress);
+
+                $('#editCompanyModal').modal('show');
+            });
+
+            $(document).on('click', '#saveChangesCompanyBtn', function () {
+                updateCompanyInDatabase();
+            });
+
             $('#companyForm').on('submit', function (e) {
                 e.preventDefault();  // Prevent the default form submission
 
@@ -93,27 +114,6 @@
                         }
                     }
                 });
-            });
-
-            $(document).on('click', '.edit-company-btn', function () {
-                var row = $(this).closest('tr');
-                var editCompanyId = row.find('td:eq(1)').text().trim();
-                var companyName = row.find('td:eq(3)').text().trim();
-                var jobMail = row.find('td:eq(4)').text().trim();
-                var companyEmailId = row.find('td:eq(5)').text().trim();
-                var companyAddress = row.find('td:eq(6)').text().trim();
-
-                $('#editCompanyId').val(editCompanyId);
-                $('#editCompanyCompanyName').val(companyName);
-                $('#editCompanyGstNo').val(jobMail);
-                $('#editCompanyEmail').val(companyEmailId);
-                $('#editCompanyAddress').val(companyAddress);
-
-                $('#editCompanyModal').modal('show');
-            });
-
-            $(document).on('click', '#saveChangesCompanyBtn', function () {
-                updateCompanyInDatabase();
             });
 
             function updateCompanyInDatabase() {
@@ -450,7 +450,8 @@
                     <div class="col-md-6">
                         <div class="form-container">
                             <label for="companyLabel" class="form-header" style="color: #FFFFFF">Company</label>
-                            <form id="companyForm" action="{% url 'company_master' %}" method="POST" enctype="multipart/form-data">
+                            <form id="companyForm" action="{% url 'company_master' %}" method="POST"
+                                  enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <div class="row">
                                     <div class="col-xl-6 mb-3">
@@ -473,13 +474,14 @@
                                     <div class="col-xl-6 mb-3">
                                         <label for="companyPhoneNo" class="form-label">Phone No:</label>
                                         <input type="text" class="form-control" id="companyPhoneNo"
-                                               name="companyPhoneNo" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                                               name="companyPhoneNo"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                                                required>
                                     </div>
                                     <div class="col-xl-6 mb-3">
                                         <label for="companyLogo" class="form-label">Company Logo:</label>
                                         <input type="file" class="form-control" id="companyLogo" name="companyLogo"
-                                               accept=".jpg, .jpeg, .png">
+                                               accept=".jpg, .jpeg, .png" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -510,7 +512,8 @@
                                     <div class="col-xl-6 mb-3">
                                         <label for="warehousePhoneNo" class="form-label">Phone No:</label>
                                         <input type="text" class="form-control" id="warehousePhoneNo"
-                                               name="warehousePhoneNo" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
+                                               name="warehousePhoneNo"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
