@@ -1828,6 +1828,23 @@
                 $('#equipmentInsertPopup').hide();
             });
 
+            $(document).on('click', '#addNewEquipmentForm', function (event) {
+                event.preventDefault(); // Prevent any default actions
+
+                // Create a new row
+                const newRow = `
+                    <tr>
+                        <td><input type="text" id="equipmentNameClick" name="equipment_name"/></td>
+                        <td><input type="number" name="quantity" class="quantity-input"/></td>
+                        <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
+                        <td><input type="text" name="total" class="total-input" readonly /></td>
+                    </tr>
+                `;
+
+                // Append the new row to the table body
+                $('#selectedEquipmentTable tbody').append(newRow);
+            });
+
             // Sub Vendor Section
             // Function to add a new row when the button is clicked
             $('#add-sub-vendor-row-btn').click(function (event) {
