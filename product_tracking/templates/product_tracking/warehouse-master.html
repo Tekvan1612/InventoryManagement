@@ -69,6 +69,32 @@
                 });
             }
 
+            $('#companyForm').on('submit', function (e) {
+                e.preventDefault();  // Prevent the default form submission
+
+                var formData = new FormData(this);  // Get form data
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,  // Required for file upload
+                    contentType: false,  // Required for file upload
+                    success: function (response) {
+                        // If successful, redirect or show success message as needed
+                        window.location.href = "{% url 'warehouse_master' %}";
+                    },
+                    error: function (xhr) {
+                        // Show error message in an alert if returned
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            alert(xhr.responseJSON.error);
+                        } else {
+                            alert('An unexpected error occurred');
+                        }
+                    }
+                });
+            });
+
             $(document).on('click', '.edit-company-btn', function () {
                 var row = $(this).closest('tr');
                 var editCompanyId = row.find('td:eq(1)').text().trim();
@@ -424,7 +450,7 @@
                     <div class="col-md-6">
                         <div class="form-container">
                             <label for="companyLabel" class="form-header" style="color: #FFFFFF">Company</label>
-                            <form action="{% url 'company_master' %}" method="POST" enctype="multipart/form-data">
+                            <form id="companyForm" action="{% url 'company_master' %}" method="POST" enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <div class="row">
                                     <div class="col-xl-6 mb-3">
