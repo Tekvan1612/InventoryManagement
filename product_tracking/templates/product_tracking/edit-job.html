@@ -3360,12 +3360,12 @@
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Equipment Name</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Qty</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Per Unit</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Days</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Total</th>
-                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Notes</th>
+                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Qty</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Per Unit</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Days</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Total</th>
+                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -3379,7 +3379,7 @@
                 <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
                 <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.total_days}</td>
                 <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.total_rental_price}</td>
-                <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;"> </td>
+                <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_notes}</td>
             </tr>
         `;
                 });
@@ -3411,7 +3411,6 @@
             .left {
                 width: 150px;
                 text-align: left;
-                margin-top: 20px;
                 color: black;
                 height: auto;
 
@@ -3428,8 +3427,8 @@
 
             .right {
                 width: 150px;
-                text-align: right;
-                margin-top: 20px;
+                text-align: left;
+                margin-top: 30px;
                 color: black;
                 height: auto;
             }
@@ -3448,76 +3447,14 @@
             }
             .job-details {
                 display: flex;
-                border-top: 5px solid #000000;
-                margin-top: -2px;
-                padding-top: -10px;
+                border-top: 1px solid #000000;
+                margin-top: -16px;
+                padding-top: -5px;
                 justify-content: space-between;
                 height: auto;
                 color: black;
             }
-            .equipment-details {
-                display: flex;
-                border-top: 8px solid #d1e0d3;
-                margin-top: 20px;
-                padding-top: 10px;
-                justify-content: space-between;
-                height: auto;
-                font-size: 12px;
-            }
 
-            .equipment_left {
-                display: flex;
-                flex-direction: column;
-                margin-top: -2px;
-                justify-content: space-between;
-                color: #1a1d20;
-
-            }
-
-            .equipment_left p {
-                margin-bottom: 0px; /* Adjusted margin for better spacing */
-            }
-
-            .equipment_left p b {
-                display: inline-block;
-                width: 110px; /* Fixed width for labels to align values */
-            }
-            .equipment_left b{
-                font-size: 12px;
-                color: #0c0c0c;
-            }
-
-            .equipment_left p span {
-                display: inline-block;
-                margin-left: 5px; /* Space between label and value */
-                text-align: left; /* Align values to the left */
-            }
-            .equipment_right {
-                display: flex;
-                flex-direction: column;
-                margin-top: -2px;
-                justify-content: space-between;
-                color: #1a1d20;
-            }
-
-            .equipment_right p {
-                margin-bottom: 0px; /* Adjusted margin for better spacing */
-            }
-
-            .equipment_right p b {
-                display: inline-block;
-                width: 110px; /* Fixed width for labels to align values */
-            }
-
-            .equipment_right p span {
-                display: inline-block;
-                margin-left: 5px; /* Space between label and value */
-                text-align: left; /* Align values to the left */
-            }
-            .equipment_right b{
-                font-size: 12px;
-                color: #0c0c0c;
-            }
             .job_left {
                 display: flex;
                 flex-direction: column;
@@ -3657,7 +3594,7 @@
                     <p style="font-size: 11px; font-weight: bold;">${response.company.company_name}</p>
                     <p style="font-size: 11px;">${response.company.address}</p>
                     <p style="font-size: 11px;><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
-                    <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
+                    <p style="font-size: 11px; font-weight: bold;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
                     <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
@@ -3670,54 +3607,69 @@
                 </div>
             </div>
             <div>
-                <p style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</p>
+                <p style="text-align: center; font-size: 30px; margin-top: -35px; color: 0b0c0f;">${response.job.status}</p>
             </div>
             <div class="job-details">
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                     <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
-                    <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                    <p><b>Name:</b><span> ${response.job.client_name}</span></p>
+
+                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
                 </div>
                 <div class="job_right" style="width: 200px;">
-                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                    <p><b>Name:</b><span> ${response.job.client_name}</span></p>
-                    <p><b>Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                    <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
+                    <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                 </div>
             </div>
             <div class="job-details-description">
             <div class="job-container">
                 </div>
-                <h2 id="color" style="font-size: 14px; font-weight: bolder">AUDIO EQUIPMENT</h2>
+                <h2 id="color" style="font-size: 14px; font-weight: bolder;">AUDIO EQUIPMENT</h2>
                         ${equipmentTableHtml}
             </div>
             <div style="height:30px;" class="color-amount">
                                     <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
                                 </div>
-                                <div>
-                                    <p style="text-align: right;">Total INR RS. ${response.total_rental_sum}</p>
-                                </div>
-                                <div>
-                                    <p style="text-align: right;">After Discount INR RS. ${response.total_after_discount}</p>
-                                </div>
-                                <div>
-                                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.total_with_gst}</p>
-                                </div>
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    <tbody>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">Total INR </td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_rental_sum}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">After Discount INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_after_discount}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">Total Amount with 18% GST INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_with_gst}</td>
+        </tr>
+    </tbody>
+</table>
         </div>
     </body>
     </html>
     `;
                 // Convert the HTML to a PDF and download it
-                var opt = {
-                    margin: 0,
-                    filename: 'Equipment Based Quotation.pdf',
-                    image: {type: 'jpeg', quality: 0.98},
-                    html2canvas: {scale: 2},
-                    jsPDF: {unit: 'in', format: 'letter', orientation: 'portrait'}
-                };
+                var img = new Image();
+                img.src = response.company.company_logo;
+                img.onload = function() {
+                    // Convert the HTML to a PDF and download it after the image is loaded
+                    var opt = {
+                        margin: 0,
+                        filename: 'Equipment Based Quotation.pdf',
+                        image: {type: 'jpeg', quality: 0.98},
+                        html2canvas: {scale: 2, useCORS: true},
+                        jsPDF: {unit: 'in', format: 'letter', orientation: 'portrait'}
+                    };
 
-                html2pdf().from(printContent).set(opt).save();
+                    html2pdf().from(printContent).set(opt).save();
+                };
             }
 
             function handleTotalQuotation(response) {
@@ -3995,10 +3947,10 @@
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Equipment Name</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Qty</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Per Unit</th>
-                    <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #f0f0f0; font-size: 12px;">Notes</th>
+                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Qty</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Per Unit</th>
+                    <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -4010,7 +3962,7 @@
                 <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
                 <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
                 <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
-                <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;"> </td>
+                <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_notes}</td>
             </tr>
         `;
                 });
@@ -4042,7 +3994,6 @@
             .left {
                 width: 150px;
                 text-align: left;
-                margin-top: 20px;
                 color: black;
                 height: auto;
 
@@ -4059,8 +4010,8 @@
 
             .right {
                 width: 150px;
-                text-align: right;
-                margin-top: 20px;
+                text-align: left;
+                margin-top: 30px;
                 color: black;
                 height: auto;
             }
@@ -4079,75 +4030,12 @@
             }
             .job-details {
                 display: flex;
-                border-top: 5px solid #000000;
-                margin-top: -2px;
-                padding-top: -10px;
+                border-top: 1px solid #000000;
+                margin-top: -16px;
+                padding-top: -5px;
                 justify-content: space-between;
                 height: auto;
                 color: black;
-            }
-            .equipment-details {
-                display: flex;
-                border-top: 8px solid #d1e0d3;
-                margin-top: 20px;
-                padding-top: 10px;
-                justify-content: space-between;
-                height: auto;
-                font-size: 12px;
-            }
-
-            .equipment_left {
-                display: flex;
-                flex-direction: column;
-                margin-top: -2px;
-                justify-content: space-between;
-                color: #1a1d20;
-
-            }
-
-            .equipment_left p {
-                margin-bottom: 0px; /* Adjusted margin for better spacing */
-            }
-
-            .equipment_left p b {
-                display: inline-block;
-                width: 110px; /* Fixed width for labels to align values */
-            }
-            .equipment_left b{
-                font-size: 12px;
-                color: #0c0c0c;
-            }
-
-            .equipment_left p span {
-                display: inline-block;
-                margin-left: 5px; /* Space between label and value */
-                text-align: left; /* Align values to the left */
-            }
-            .equipment_right {
-                display: flex;
-                flex-direction: column;
-                margin-top: -2px;
-                justify-content: space-between;
-                color: #1a1d20;
-            }
-
-            .equipment_right p {
-                margin-bottom: 0px; /* Adjusted margin for better spacing */
-            }
-
-            .equipment_right p b {
-                display: inline-block;
-                width: 110px; /* Fixed width for labels to align values */
-            }
-
-            .equipment_right p span {
-                display: inline-block;
-                margin-left: 5px; /* Space between label and value */
-                text-align: left; /* Align values to the left */
-            }
-            .equipment_right b{
-                font-size: 12px;
-                color: #0c0c0c;
             }
             .job_left {
                 display: flex;
@@ -4260,7 +4148,6 @@
             body {
                 margin: 0px;
                 font-size: 10pt;
-                {#background-color: #FFFFFF;#}
                 padding: 0px;
             }
             @media only screen and (max-width: 500px) {
@@ -4288,7 +4175,7 @@
                     <p style="font-size: 11px; font-weight: bold;">${response.company.company_name}</p>
                     <p style="font-size: 11px;">${response.company.address}</p>
                     <p style="font-size: 11px;><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
-                    <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
+                    <p style="font-size: 11px; font-weight: bold;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
                     <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
@@ -4301,21 +4188,21 @@
                 </div>
             </div>
             <div>
-                <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+                <h3 style="text-align: center; font-size: 30px; margin-top: -35px; color: #0b0c0f;">${response.job.status}</h3>
             </div>
             <div class="job-details">
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                     <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
-                    <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+
                     <p><b>No of Days:</b><span> ${response.job.total_days}</span></p>
-                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                    <p><b>Customer:</b><span> ${response.job.client_name}</span></p>
+                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
                 </div>
                 <div class="job_right" style="width: 200px;">
-                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                    <p><b>Customer:</b><span> ${response.job.client_name}</span></p>
-                    <p><b>Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                    <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
+                    <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                 </div>
             </div>
 
@@ -4326,31 +4213,46 @@
                         ${equipmentTableHtml}
                 </div>
                 <div style="height:30px;" class="color-amount">
-                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
+                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_with_gst}</b></p>
                 </div>
-                <div>
-                    <p style="text-align: right;">Total INR RS. ${response.job.amount_row}</p>
-                </div>
-                <div>
-                    <p style="text-align: right;">After Discount INR RS. ${response.job.amount_after_discount}</p>
-                </div>
-                <div>
-                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.job.total_amount}</p>
-                </div>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    <tbody>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: #050505;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: #050505;">Total INR </td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: #050505;">RS.${response.total_rental_sum}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: #050505;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: #050505;">After Discount INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: #050505;">RS.${response.total_after_discount}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: #050505;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: #050505;">Total Amount with 18% GST INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: #050505;">RS.${response.total_with_gst}</td>
+        </tr>
+    </tbody>
+</table>
             </div>
     </body>
     </html>
     `;
                 // Convert the HTML to a PDF and download it
-                var opt = {
-                    margin: 0,
-                    filename: 'Total Quotation.pdf',
-                    image: {type: 'jpeg', quality: 0.98},
-                    html2canvas: {scale: 2},
-                    jsPDF: {unit: 'in', format: 'letter', orientation: 'portrait'}
-                };
+                var img = new Image();
+                img.src = response.company.company_logo;
+                img.onload = function() {
+                    // Convert the HTML to a PDF and download it after the image is loaded
+                    var opt = {
+                        margin: 0,
+                        filename: 'Total Quotation.pdf',
+                        image: {type: 'jpeg', quality: 0.98},
+                        html2canvas: {scale: 2, useCORS: true},
+                        jsPDF: {unit: 'in', format: 'letter', orientation: 'portrait'}
+                    };
 
-                html2pdf().from(printContent).set(opt).save();
+                    html2pdf().from(printContent).set(opt).save();
+                };
             }
 
             function handlePerfoma(response) {
@@ -4913,8 +4815,8 @@
             <thead>
                 <tr>
                     <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
-                    <th style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
-                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
+                    <th style="width: 48%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -4924,8 +4826,8 @@
                     equipmentTableHtml += `
             <tr>
                 <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
-                <td style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
-                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
+                <td style="width: 48%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes}</td>
             </tr>
         `;
                 });
@@ -5255,9 +5157,9 @@
         <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
             <thead>
                 <tr>
-                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #ffffff; font-size: 12px;">Equipment Name</th>
-                    <th style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #ffffff; font-size: 12px;">Quantity</th>
-                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #ffffff; font-size: 12px;">Notes</th>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Equipment Name</th>
+                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Quantity</th>
+                    <th style="width: 50%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -5267,8 +5169,8 @@
                     equipmentTableHtml += `
             <tr>
                 <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
-                <td style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
-                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.job.notes}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
+                <td style="width: 50%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_notes}</td>
             </tr>
         `;
                 });
@@ -5300,7 +5202,6 @@
             .left {
                 width: 150px;
                 text-align: left;
-                margin-top: 20px;
                 color: black;
                 height: auto;
 
@@ -5314,11 +5215,10 @@
             .left p a {
                 color: #2881b5;
             }
-
             .right {
                 width: 150px;
-                text-align: right;
-                margin-top: 20px;
+                text-align: left;
+                margin-top: 30px;
                 color: black;
                 height: auto;
             }
@@ -5338,8 +5238,8 @@
             .job-details {
                 display: flex;
                 border-top: 5px solid #000000;
-                margin-top: -2px;
-                padding-top: -10px;
+                margin-top: -16px;
+                padding-top: -5px;
                 justify-content: space-between;
                 height: auto;
                 color: black;
@@ -5475,7 +5375,7 @@
                 text-align: right;
             }
             .color-amount {
-                background-color: #00aced;
+                background-color: #bfcddb;
             }
             .job-container {
                 display: flex;
@@ -5518,7 +5418,6 @@
             body {
                 margin: 0px;
                 font-size: 10pt;
-                {#background-color: #FFFFFF;#}
                 padding: 0px;
             }
             @media only screen and (max-width: 500px) {
@@ -5545,8 +5444,8 @@
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
                     <p style="font-size: 11px; font-weight: bold;">${response.company.company_name}</p>
                     <p style="font-size: 11px;">${response.company.address}</p>
-                    <p style="font-size: 11px;"><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
-                    <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
+                    <p style="font-size: 11px;><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
+                    <p style="font-size: 11px; font-weight: bold;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
                     <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="${response.company.company_name} Logo" />
@@ -5559,7 +5458,7 @@
                 </div>
             </div>
             <div>
-                <p style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</p>
+                <p style="text-align: center; font-size: 30px; margin-top: -35px; color: #0b0c0f;">${response.job.status}</p>
             </div>
             <div class="job-details">
                 <div class="job_left" style="width: 400px;">
@@ -5569,7 +5468,7 @@
                     ${response.job.state}<br>${response.job.post_code}<br>${response.job.country}</span></p>
                 </div>
                 <div class="job_right" style="width: 200px;">
-                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                    <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
                     <p><b>Sound Engineer:</b><span> ${response.job.contact_person_name}</span></p>
                     <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
                 </div>
@@ -5602,15 +5501,20 @@
     </html>
     `;
                 // Convert the HTML to a PDF and download it
-                var opt = {
-                    margin: 0,
-                    filename: 'Delivery Challan.pdf',
-                    image: {type: 'jpeg', quality: 0.98},
-                    html2canvas: {scale: 2},
-                    jsPDF: {unit: 'in', format: 'letter', orientation: 'portrait'}
-                };
+                var img = new Image();
+                img.src = response.company.company_logo;
+                img.onload = function() {
+                    // Convert the HTML to a PDF and download it after the image is loaded
+                    var opt = {
+                        margin: 0,
+                        filename: 'Delivery Challan.pdf',
+                        image: {type: 'jpeg', quality: 0.98},
+                        html2canvas: {scale: 2, useCORS: true},
+                        jsPDF: {unit: 'in', format: 'letter', orientation: 'portrait'}
+                    };
 
-                html2pdf().from(printContent).set(opt).save();
+                    html2pdf().from(printContent).set(opt).save();
+                };
             }
         });
     </script>
