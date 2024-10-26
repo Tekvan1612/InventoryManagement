@@ -3183,6 +3183,7 @@ def insert_equipment_details_test(request):
                 quantity = equipment['quantity']
                 equipment_unit_price = equipment['equipment_unit_price']
                 equipment_total = equipment['equipment_total']
+                equipment_notes = equipment['equipment_notes']
                 location = equipment.get('location', '')
                 incharge = equipment.get('incharge', '')
                 equipment_setup_date = equipment.get('equipment_setup_date', '')
@@ -3203,12 +3204,12 @@ def insert_equipment_details_test(request):
                 # Insert into the database
                 query = """
                     INSERT INTO public.temp_equipment_details
-                    (temp_id, equipment_detail_id, equipment_name, quantity, equipment_unit_price, equipment_total, location, incharge, equipment_setup_date, equipment_rehearsal_date)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (temp_id, equipment_detail_id, equipment_name, quantity, equipment_unit_price, equipment_total, equipment_notes, location, incharge, equipment_setup_date, equipment_rehearsal_date)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 cursor.execute(query, [
                     temp_id, equipment_detail_id, equipment_name, quantity,
-                    equipment_unit_price, equipment_total, location,
+                    equipment_unit_price, equipment_total, equipment_notes, location,
                     incharge, equipment_setup_date, equipment_rehearsal_date
                 ])
 
@@ -3220,6 +3221,7 @@ def insert_equipment_details_test(request):
                             status=200)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 
 def fetch_equipment_details_multiple(request):
@@ -3234,7 +3236,7 @@ def fetch_equipment_details_multiple(request):
                 # Replace 'temp_equipment_details' with your table name and column names as needed
                 cursor.execute("""
                     SELECT id, location, incharge, equipment_setup_date, equipment_rehearsal_date, 
-                           equipment_name, quantity, equipment_unit_price, equipment_total
+                           equipment_name, quantity, equipment_unit_price, equipment_total, equipment_notes
                     FROM temp_equipment_details
                     WHERE equipment_detail_id = %s
                 """, [equip_id])
@@ -3255,7 +3257,8 @@ def fetch_equipment_details_multiple(request):
                             'equipment_name': detail[5],
                             'quantity': detail[6],
                             'unit_price': detail[7],
-                            'total': detail[8]
+                            'total': detail[8],
+                            'equipment_notes': detail[9]
                         }
                         for detail in equipment_details
                     ]
@@ -3267,6 +3270,7 @@ def fetch_equipment_details_multiple(request):
             return JsonResponse({'status': 'error', 'message': 'Invalid equipment ID.'})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
 
 
 def fetch_employee_names_equipment(request):
@@ -3319,6 +3323,7 @@ def update_equipment_id(request):
         quantity = request.POST.get('quantity')
         unit_price = request.POST.get('unit_price')
         total = request.POST.get('total')
+        equipment_notes = request.POST.get('equipment_notes_temp')
         location = request.POST.get('location')
         incharge = request.POST.get('incharge')
         setup_date = request.POST.get('setup_date')  # Get the setup date
@@ -3331,9 +3336,9 @@ def update_equipment_id(request):
             with connection.cursor() as cursor:
                 cursor.execute("""
                     UPDATE temp_equipment_details
-                    SET equipment_name = %s, quantity = %s, equipment_unit_price = %s, equipment_total = %s
+                    SET equipment_name = %s, quantity = %s, equipment_unit_price = %s, equipment_total = %s, equipment_notes = %s
                     WHERE id = %s
-                """, [equipment_name, quantity, unit_price, total, row_equip_id])
+                """, [equipment_name, quantity, unit_price, total, equipment_notes, row_equip_id])
 
             # Update the location and incharge (based on clicked element ID)
             with connection.cursor() as cursor:
@@ -3348,6 +3353,7 @@ def update_equipment_id(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
 
 
 @csrf_exempt
@@ -3368,11 +3374,15 @@ def insert_equipment_details_id(request):
                     # Check for required fields
                     if 'equipment_name' not in item or 'equipment_detail_id' not in item:
                         return JsonResponse({'error': 'Required fields missing in one of the entries'}, status=400)
+                    print('Current item being processed:', item)
 
                     # Convert data types
                     quantity = int(item['quantity'])
                     equipment_unit_price = float(item['equipment_unit_price'])
                     equipment_total = float(item['equipment_total'])
+
+                    # Fetch the equipment_notes from the item
+                    equipment_notes = item.get('equipment_notes', '')  # Default to empty string if not provided
 
                     # Check if the equipment_name already exists for the given equipment_detail_id
                     cursor.execute("""
@@ -3399,15 +3409,16 @@ def insert_equipment_details_id(request):
                         quantity,
                         equipment_unit_price,
                         equipment_total,
+                        equipment_notes  # Include equipment_notes here
                     ))
 
                     # Insert into the temp_equipment_details table
                     cursor.execute(""" 
                         INSERT INTO public.temp_equipment_details (
                             temp_id, equipment_detail_id, location, incharge, equipment_setup_date, equipment_rehearsal_date,
-                            equipment_name, quantity, equipment_unit_price, equipment_total
+                            equipment_name, quantity, equipment_unit_price, equipment_total, equipment_notes
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         item['temp_id'],
                         item['equipment_detail_id'],
@@ -3419,6 +3430,7 @@ def insert_equipment_details_id(request):
                         quantity,
                         equipment_unit_price,
                         equipment_total,
+                        equipment_notes  # Pass equipment_notes as a parameter
                     ))
 
                     print('Inserted item', item)
@@ -3430,6 +3442,7 @@ def insert_equipment_details_id(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 
 
 def save_crew_allocation(request):
@@ -5792,19 +5805,32 @@ def print_jobs(request):
     print('Fetch the job Query:', job_query)
 
     # Updated query to fetch the first row of each equipment_id including rental_price as integer
+    # Simplified query to fetch only equipment names based on temp_id
     equipment_query = '''
-        SELECT DISTINCT ON (e.id)
-               te.id AS temp_equipment_id,
-               e.id AS equipment_id,
-               te.equipment_name,
-               te.quantity,
-               COALESCE(CAST(s.rental_price AS INTEGER), 0) AS rental_price
+        SELECT
+            te.equipment_name,
+            te.quantity,
+            el.id AS equipment_id,
+            el.category_type,
+            el.sub_category_id,
+            sc.name AS sub_category_name,
+            sd.rental_price,
+            te.equipment_notes
         FROM temp_equipment_details te
-        JOIN equipment_list e ON e.equipment_name = te.equipment_name
-        LEFT JOIN stock_details s ON s.equipment_id = e.id
+        JOIN equipment_list el ON te.equipment_name = el.equipment_name
+        JOIN sub_category sc ON el.sub_category_id = sc.id
+        LEFT JOIN (
+            SELECT equipment_id, rental_price
+            FROM stock_details
+            WHERE (equipment_id, id) IN (
+                SELECT equipment_id, MIN(id)
+                FROM stock_details
+                GROUP BY equipment_id
+            )
+        ) sd ON el.id = sd.equipment_id
         WHERE te.temp_id = %s
-        ORDER BY e.id, s.purchase_date DESC
     '''
+
     print('Fetch the Equipment_Query', equipment_query)
 
     # Query to fetch connects details with billing or individual address based on client type
@@ -5906,8 +5932,7 @@ def print_jobs(request):
             'company_name': company_details[0] if company_details else None,
             'gst_no': company_details[1] if company_details else None,
             'email': company_details[2] if company_details else None,
-            'company_logo': company_details[3] if company_details else None,
-            # 'company_logo': default_storage.url(company_details[3]) if company_details else None,
+            'company_logo': company_details[3] if company_details else None,  # This is the Cloudinary image URL
             'address': company_details[4] if company_details else None
         } if company_details else None
         print('Fetch the company DATA:', company_data)
@@ -5922,20 +5947,23 @@ def print_jobs(request):
         print('Processing Equipment Details:', equipment_details)
         print('Processing Detail:', detail)
 
-        rental_price = int(detail[4]) if detail[4] is not None else 0
-        total_days_price = int(detail[3]) * rental_price if rental_price else 'Not Available'
-        total_rental_price = int(detail[3]) * int(
+        rental_price = int(detail[6]) if detail[6] is not None else 0
+        total_days_price = int(detail[1]) * rental_price if rental_price else 'Not Available'
+        total_rental_price = int(detail[1]) * int(
             job_data['total_days']) * rental_price if rental_price else 'Not Available'
 
         if isinstance(total_rental_price, int):
             total_rental_sum += total_rental_price
 
         equipment_data.append({
-            'temp_equipment_id': detail[0],
-            'equipment_id': detail[1],
-            'equipment_name': detail[2],
-            'quantity': detail[3],
+            'equipment_name': detail[0],
+            'quantity': detail[1],
+            'equipment_id': detail[2],
+            'category_type': detail[3],
+            'sub_category_id': detail[4],
+            'sub_category_name': detail[5],
             'rental_price': rental_price if rental_price else 'Not Available',
+            'equipment_notes': detail[7],
             'total_days_price': total_days_price,
             'total_rental_price': total_rental_price
         })
@@ -5968,6 +5996,7 @@ def print_jobs(request):
     print('Fetch the response DATA:', response_data)
 
     return JsonResponse(response_data)
+
 def fetch_crew_allocation_edit(request):
     print('Check the fetch crew allocation edit function')
     job_id = request.GET.get('jobId')  # Get jobId from the request

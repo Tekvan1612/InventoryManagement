@@ -327,7 +327,7 @@
         .custom-table th, .custom-table td {
             text-align: left; /* Align text to the left */
             padding: 1px; /* Padding for table cells */
-            padding-left: 48px;
+            padding-left: 12px;
         }
 
         .custom-table th {
@@ -752,7 +752,9 @@
 
             // Function to update fields based on status value
             function updateFieldsBasedOnStatus(status) {
+                console.log('check the status of update field based status:', status)
                 if (status === "Quotation") {
+                    $('#vehicle-number-field').hide();
                     $('#quotation-fields').show();
                     $('#quotation-details').show();
                     $('#quotation-fields1').show();
@@ -764,7 +766,8 @@
                     $('#nav-crew_allocation').hide();
                     $('#nav-transportation_allocation').hide();
                     $('#nav-add_sub_vendor').hide();
-                } else if (status === "Porforma") {
+
+                } else if (status === "Proforma") {
                     $('#quotation-fields1').show();
                     $('#crew-allocation-delivery-challan').hide();
                     $('#crew-allocation-quotation').show();
@@ -775,6 +778,7 @@
                     $('#nav-add_sub_vendor').hide();
                     $('#nav-crew_allocation').hide();
                     $('#nav-transportation_allocation').hide();
+                    $('.vehicle-number-field').hide();
                 } else if (status === "Prepsheet") {
                     $('#quotation-fields').hide();
                     $('#prepsheet-fields').show();
@@ -786,6 +790,7 @@
                     $('#nav-add_sub_vendor').show();
                     $('#nav-crew_allocation').show();
                     $('#nav-transportation_allocation').show();
+                    $('.vehicle-number-field').show();
                     fetchEmployeeNames();
                     fetchCrewAllocation(jobId);
                 } else {
@@ -799,6 +804,7 @@
                     $('#nav-crew_allocation').show();
                     $('#nav-transportation_allocation').show();
                     $('#crew-allocation-delivery-challan').show();
+                    $('.vehicle-number-field').show();
                     fetchCrewAllocation(jobId);
                 }
             }
@@ -899,7 +905,7 @@
 
                 if (status === 'Quotation') {
                     updateTempDetails();
-                } else if (status === 'Porforma') {
+                } else if (status === 'Proforma') {
                     updateTempDetails();
                 } else if (status === 'Prepsheet') {
                     updateTempDetails();
@@ -926,7 +932,7 @@
                     $('#nav-crew_allocation').hide();
                     $('#nav-transportation_allocation').hide();
                     $('#nav-add_sub_vendor').hide();
-                } else if (selectedValue === "Porforma") {
+                } else if (selectedValue === "Proforma") {
                     $('#quotation-fields1').show();
                     $('#crew-allocation-delivery-challan').hide();
                     $('#crew-allocation-quotation').show();
@@ -997,7 +1003,7 @@
 
                     // Calculate the total amount with GST
                     var totalAmountWithGST = discountedAmount * 1.18;
-                    $('#total_amount_cal').val(totalAmountWithGST);
+                    $('#total_amount_cal').val(Math.round(totalAmountWithGST));
                 }
             }
 
@@ -1053,8 +1059,9 @@
                 sign.text(sign.text() === '+' ? '-' : '+');
             });
 
-            let equipmentDetailId; // Initialize it
-            console.log('Check the global variable:', equipmentDetailId)
+            // change from this start 24/10/2024
+            // Declare equipmentDetailId globally
+            let equipmentDetailId;
 
             if (jobId) {
                 console.log('Fetching equipment detail IDs for jobId:', jobId);
@@ -1090,13 +1097,31 @@
                                 equipmentDetailId = $(this).data('equip-id');  // Get the ID from data attribute
                                 console.log('Check the equipment ID:', equipmentDetailId);
 
+                                // Reset the font-weight of all equipment IDs
+                                $('.equipment-id').css('font-weight', 'normal');  // Reset all to normal
+
+                                // Highlight the first equipment by default
+                                $(`.equipment-id[data-equip-id='${equipmentDetailId}']`).css('font-weight', 'bold');  // Highlight default
+
                                 // Automatically call the second AJAX to fetch equipment details
                                 fetchEquipmentDetails(equipmentDetailId);  // Re-use the AJAX call as a function
                             });
 
                             // Show details for the first equipment by default
                             const firstEquipmentId = equipmentDetailIds[0];  // Get the first ID
-                            fetchEquipmentDetails(firstEquipmentId);  // Automatically fetch details for the first ID
+                            console.log('Fetching details for the first equipment ID:', firstEquipmentId);
+
+                            // Assign firstEquipmentId to the global variable equipmentDetailId
+                            equipmentDetailId = firstEquipmentId;
+                            console.log('Fetching details for the Second equipment ID:', equipmentDetailId);
+
+                            // Reset font-weight for all before highlighting the first one
+                            $('.equipment-id').css('font-weight', 'normal');  // Reset all to normal
+
+                            // Highlight the first equipment by default
+                            $(`.equipment-id[data-equip-id='${firstEquipmentId}']`).css('font-weight', 'bold');  // Highlight default
+
+                            fetchEquipmentDetails(equipmentDetailId);  // Automatically fetch details for the first ID
 
                         } else {
                             console.log('No equipment detail IDs found for this jobId.');
@@ -1108,6 +1133,7 @@
                     }
                 });
             }
+            // to end changes here
 
             // Create a reusable function to fetch equipment details based on equipment ID
             function fetchEquipmentDetails(equipmentDetailId) {
@@ -1135,6 +1161,7 @@
                 });
             }
 
+            // show existing values based on that tempId from the temp_equipment_details table
             function showExistingValues(data, equipmentDetailId) {
                 console.log('Fetch the show exising:', data, equipmentDetailId)
                 var newSection = `
@@ -1172,6 +1199,7 @@
                                         <th>Quantity</th>
                                         <th>Unit Price</th>
                                         <th>Total</th>
+                                        <th>Notes</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -1182,6 +1210,7 @@
                                         <td><input type="number" name="quantity" class="quantity-input" id="quantityTotalAmount" value="${detail.quantity}" /></td>
                                         <td><input type="number" name="unit_price" class="unit-price-input" value="${detail.unit_price}" readonly /></td>
                                         <td><input type="text" name="total" class="total-input" id="totalEquipmetAmount" value="${detail.total}" readonly /></td>
+                                        <td><input type="text" name="equipment_notes_temp" value="${detail.equipment_notes}" /></td>
                                         <td><button class="btn btn-secondary delete-equipment-btn"><i class="fa fa-times"></i></button></td>
                                     </tr>
                                     `).join('')}
@@ -1200,14 +1229,14 @@
                 });
             }
 
-            // Update the row
+            // Update row
             // Input event handler with a check for equipmentDetailId
-            $(document).on('input', 'input[name="quantity"], input[name="unit_price"], #locationNameExisting, #inchargeEmployeeExisting, #setupDateExisting, #rehearsalDateExisting', function () {
+            $(document).on('input', 'input[name="quantity"], input[name="unit_price"], input[name="equipment_notes_temp"], #locationNameExisting, #inchargeEmployeeExisting, #setupDateExisting, #rehearsalDateExisting', function () {
                 // Check if equipmentDetailId is set
                 if (typeof equipmentDetailId === 'undefined') {
                     console.warn('Equipment Detail ID is not set yet. Make sure to click an equipment ID first.');
                     return; // Exit the function if ID is not set
-                }
+                 }
 
                 var row = $(this).closest('tr'); // Get the current row
 
@@ -1218,8 +1247,10 @@
                 // Fetch updated values from input fields
                 var quantity = parseFloat(row.find('input[name="quantity"]').val()) || 0; // Default to 0 if NaN
                 var unitPrice = parseFloat(row.find('input[name="unit_price"]').val()) || 0; // Default to 0 if NaN
+                var equipmentNotes = row.find('input[name="equipment_notes_temp"]').val(); // Fetch equipment notes
                 var total = (quantity * unitPrice).toFixed(2); // Calculate total and fix to 2 decimal points
                 row.find('input[name="total"]').val(total); // Update the total field
+                console.log('check the equipment Notes:', equipmentNotes)
 
                 // Fetch location and incharge from the inputs
                 var location = $('#locationNameExisting').val();  // Location input
@@ -1238,6 +1269,7 @@
                         quantity: quantity,
                         unit_price: unitPrice,
                         total: total,
+                        equipment_notes_temp: equipmentNotes, // Add equipment notes to the data
                         location: location,             // Location (from element)
                         incharge: incharge,             // Incharge (from element)
                         setup_date: setupDate,          // Setup date
@@ -1263,6 +1295,7 @@
                 addNewEquipmentSection();
             });
 
+            // create new form after click on equipment plus sign
             function addNewEquipmentSection() {
                 var newSection = `
         <div class="equipment-section" data-temp-id="${jobId}">
@@ -1301,6 +1334,7 @@
                             <th>Quantity</th>
                             <th>Unit Price</th>
                             <th>Total</th>
+                            <th>Notes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1309,6 +1343,7 @@
                             <td><input type="number" name="quantity" class="quantity-input" /></td>
                             <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
                             <td><input type="text" name="total" class="total-input" readonly /></td>
+                            <td><input type="text" name="equipment_notes" class="equipment-notes" /></td>
                         </tr>
                     </tbody>
                 </table>
@@ -1452,6 +1487,7 @@
                                 '<td>' + quantity + '</td>' +
                                 '<td>' + unitPrice + '</td>' +
                                 '<td>' + total + '</td>' +
+                                '<td><input type="text" style="width: 100%;" name="equipment_notes" placeholder="Enter value"></td>' +
                                 '</tr>'
                             );
                         }
@@ -1480,6 +1516,7 @@
                         quantity: $(this).find('td:eq(1)').text(), // Quantity
                         equipment_unit_price: $(this).find('td:eq(2)').text(), // Unit Price
                         equipment_total: $(this).find('td:eq(3)').text(), // Total
+                        equipment_notes: $(this).find('input[name="equipment_notes"]').val(), // Capture the notes value
                         location: locationName, // Add location
                         incharge: inchargeName, // Add incharge
                         equipment_setup_date: setupDate, // Add setup date
@@ -1594,7 +1631,9 @@
             }
 
             $('#existingSaveEquipmentList').click(function (event) {
+                console.log('Check the 1st step working...')
                 event.preventDefault(); // Prevent the default form submission
+                console.log('Check the 1st step working...')
 
                 var selectedEquipmentBody = $('#selectedEquipmentTable tbody');
                 var tempId = jobId; // Replace with the actual temp_id
@@ -1603,6 +1642,8 @@
                 var incharge = $('#inchargeEmployeeExisting').val(); // Replace with the actual incharge
                 var setupDate = $('#setupDateExisting').val(); // Replace with the actual setup date
                 var rehearsalDate = $('#rehearsalDateExisting').val(); // Replace with the actual rehearsal date
+                console.log('Check the 2st step working...')
+                console.log('Check the 1st step working...', selectedEquipmentBody, tempId, equipDetailId, location, incharge, setupDate, rehearsalDate)
 
                 // Remove only blank rows from the selected equipment table
                 selectedEquipmentBody.find('tr').each(function () {
@@ -1611,9 +1652,11 @@
                         $(this).remove(); // Remove the row if quantity is empty or zero
                     }
                 });
+                console.log('Check the 3rd step working...', selectedEquipmentBody)
 
                 // Prepare an array to hold the data to be sent to the backend
                 var equipmentData = [];
+                console.log('Check the 4th step working...')
 
                 // Loop through each row in the equipment table
                 $('#equipmentTable tbody tr').each(function () {
@@ -1647,6 +1690,7 @@
                         });
                     }
                 });
+                console.log('Check the 5th step working...')
 
                 // AJAX request to insert the data into the temp_equipment_details table
                 $.ajax({
@@ -1770,6 +1814,18 @@
                         row.hide();  // Hide the row if it doesn't match
                     }
                 });
+            });
+
+            $('#cancelButton').click(function (e) {
+                e.preventDefault();
+                // Hide the popup
+                $('#equipmentPopup').hide();
+            });
+
+            $('#cancelSaveEquipmentButton').click(function (e) {
+                e.preventDefault();
+
+                $('#equipmentInsertPopup').hide();
             });
 
             // Sub Vendor Section
@@ -2615,7 +2671,7 @@
                                 </div>
                                 <div class="col-xl-3 mb-3">
                                     <label class="form-label">Vehicle Number</label>
-                                    <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="vehicle_number" value="${item.vehicle_number || ''}">
+                                    <input type="text" class="form-control" id="vehicle-number-field" placeholder="Enter Vehicle Number" name="vehicle_number" value="${item.vehicle_number || ''}">
                                 </div>
                                 <div class="col-xl-2 mb-3" style="margin-top: 36px;">
                                     <button type="button" class="btn btn-success updateRow"><i class="fa fa-save"></i></button>
@@ -2639,7 +2695,7 @@
                                     <input type="number" class="form-control" placeholder="Enter Contact Number" name="outside_contact_number" value="${item.outside_contact_number || ''}">
                                 </div>
                                 <div class="col-xl-3 mb-3">
-                                    <label class="form-label">Outside Vehicle Number</label>
+                                    <label class="form-label vehicle-number-field">Outside Vehicle Number</label>
                                     <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="outside_vehicle_number" value="${item.outside_vehicle_number || ''}">
                                 </div>
                                 <div class="col-xl-2 mb-3" style="margin-top: 36px;">
@@ -2914,9 +2970,49 @@
                                     });
 
                                 } else if (status === 'porforma') {
-                                    handlePerfoma(response);
+                                    // Show PDF and Print options
+                                    $('#porforma-options-container').show();
+
+                                    // Clear previous event listeners from #pdfOption and #printOption
+                                    $('#porforma-options-container #porformaPdfOption').off('click');
+                                    $('#porforma-options-container #porformaPrintOption').off('click');
+
+                                    // Handle the click on the PDF option
+                                    $('#porforma-options-container #porformaPdfOption').on('click', function () {
+                                        handleDeliveryChallanPdf(response);
+
+                                        $('#porforma-options-container').hide(); // Hide options after selection
+                                    });
+
+                                    // Handle the click on the Print option
+                                    $('#porforma-options-container #porformaPrintOption').on('click', function () {
+                                        handlePerfoma(response);
+
+                                        $('#porforma-options-container').hide(); // Hide options after selection
+                                    });
+
                                 } else if (status === 'prepsheet') {
-                                    handlePrepsheet(response);
+                                    // Show PDF and Print options
+                                    $('#prepsheet-options-container').show();
+
+                                    // Clear previous event listeners from #pdfOption and #printOption
+                                    $('#prepsheet-options-container #prepsheetPdfOption').off('click');
+                                    $('#prepsheet-options-container #prepsheetPrintOption').off('click');
+
+                                    // Handle the click on the PDF option
+                                    $('#prepsheet-options-container #prepsheetPdfOption').on('click', function () {
+                                        handleDeliveryChallanPdf(response);
+
+                                        $('#prepsheet-options-container').hide(); // Hide options after selection
+                                    });
+
+                                    // Handle the click on the Print option
+                                    $('#prepsheet-options-container #prepsheetPrintOption').on('click', function () {
+                                        handlePrepsheet(response);
+
+                                        $('#prepsheet-options-container').hide(); // Hide options after selection
+                                    });
+
                                 } else if (status === 'delivery challan') {
                                     // Show PDF and Print options
                                     $('#delivery-options-container').show();
@@ -2992,7 +3088,7 @@
                                 <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${detail.rental_price}</td>
                                 <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
                                 <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${detail.total_rental_price}</td>
-                                <td style=" width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> </td>
+                                <td style=" width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes} </td>
                             </tr>
                         `;
                 });
@@ -3029,7 +3125,7 @@
                                 }
                                 .right {
                                     width: 150px;
-                                    text-align: right;
+                                    text-align: left;
 
                                 }
                                 .left p {
@@ -3057,7 +3153,7 @@
                                 .job-details {
                                     display: flex;
                                     border-top: 1px solid #000000;
-                                    padding-top: -10px;
+                                    margin-top: -22px;
                                     justify-content: space-between;
                                     height: auto;
                                 }
@@ -3066,7 +3162,7 @@
                                     flex-direction: column;
                                 }
                                 .job_left p {
-                                    margin-bottom: -5px;
+                                    margin-bottom: -8px;
                                 }
                                 .job_left p b {
                                     display: inline-block;
@@ -3084,7 +3180,7 @@
                                 }
 
                                 .job_right p {
-                                    margin-bottom: -5px;
+                                    margin-bottom: -8px;
                                     display: flex;
                                     flex-wrap: wrap;
                                 }
@@ -3162,8 +3258,8 @@
                                         <h3><u>Registered Address:</u></h3>
                                         <h3 style="font-size: 14px;">${response.company.company_name}</h3>
                                         <p>${response.company.address}</p>
-                                        <p><a href="mailto:${response.company.email}">${response.company.email}</a></p>
-                                        <h5>GST No: ${response.company.gst_no}</h5>
+                                        <p style="margin-top: -4px;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                                        <h5 style="font-size: 11px;">GST No: ${response.company.gst_no}</h5>
                                     </div>
                                     <div class="logo">
                                         <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
@@ -3172,7 +3268,7 @@
                                         <h3><u>Warehouse Address:</u></h3>
                                         <h3 style="font-size: 14px;">Echoes</h3>
                                         <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
-                                        <p>9029884368</p>
+                                        <p style="margin-top: -2px;">9029884368</p>
                                     </div>
                                 </div>
                                 <div>
@@ -3182,14 +3278,14 @@
                                     <div class="job_left" style="width: 300px;">
                                         <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                                         <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
-                                        <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
-                                        <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                                        <p><b>Name:</b><span> ${response.job.client_name}</span></p>
+                                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
+
                                     </div>
                                     <div class="job_right" style="width: 200px;">
-                                        <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                                        <p><b>Name:</b><span> ${response.job.client_name}</span></p>
-                                        <p><b>Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                                        <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
+                                        <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                                        <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                                     </div>
                                 </div>
                                 <div class="job-details-description">
@@ -3200,17 +3296,28 @@
                                     ${equipmentTableHtml}
                                 </div>
                                 <div style="height:30px;" class="color-amount">
-                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
                                 </div>
-                                <div>
-                                    <p style="text-align: right;">Total INR RS. ${response.total_rental_sum}</p>
-                                </div>
-                                <div>
-                                    <p style="text-align: right;">After Discount INR RS. ${response.total_after_discount}</p>
-                                </div>
-                                <div>
-                                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.total_with_gst}</p>
-                                </div>
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    <tbody>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total INR </td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_rental_sum}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">After Discount INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_after_discount}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total Amount with 18% GST INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_with_gst}</td>
+        </tr>
+    </tbody>
+</table>
+
 
                             </div>
                         </body>
@@ -3617,7 +3724,7 @@
                 <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
                 <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
                 <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.rental_price}</td>
-                <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> </td>
+                <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes} </td>
             </tr>
         `;
                 });
@@ -3681,7 +3788,7 @@
                 .job-details {
                     display: flex;
                     border-top: 1px solid #000000;
-                    padding-top: -10px;
+                    margin-top: -22px;
                     justify-content: space-between;
                     height: auto;
                 }
@@ -3690,7 +3797,7 @@
                     flex-direction: column;
                 }
                 .job_left p {
-                    margin-bottom: -5px;
+                    margin-bottom: -8px;
                 }
                 .job_left p b {
                     display: inline-block;
@@ -3708,7 +3815,7 @@
 }
 
 .job_right p {
-    margin-bottom: -5px;
+    margin-bottom: -8px;
     display: flex;
     flex-wrap: wrap;
 }
@@ -3789,8 +3896,8 @@
                         <h3><u>Registered Address:</u></h3>
                         <h3 style="font-size: 14px;">${response.company.company_name}</h3>
                         <p>${response.company.address}</p>
-                        <p><a href="mailto:${response.company.email}">${response.company.email}</a></p>
-                        <h5>GST No: ${response.company.gst_no}</h5>
+                        <p style="margin-top: -4px;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                        <h5 style="font-size: 11px;">GST No: ${response.company.gst_no}</h5>
                     </div>
                     <div class="logo">
                         <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
@@ -3799,7 +3906,7 @@
                         <h3><u>Warehouse Address:</u></h3>
                         <h3 style="font-size: 14px;">Echoes</h3>
                         <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
-                        <p>9029884368</p>
+                        <p style="margin-top: -2px;">9029884368</p>
                     </div>
                 </div>
                 <div>
@@ -3808,16 +3915,14 @@
                 <div class="job-details">
                     <div class="job_left" style="width: 300px;">
                         <p><b>Job Title:</b><span> ${response.job.title}</span></p>
-                        <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
-                        <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
-                        <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                        <p><b>No of Days:</b><span> ${response.job.total_days}</span></p>
-                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name}</span></p>
+                                        <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
+                                        <p><b>Name:</b><span> ${response.job.client_name}</span></p>
+                                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
                     </div>
                     <div class="job_right" style="width: 200px;">
-                        <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                        <p><b>Customer:</b><span> ${response.job.client_name}</span></p>
-                        <p><b>Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                        <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
+                                        <p><b>Job Date Out:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                                        <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                     </div>
                 </div>
                 <div class="job-details-description">
@@ -3828,17 +3933,27 @@
                     ${equipmentTableHtml}
                 </div>
                 <div style="height:30px;" class="color-amount">
-                    <p style="text-align: right; color: black;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
+                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_with_gst}</b></p>
                 </div>
-                <div>
-                    <p style="text-align: right;">Total INR RS. ${response.job.amount_row}</p>
-                </div>
-                <div>
-                    <p style="text-align: right;">After Discount INR RS. ${response.job.amount_after_discount}</p>
-                </div>
-                <div>
-                    <p style="text-align: right;">Total Amount with 18% GST INR RS. ${response.job.total_amount}</p>
-                </div>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    <tbody>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total INR </td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_rental_sum}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">After Discount INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_after_discount}</td>
+        </tr>
+        <tr>
+<td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total Amount with 18% GST INR</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_with_gst}</td>
+        </tr>
+    </tbody>
+</table>
             </div>
         </body>
         </html>
@@ -4439,37 +4554,32 @@
             }
 
             function handlePrepsheet(response) {
-                // Group equipment details by Type
-                var groupedEquipment = {};
+                var equipmentTableHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+                <tr>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                    <th style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
+                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
 
-                response.job_details.forEach(function (detail) {
-                    if (!groupedEquipment[detail.type]) {
-                        groupedEquipment[detail.type] = [];
-                    }
-                    groupedEquipment[detail.type].push({
-                        quantity: detail.quantity,
-                        equipment_name: detail.equipment_name,
-                        type: detail.type,
-                        amount: detail.amount
-                    });
+                response.equipment_details.forEach(function (detail) {
+                    equipmentTableHtml += `
+            <tr>
+                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
+                <td style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
+                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes}</td>
+            </tr>
+        `;
                 });
 
-                // Generate HTML for each category_type
-                var equipmentLeftHtml = '';
-                var equipmentRightHtml = '';
-
-                for (var type in groupedEquipment) {
-                    if (groupedEquipment.hasOwnProperty(type)) {
-                        var equipmentItems = groupedEquipment[type];
-                        equipmentLeftHtml += `<h3>${type}</h3>`;
-                        equipmentRightHtml += `<h3>${type}</h3>`;
-
-                        equipmentItems.forEach(function (item) {
-                            equipmentLeftHtml += `<p>${item.quantity}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${item.equipment_name}</p>`;
-                            equipmentRightHtml += `<p>RS. ${item.amount}</p>`;
-                        });
-                    }
-                }
+                equipmentTableHtml += `
+            </tbody>
+        </table>
+    `;
 
                 var printContent = `
     <!DOCTYPE html>
@@ -4490,8 +4600,6 @@
                 justify-content: space-between;
                 align-items: center;
                 padding: 0px;
-                font-style: italic;
-                font-weight: bolder;
             }
             .left {
                 width: 150px;
@@ -4499,21 +4607,16 @@
             }
             .right {
                 width: 150px;
-                text-align: right;
-                padding-top: 5px;
-                margin-top: -60px;
+                text-align: left;
             }
             .right p {
-                margin-bottom: -8px;
+                margin-bottom: 4px;
             }
             .right h3 {
                 margin-bottom: -10px;
             }
-            .right h4 {
-                margin-bottom: -10px;
-            }
-            .left h4 {
-                margin-bottom: -10px;
+            .right h5 {
+                margin-top: 5px;
             }
             .left p {
                 margin-bottom: 4px;
@@ -4530,15 +4633,15 @@
             }
             .job-details {
                 display: flex;
-                border-top: 5px solid #000000;
-                margin-top: -25px;
+                border-top: 1px solid #000000;
+                margin-top: -22px;
                 padding-top: -10px;
                 justify-content: space-between;
                 height: auto;
             }
             .equipment-details {
                 display: flex;
-                border-top: 10px solid #97cc9e;
+                border-top: 10px solid #d1e0d3;
                 margin-top: 20px;
                 padding-top: 10px;
                 justify-content: space-between;
@@ -4557,10 +4660,30 @@
 
             .equipment_left p b {
                 display: inline-block;
-                width: 115px; /* Fixed width for labels to align values */
+                width: 100px; /* Fixed width for labels to align values */
             }
 
             .equipment_left p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .equipment_right {
+                display: flex;
+                flex-direction: column;
+                margin-top: -15px;
+            }
+
+            .equipment_right p {
+                margin-bottom: -8px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_right p b {
+                display: inline-block;
+                width: 100px; /* Fixed width for labels to align values */
+            }
+
+            .equipment_right p span {
                 display: inline-block;
                 margin-left: 5px; /* Space between label and value */
                 text-align: left; /* Align values to the left */
@@ -4574,19 +4697,37 @@
             }
             .job_left p b {
                 display: inline-block;
-                width: 120px;
+                width: 110px;
             }
             .job_left p span {
                 display: inline-block;
                 margin-left: -22px;
             }
             .job_right {
-                width: 250px;
-                display: inline-block;
-                vertical-align: top;
-            }
+    display: flex;
+    flex-direction: column;
+    width: 150px; /* Maintain the width */
+    word-wrap: break-word; /* Ensures that long text wraps to the next line */
+}
+
+.job_right p {
+    margin-bottom: -5px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.job_right p b {
+    flex: 0 0 100px; /* Fixed width for the label */
+    display: inline-block;
+}
+
+.job_right p span {
+    flex: 1; /* Allows the span to take up remaining space */
+    display: inline-block;
+    word-wrap: break-word; /* Ensures text inside <span> wraps properly */
+}
             .job-details-description {
-                margin-top: 15px;
+                margin-top: 30px;
                 border-top: 1px solid #000000;
                 display: flex;
                 flex-direction: column;
@@ -4595,7 +4736,7 @@
             }
             .job-details-description h4 {
                 text-align: left;
-                margin-top: auto;
+                margin-top: 10px;
             }
             .job-details-description h2 {
                 text-align: left;
@@ -4616,6 +4757,19 @@
             }
             .color-amount {
                 background-color: #00aced;
+            }
+            .job-container {
+                display: flex;
+                justify-content: space-between; /* Ensures that h4 and p are spaced apart */
+                align-items: center; /* Centers items vertically within the div */
+            }
+            .job-details-left {
+                margin-top: 10px; /* Removes default margin */
+            }
+            .job-details-center {
+                margin: 0; /* Removes default margin */
+                text-align: center; /* Centers text inside the paragraph */
+                flex: 1; /* Allows the paragraph to take up remaining space */
             }
             #default-text {
                 font-size: 20px;
@@ -4661,6 +4815,7 @@
                     width: 100%;
                     text-align: center;
                 }
+
             }
         </style>
     </head>
@@ -4668,20 +4823,20 @@
         <div class="box">
             <div class="container">
                 <div class="left">
-                    <h4><u><i>Registered Address:</i></u></h4>
-                    <h3 style="font-size: 12px;">${response.job.company_name}</h3>
-                    <p>${response.job.company_address}</p>
-                    <p style="margin-top:-4px;"><a href="mailto:${response.job.company_email}">${response.job.company_email}</a></p>
-                    <h5>GST No: ${response.job.company_gst_no}</h5>
+                    <h3><u><i>Registered Address:</i></u></h3>
+                    <h3 style="font-size: 14px;">${response.company.company_name}</h3>
+                    <p>${response.company.address}</p>
+                    <p style="margin-top: -4px;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <h5 style="font-size: 11px;">GST No: ${response.company.gst_no}</h5>
                 </div>
                 <div class="logo">
-                    <img id="logoImage" src="${response.job.company_logo_path}" class="logo" alt="Logo" />
+                    <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
                 </div>
                 <div class="right">
                     <h3><u>Warehouse Address:</u></h3>
                     <h3 style="font-size: 14px;">Echoes</h3>
                     <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
-                    <p>9029884368</p>
+                    <p style="margin-top: -2px;">9029884368</p>
                 </div>
             </div>
             <div>
@@ -4691,38 +4846,31 @@
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                     <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Customer:</b><span class="customer-details"> ${response.job.company_name}<br>${response.job.company_address}</span></p>
+                    <p><b>Client:</b><span class="customer-details"> ${response.job.client_name}<br>${response.job.address}<br>
+                    ${response.job.state}<br>${response.job.post_code}<br>${response.job.country}</span></p>
                 </div>
-                <div class="job_right" style="text-align: right; width: 250px;">
-                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
-                    <p style="margin-top: -10px;"><b>Sound Engineer:</b><span> ${response.job.employee}</span></p>
-                    <p style="margin-top: -10px;"><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
+                <div class="job_right" style="width: 200px;">
+                    <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
+                    <p><b>Sound Engineer:</b><span> ${response.job.contact_person_name}</span></p>
+                    <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
                 </div>
             </div>
             <div class="equipment-details">
-                <div class="equipment_left" style="width: 300px;">
+                <div class="equipment_left" style="width: 700px;">
                     <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${response.job.job_reference_no}</span></p>
                     <p><b>Equipment Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Event Start Date:</b><span> ${response.job.show_start_date ? response.job.show_start_date : '-'}</span></p>
-                    <p><b>Event End Date:</b><span> ${response.job.show_end_date ? response.job.show_end_date : '-'}</span></p>
+                    <p><b>Event Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                    <p><b>Event End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                 </div>
             </div>
             <div class="job-details-description">
-                <p id="default-text">Default Section Header</p>
-                <h4>Qty Description</h4>
-                <h2 id="color">Audio Equipment</h2>
-                <div class="job_equipment_container">
-                    <div class="job_left_equipment">
-                        ${equipmentLeftHtml}
-                    </div>
+            <div class="job-container">
+
                 </div>
-            </div>
-            <div style="text-align: left; font-size: 22px;">
-                <b><u>Warehouse Added Equipment</u></b>
-            </div>
-            <p style="font-size: 18px;"><i><b>AUDIO EQUIPMENT</i></b></p>
-            <div style="display: flex; justify-content: space-between;">
-                <p style="text-align: left;">2 MACKIE SRM150</p>
+                <h2 id="color">AUDIO EQUIPMENT</h2>
+
+                        ${equipmentTableHtml}
+
             </div>
         </div>
     </body>
@@ -4760,7 +4908,7 @@
             <tr>
                 <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
                 <td style="width: 20%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
-                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.job.notes}</td>
+                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes}</td>
             </tr>
         `;
                 });
@@ -4796,7 +4944,7 @@
             }
             .right {
                 width: 150px;
-                text-align: right;
+                text-align: left;
             }
             .right p {
                 margin-bottom: 4px;
@@ -5015,8 +5163,8 @@
                     <h3><u><i>Registered Address:</i></u></h3>
                     <h3 style="font-size: 14px;">${response.company.company_name}</h3>
                     <p>${response.company.address}</p>
-                    <p><a href="mailto:${response.company.email}">${response.company.email}</a></p>
-                    <h5>GST No: ${response.company.gst_no}</h5>
+                    <p style="margin-top: -4px;"><a href="mailto:${response.company.email}">${response.company.email}</a></p>
+                    <h5 style="font-size: 11px;">GST No: ${response.company.gst_no}</h5>
                 </div>
                 <div class="logo">
                     <img id="logoImage" src="${response.company.company_logo}" class="logo" alt="Logo" />
@@ -5025,7 +5173,7 @@
                     <h3><u>Warehouse Address:</u></h3>
                     <h3 style="font-size: 14px;">Echoes</h3>
                     <p>F-37, Kailas Industrial Complex, Building no.1, Near Satara Bank, Veer Savarkar Road, Park Site, Vikhroli (W), Mumbai, 400079</p>
-                    <p>9029884368</p>
+                    <p style="margin-top: -2px;">9029884368</p>
                 </div>
             </div>
             <div>
@@ -5039,7 +5187,7 @@
                     ${response.job.state}<br>${response.job.post_code}<br>${response.job.country}</span></p>
                 </div>
                 <div class="job_right" style="width: 200px;">
-                    <p><b>Venue:</b><span> ${response.job.venue_address}</span></p>
+                    <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
                     <p><b>Sound Engineer:</b><span> ${response.job.contact_person_name}</span></p>
                     <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
                 </div>
@@ -5380,7 +5528,7 @@
                     <h4 style="font-size: 12px; font-weight: bolder; margin-bottom: 2px;"><u>Registered Address:</u></h4>
                     <p style="font-size: 11px; font-weight: bold;">${response.company.company_name}</p>
                     <p style="font-size: 11px;">${response.company.address}</p>
-                    <p style="font-size: 11px;><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
+                    <p style="font-size: 11px;"><a href="mailto:${response.company.email}" style="background-color: black; color: #2881b5;">${response.company.email}</a></p>
                     <p style="font-size: 11px;">GST No: ${response.company.gst_no}</p>
                 </div>
                 <div class="logo">
@@ -5522,6 +5670,23 @@
                                                                style="color: red"></i> Total Quotation
                             </button>
                         </div>
+                        <div id="porforma-options-container" style="display:none;">
+                            <button id="porformaPrintOption" class="dropdown-item" style="text-align: center;"><i
+                                    class="bi bi-printer-fill"></i> Print
+                            </button>
+                            <button id="porformaPdfOption" class="dropdown-item" style="text-align: center;"><i
+                                    class="bi bi-file-fill"></i> PDF
+                            </button>
+                        </div>
+                        <div id="prepsheet-options-container" style="display:none;">
+                            <button id="prepsheetPrintOption" class="dropdown-item" style="text-align: center;"><i
+                                    class="bi bi-printer-fill"></i> Print
+                            </button>
+                            <button id="prepsheetPdfOption" class="dropdown-item" style="text-align: center;"><i
+                                    class="bi bi-file-fill"></i> PDF
+                            </button>
+                        </div>
+
                         <div id="delivery-options-container" style="display:none;">
                             <button id="printOption" class="dropdown-item" style="text-align: center;"><i
                                     class="bi bi-printer-fill"></i> Print
@@ -5622,7 +5787,7 @@
                                 <select class="default-select form-control" id="statusType"
                                         name="status">
                                     <option value="Quotation">Quotation</option>
-                                    <option value="Porforma">Porforma</option>
+                                    <option value="Proforma">Proforma</option>
                                     <option value="Prepsheet">Prepsheet</option>
                                     <option value="Delivery Challan">Delivery Challan</option>
                                 </select>
@@ -5787,7 +5952,7 @@
                                 <input type="text" class="search-bar" placeholder="Search..."
                                        id="searchBarExisting">
                                 <button class="button" id="existingSaveEquipmentList">OK</button>
-                                <button class="button" id="cancelInsertButton">Cancel</button>
+                                <button class="button" id="cancelSaveEquipmentButton">Cancel</button>
                             </div>
                         </div>
                     </div>
