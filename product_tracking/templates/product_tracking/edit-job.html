@@ -4810,32 +4810,75 @@
             }
 
             function handleDeliveryChallan(response) {
-                var equipmentTableHtml = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-            <thead>
-                <tr>
-                    <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
-                    <th style="width: 48%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
 
-                response.equipment_details.forEach(function (detail) {
+                let equipmentDetailsHtml = "";
+    let processedIds = new Set();
+
+    response.equipment_details.forEach(function(detail) {
+        if (!processedIds.has(detail.equipment_detail_id)) {
+            processedIds.add(detail.equipment_detail_id);
+
+            // Generate equipment details HTML for each unique equipment_detail_id
+            let equipmentTableHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                            <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Quantity</th>
+                            <th style="width: 48%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Loop through and add only rows matching this equipment_detail_id
+            response.equipment_details
+                .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
+                .forEach(function(item) {
                     equipmentTableHtml += `
-            <tr>
-                <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
-                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
-                <td style="width: 48%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes}</td>
-            </tr>
-        `;
+                        <tr>
+                            <td style="width: 40%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_name}</td>
+                            <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.quantity}</td>
+                            <td style="width: 48%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_notes || '-'}</td>
+                        </tr>
+                    `;
                 });
 
-                equipmentTableHtml += `
-            </tbody>
-        </table>
-    `;
+            equipmentTableHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            equipmentDetailsHtml += `
+                <div class="equipment-details">
+                    <div class="equipment_left" style="width: 700px;">
+                        <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${detail.equipment_detail_id}</span></p>
+                        <p><b>Equipment Ref:</b><span> ${detail.equipment_detail_id}</span></p>
+                        <p><b>Location:</b><span> ${detail.location}</span></p>
+                        <p><b>Event Start Date:</b><span> ${detail.equipment_setup_date}</span></p>
+                        <p><b>Event End Date:</b><span> ${detail.equipment_rehearsal_date}</span></p>
+                    </div>
+                    <div class="equipment_right" style="width: 300px;">
+                        <p><b>Show Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                        <p><b>Setup Date:</b><span> ${response.job.setup_date}</span></p>
+                        <p><b>Show End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                        <p><b>Pack Up Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                    </div>
+
+                </div>
+<div class="job-details-description">
+            <div class="job-container">
+
+                </div>
+                <h2 id="color" style="margin-top: 10px;">AUDIO EQUIPMENT</h2>
+
+                        ${equipmentTableHtml}
+
+            </div>
+            `;
+        }
+    });
+
 
                 var printContent = `
     <!DOCTYPE html>
@@ -4847,15 +4890,14 @@
             .box {
                 background-color: #fff;
                 padding: 20px;
-                margin: 10px auto;
-                max-width: 700px;
-                min-height: 100%;
+                margin: -35px auto;
+                max-width: 95%;
+                min-height: 90%;
             }
             .container {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 0px;
             }
             .left {
                 width: 150px;
@@ -4889,8 +4931,8 @@
             }
             .job-details {
                 display: flex;
-                border-top: 5px solid #000000;
-                margin-top: -25px;
+                border-top: 1px solid #000000;
+                margin-top: -22px;
                 padding-top: -10px;
                 justify-content: space-between;
                 height: auto;
@@ -5053,11 +5095,12 @@
                 margin: 0;
             }
             body {
-                margin: 0px;
+                margin: 0;
                 font-size: 10pt;
                 background-color: #FFFFFF;
-                padding: 0px;
+                padding: 0;
             }
+
             @media only screen and (max-width: 500px) {
                 .container {
                     flex-direction: column;
@@ -5072,11 +5115,33 @@
                     text-align: center;
                 }
 
+
             }
+@page {
+    size: A4;
+    margin: 0.5cm;
+}
+
+body {
+    margin: 0;
+    font-size: 10pt;
+    background-color: #FFFFFF;
+    padding: 1cm; }
+
+.table-container {
+    page-break-inside: avoid;
+}
+
+.equipment-details,
+.job-details,
+.job-details-description {
+    page-break-inside: avoid; }
+
         </style>
     </head>
     <body>
-        <div class="box">
+    <div class="box">
+
             <div class="container">
                 <div class="left">
                     <h3><u><i>Registered Address:</i></u></h3>
@@ -5096,8 +5161,9 @@
                 </div>
             </div>
             <div>
-                <h3 style="text-align: center; font-size: 30px; margin-top: -35px;">${response.job.status}</h3>
+                <h3 style="text-align: center; font-size: 30px; margin-top: -15px;">${response.job.status}</h3>
             </div>
+
             <div class="job-details">
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
@@ -5111,31 +5177,11 @@
                     <p><b>Client Contact:</b><span> ${response.job.contact_person_number}</span></p>
                 </div>
             </div>
-            <div class="equipment-details">
-                <div class="equipment_left" style="width: 700px;">
-                    <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${response.job.job_reference_no}</span></p>
-                    <p><b>Equipment Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Event Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
-                    <p><b>Event End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                </div>
-                <div class="equipment_right" style="width: 300px;">
-                    <p><b>Show Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
-                    <p><b>Setup Date:</b><span> ${response.job.setup_date}</span></p>
-                    <p><b>Show End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                    <p><b>Pack Up Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
-                </div>
-            </div>
-            <div class="job-details-description">
-            <div class="job-container">
-
-                </div>
-                <h2 id="color">AUDIO EQUIPMENT</h2>
-
-                        ${equipmentTableHtml}
-
-            </div>
+            ${equipmentDetailsHtml} <!-- Include equipment details here -->
         </div>
-    </body>
+
+</body>
+
     </html>
     `;
                 // Open the print window
