@@ -5852,7 +5852,12 @@ def print_jobs(request):
             el.sub_category_id,
             sc.name AS sub_category_name,
             sd.rental_price,
-            te.equipment_notes
+            te.equipment_notes,
+            te.equipment_detail_id,
+            te.location,
+            te.incharge,
+            te.equipment_setup_date,
+            te.equipment_rehearsal_date
         FROM temp_equipment_details te
         JOIN equipment_list el ON te.equipment_name = el.equipment_name
         JOIN sub_category sc ON el.sub_category_id = sc.id
@@ -5979,6 +5984,7 @@ def print_jobs(request):
     total_rental_sum = 0
     equipment_data = []
     print('Fetch the equipment DATA:', equipment_data)
+
     # Process each equipment detail
     for detail in equipment_details:
         print('Processing Equipment Details:', equipment_details)
@@ -5992,7 +5998,24 @@ def print_jobs(request):
         if isinstance(total_rental_price, int):
             total_rental_sum += total_rental_price
 
+            # Attempt to parse equipment_setup_date as a date
+        setup_date = detail[11]
+        if isinstance(setup_date, str):
+            try:
+                setup_date = datetime.strptime(setup_date, '%Y-%m-%d')  # Adjust format if needed
+            except ValueError:
+                setup_date = None  # Handle invalid date format gracefully
+
+        # Attempt to parse equipment_rehearsal_date as a date
+        rehearsal_date = detail[12]
+        if isinstance(rehearsal_date, str):
+            try:
+                rehearsal_date = datetime.strptime(rehearsal_date, '%Y-%m-%d')  # Adjust format if needed
+            except ValueError:
+                rehearsal_date = None  # Handle invalid date format gracefully
+
         equipment_data.append({
+            # 'temp_equipment_id': detail[0],
             'equipment_name': detail[0],
             'quantity': detail[1],
             'equipment_id': detail[2],
@@ -6001,8 +6024,15 @@ def print_jobs(request):
             'sub_category_name': detail[5],
             'rental_price': rental_price if rental_price else 'Not Available',
             'equipment_notes': detail[7],
+            'equipment_detail_id': detail[8],
+            'location': detail[9],
+            'incharge': detail[10],
+            'equipment_setup_date': setup_date.strftime('%d-%m-%Y') if setup_date else 'Not Available',
+            'equipment_rehearsal_date': rehearsal_date.strftime('%d-%m-%Y') if rehearsal_date else 'Not Available',
             'total_days_price': total_days_price,
             'total_rental_price': total_rental_price
+
+
         })
 
     print('Final Equipment Data:', equipment_data)
