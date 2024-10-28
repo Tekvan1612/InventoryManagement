@@ -3317,22 +3317,57 @@ def delete_equipment_id(request):
 
 def update_equipment_id(request):
     if request.method == 'POST':
-        row_equip_id = request.POST.get('rowEquipId')  # For row updates
-        element_equip_id = request.POST.get('elementEquipId')  # For location/incharge updates
+        row_equip_id = request.POST.get('rowEquipId')
+        element_equip_id = request.POST.get('elementEquipId')
         equipment_name = request.POST.get('equipment_name')
-        quantity = request.POST.get('quantity')
+        quantity = int(request.POST.get('quantity', 0))
         unit_price = request.POST.get('unit_price')
         total = request.POST.get('total')
         equipment_notes = request.POST.get('equipment_notes_temp')
         location = request.POST.get('location')
         incharge = request.POST.get('incharge')
-        setup_date = request.POST.get('setup_date')  # Get the setup date
-        rehearsal_date = request.POST.get('rehearsal_date')  # Get the rehearsal date
-        print('Check the row ID:', row_equip_id, equipment_name, quantity, unit_price, total)
-        print('Check the location ID:', element_equip_id, location, incharge, setup_date, rehearsal_date)
+        setup_date = request.POST.get('setup_date')
+        rehearsal_date = request.POST.get('rehearsal_date')
 
+        # Step 1: Check the available quantity before updating
         try:
-            # Update the equipment details (based on hidden row ID)
+            with connection.cursor() as cursor:
+                # Execute reference query to get available and assigned quantities
+                cursor.execute("""
+                    WITH active_jobs AS (
+                        SELECT id
+                        FROM public.temp
+                        WHERE status = 'Delivery Challan' AND completion_flag = false
+                    ),
+                    assigned_quantities AS (
+                        SELECT ted.equipment_name, SUM(CAST(ted.quantity AS INTEGER)) AS total_assigned
+                        FROM public.temp_equipment_details ted
+                        JOIN active_jobs aj ON ted.temp_id = aj.id
+                        GROUP BY ted.equipment_name
+                    )
+                    SELECT
+                        COUNT(s.id) AS available_quantity,
+                        COALESCE(aq.total_assigned, 0) AS assigned_quantity
+                    FROM
+                        public.equipment_list e
+                    LEFT JOIN
+                        public.stock_details s ON e.id = s.equipment_id
+                    LEFT JOIN
+                        assigned_quantities aq ON e.equipment_name = aq.equipment_name
+                    WHERE e.equipment_name = %s
+                    GROUP BY
+                        e.equipment_name, aq.total_assigned
+                """, [equipment_name])
+
+                result = cursor.fetchone()
+                available_quantity = result[0] if result else 0
+                assigned_quantity = result[1] if result else 0
+
+            # Calculate if there is enough stock
+            if quantity > available_quantity:
+                return JsonResponse({'status': 'error', 'message': 'Quantity exceeds available stock.'})
+
+            # Step 2: Update the equipment details if quantity is within limit
             with connection.cursor() as cursor:
                 cursor.execute("""
                     UPDATE temp_equipment_details
@@ -3340,7 +3375,7 @@ def update_equipment_id(request):
                     WHERE id = %s
                 """, [equipment_name, quantity, unit_price, total, equipment_notes, row_equip_id])
 
-            # Update the location and incharge (based on clicked element ID)
+            # Update the location and incharge
             with connection.cursor() as cursor:
                 cursor.execute("""
                     UPDATE temp_equipment_details
@@ -3349,8 +3384,10 @@ def update_equipment_id(request):
                 """, [location, incharge, setup_date, rehearsal_date, element_equip_id])
 
             return JsonResponse({'status': 'success'})
+
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
+
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 

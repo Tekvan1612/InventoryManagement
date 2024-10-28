@@ -90,6 +90,32 @@
                 updateCompanyInDatabase();
             });
 
+            $('#companyForm').on('submit', function (e) {
+                e.preventDefault();  // Prevent the default form submission
+
+                var formData = new FormData(this);  // Get form data
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,  // Required for file upload
+                    contentType: false,  // Required for file upload
+                    success: function (response) {
+                        // If successful, redirect or show success message as needed
+                        window.location.href = "{% url 'warehouse_master' %}";
+                    },
+                    error: function (xhr) {
+                        // Show error message in an alert if returned
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            alert(xhr.responseJSON.error);
+                        } else {
+                            alert('An unexpected error occurred');
+                        }
+                    }
+                });
+            });
+
             function updateCompanyInDatabase() {
                 var editCompanyId = $('#editCompanyId').val();
                 var companyName = $('#editCompanyCompanyName').val().trim();
@@ -424,7 +450,8 @@
                     <div class="col-md-6">
                         <div class="form-container">
                             <label for="companyLabel" class="form-header" style="color: #FFFFFF">Company</label>
-                            <form action="{% url 'company_master' %}" method="POST" enctype="multipart/form-data">
+                            <form id="companyForm" action="{% url 'company_master' %}" method="POST"
+                                  enctype="multipart/form-data">
                                 {% csrf_token %}
                                 <div class="row">
                                     <div class="col-xl-6 mb-3">
@@ -447,13 +474,14 @@
                                     <div class="col-xl-6 mb-3">
                                         <label for="companyPhoneNo" class="form-label">Phone No:</label>
                                         <input type="text" class="form-control" id="companyPhoneNo"
-                                               name="companyPhoneNo" oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                                               name="companyPhoneNo"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                                                required>
                                     </div>
                                     <div class="col-xl-6 mb-3">
                                         <label for="companyLogo" class="form-label">Company Logo:</label>
                                         <input type="file" class="form-control" id="companyLogo" name="companyLogo"
-                                               accept=".jpg, .jpeg, .png">
+                                               accept=".jpg, .jpeg, .png" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -484,7 +512,8 @@
                                     <div class="col-xl-6 mb-3">
                                         <label for="warehousePhoneNo" class="form-label">Phone No:</label>
                                         <input type="text" class="form-control" id="warehousePhoneNo"
-                                               name="warehousePhoneNo" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
+                                               name="warehousePhoneNo"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
