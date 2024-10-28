@@ -3081,39 +3081,80 @@
             });
 
             function handleEquipmentQuotation(response) {
-                // Construct the table HTML for equipment details
-                var equipmentTableHtml = `
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                            <thead>
-                                <tr>
-                                    <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
-                                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
-                                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
-                                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Days</th>
-                                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total</th>
-                                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
 
-                response.equipment_details.forEach(function (detail) {
+    let equipmentDetailsHtml = "";
+    let processedIds = new Set();
+
+    response.equipment_details.forEach(function(detail) {
+        if (!processedIds.has(detail.equipment_detail_id)) {
+            processedIds.add(detail.equipment_detail_id);
+
+            // Generate equipment details HTML for each unique equipment_detail_id
+            let equipmentTableHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
+                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
+                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Days</th>
+                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total</th>
+                        <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Loop through and add only rows matching this equipment_detail_id
+            response.equipment_details
+                .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
+                .forEach(function(item) {
                     equipmentTableHtml += `
-                            <tr>
-                                <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_name}</td>
-                                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.quantity}</td>
-                                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${detail.rental_price}</td>
-                                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
-                                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;"> ${detail.total_rental_price}</td>
-                                <td style=" width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${detail.equipment_notes} </td>
-                            </tr>
-                        `;
+                        <tr>
+                            <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_name}</td>
+                    <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.quantity}</td>
+                    <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.rental_price}</td>
+                    <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
+                    <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.total_rental_price}</td>
+                    <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_notes}</td>
+                        </tr>
+                    `;
                 });
 
-                equipmentTableHtml += `
-                            </tbody>
-                        </table>
-                    `;
+            equipmentTableHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            equipmentDetailsHtml += `
+                <div class="equipment-details">
+                    <div class="equipment_left" style="width: 700px;">
+                        <p><b>Equipment Title:</b><span> ${response.job.title}</span>:<span>${detail.equipment_detail_id}</span></p>
+                        <p><b>Equipment Ref:</b><span> ${detail.equipment_detail_id}</span></p>
+                        <p><b>Location:</b><span> ${detail.location}</span></p>
+                        <p><b>Event Start Date:</b><span> ${detail.equipment_setup_date}</span></p>
+                        <p><b>Event End Date:</b><span> ${detail.equipment_rehearsal_date}</span></p>
+                    </div>
+                    <div class="equipment_right" style="width: 300px;">
+                        <p><b>Show Start Date:</b><span> ${response.job.event_date ? response.job.event_date : '-'}</span></p>
+                        <p><b>Setup Date:</b><span> ${response.job.setup_date}</span></p>
+                        <p><b>Show End Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                        <p><b>Pack Up Date:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
+                    </div>
+
+                </div>
+<div class="job-details-description">
+            <div class="job-container">
+
+                </div>
+                <h2 id="color" style="margin-top: 10px;">AUDIO EQUIPMENT</h2>
+
+                        ${equipmentTableHtml}
+
+            </div>
+            `;
+        }
+    });
 
 
                 var printContent = `
@@ -3126,7 +3167,7 @@
                                 .box {
                                     background-color: #fff;
                                     padding: 20px;
-                                    margin: 10px auto;
+                                    margin: -35px auto;
                                     max-width: 700px;
                                     min-height: 100%;
                                 }
@@ -3134,7 +3175,7 @@
                                     display: flex;
                                     justify-content: space-between;
                                     align-items: center;
-                                    padding: 0px;
+                                    padding: 0;
                                 }
                                 .left {
                                     width: 150px;
@@ -3174,6 +3215,55 @@
                                     justify-content: space-between;
                                     height: auto;
                                 }
+                                .equipment-details {
+                display: flex;
+                border-top: 10px solid #d1e0d3;
+                margin-top: 20px;
+                padding-top: 10px;
+                justify-content: space-between;
+                height: auto;
+            }
+
+            .equipment_left {
+                display: flex;
+                flex-direction: column;
+                margin-top: -15px;
+            }
+
+            .equipment_left p {
+                margin-bottom: -8px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_left p b {
+                display: inline-block;
+                width: 100px; /* Fixed width for labels to align values */
+            }
+
+            .equipment_left p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
+            .equipment_right {
+                display: flex;
+                flex-direction: column;
+                margin-top: -15px;
+            }
+
+            .equipment_right p {
+                margin-bottom: -8px; /* Adjusted margin for better spacing */
+            }
+
+            .equipment_right p b {
+                display: inline-block;
+                width: 100px; /* Fixed width for labels to align values */
+            }
+
+            .equipment_right p span {
+                display: inline-block;
+                margin-left: 5px; /* Space between label and value */
+                text-align: left; /* Align values to the left */
+            }
                                 .job_left {
                                     display: flex;
                                     flex-direction: column;
@@ -3243,6 +3333,21 @@
                                 .color-amount{
                                     background-color: #b5c3c9;
                                 }
+                                #color {
+                background-color: #bfcddb;
+                color: #0b0c0f;
+                border-bottom: 1px solid #000000;
+                font-style: italic;
+            }
+            .customer-details {
+                display: inline-block;
+                vertical-align: top;
+                max-width: 150px;
+            }
+            .company-address {
+                margin-top: 5px;
+                word-wrap: break-word;
+            }
                                 @page {
                                     size: A4;
                                     margin: 0;
@@ -3266,6 +3371,25 @@
                                         text-align: center;
                                     }
                                 }
+@page {
+    size: A4;
+    margin: 0.5cm;
+}
+
+body {
+    margin: 0;
+    font-size: 10pt;
+    background-color: #FFFFFF;
+    padding: 1cm; }
+
+.table-container {
+    page-break-inside: avoid;
+}
+
+.equipment-details,
+.job-details,
+.job-details-description {
+    page-break-inside: avoid; }
                             </style>
                         </head>
                         <body>
@@ -3305,15 +3429,11 @@
                                         <p><b>Job Date Back:</b><span> ${response.job.dismantle_date ? response.job.dismantle_date : '-'}</span></p>
                                     </div>
                                 </div>
-                                <div class="job-details-description">
 
-                                    <div style="background-color: #c5d9e1; padding: 10px; margin: 0;">
-                                <h2 style="margin: 0;">Audio Equipment</h2>
-                            </div>
-                                    ${equipmentTableHtml}
-                                </div>
+                                    ${equipmentDetailsHtml}
+
                                 <div style="height:30px;" class="color-amount">
-                                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_with_gst}</b></p>
                                 </div>
                                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
     <tbody>
