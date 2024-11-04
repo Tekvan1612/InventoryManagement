@@ -449,6 +449,13 @@
                 $('#editEmployeeModal').modal('hide');
             });
 
+            $('#cancel-button').on('click', function (e) {
+                e.preventDefault();
+                $('#offcanvasExample').removeClass('show');
+                $('body').removeClass('offcanvas-open');
+                $('.offcanvas-backdrop').remove();
+            });
+
             $(document).on('click', '.delete-btn', function () {
                 const employeeId = $(this).data('id');
                 if (confirm('Are you sure you want to delete this employee?')) {
@@ -1021,7 +1028,7 @@
                     </div>
                     <div>
                         <button class="btn btn-primary me-1">Submit</button>
-                        <button class="btn btn-danger light ms-1">Cancel</button>
+                        <button class="btn btn-danger light ms-1" id="cancel-button">Cancel</button>
                     </div>
                 </form>
             </div>
