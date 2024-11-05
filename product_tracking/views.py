@@ -5871,6 +5871,7 @@ def print_jobs(request):
             )
         ) sd ON el.id = sd.equipment_id
         WHERE te.temp_id = %s
+	ORDER BY te.equipment_detail_id
     '''
 
     print('Fetch the Equipment_Query', equipment_query)
