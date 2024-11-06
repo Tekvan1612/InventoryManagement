@@ -678,10 +678,11 @@
                             // Append the new row to the selected equipment table
                             selectedEquipmentBody.append(
                                 '<tr>' +
-                                '<td>' + equipmentName + '</td>' +
+                                '<td style="width: 30%;">' + equipmentName + '</td>' +
                                 '<td>' + quantity + '</td>' +
-                                '<td>' + unitPrice + '</td>' +
-                                '<td>' + total + '</td>' +
+                                '<td style="width: 15%;">' + unitPrice + '</td>' +
+                                '<td style="width: 15%;">' + total + '</td>' +
+                                '<td><input type="text" style="width: 100%;" name="equipment_notes" placeholder="Enter value"></td>' +
                                 '</tr>'
                             );
                         }
@@ -802,6 +803,7 @@
                         quantity: $(this).find('td:eq(1)').text(), // Quantity
                         equipment_unit_price: $(this).find('td:eq(2)').text(), // Unit Price
                         equipment_total: $(this).find('td:eq(3)').text(), // Total
+                        equipment_notes: $(this).find('input[name="equipment_notes"]').val(),
                         location: locationName, // Add location
                         incharge: inchargeName, // Add incharge
                         equipment_setup_date: setupDate, // Add setup date
@@ -907,6 +909,7 @@
                                         <th>Quantity</th>
                                         <th>Unit Price</th>
                                         <th>Total</th>
+                                        <th>Notes</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -917,6 +920,7 @@
                                         <td><input type="number" name="quantity" class="quantity-input" value="${detail.quantity}" /></td>
                                         <td><input type="number" name="unit_price" class="unit-price-input" value="${detail.unit_price}" readonly /></td>
                                         <td><input type="text" name="total" class="total-input" value="${detail.total}" readonly /></td>
+                                        <td><input type="text" name="equipment_notes_temp" class="equipment-notes" value="${detail.equipment_notes}" /></td>
                                         <td><button class="btn btn-secondary delete-equipment-btn"><i class="fa fa-times"></i></button></td>
                                     </tr>
                                     `).join('')}
@@ -964,7 +968,7 @@
             });
 
             // Update the row
-            $(document).on('input', 'input[name="equipment_name"], input[name="quantity"], input[name="unit_price"], #locationNameExisting, #inchargeEmployeeExisting, #setupDateExisting, #rehearsalDateExisting', function () {
+            $(document).on('input', 'input[name="equipment_name"], input[name="quantity"], input[name="unit_price"], input[name="equipment_notes_temp"], #locationNameExisting, #inchargeEmployeeExisting, #setupDateExisting, #rehearsalDateExisting', function () {
                 var row = $(this).closest('tr'); // Get the current row
 
                 // Hidden equipId used for equipment details
@@ -982,6 +986,7 @@
                 var equipmentName = row.find('input[name="equipment_name"]').val();
                 var quantity = row.find('input[name="quantity"]').val();
                 var unitPrice = row.find('input[name="unit_price"]').val();
+                var equipmentNotes = row.find('input[name="equipment_notes_temp"]').val();
                 var total = quantity * unitPrice;
                 row.find('input[name="total"]').val(total); // Update the total field
 
@@ -1003,6 +1008,7 @@
                         quantity: quantity,
                         unit_price: unitPrice,
                         total: total,
+                        equipment_notes_temp: equipmentNotes,
                         location: location,             // Location (from element)
                         incharge: incharge,             // Incharge (from element)
                         setup_date: setupDate,          // Setup date
@@ -1062,6 +1068,7 @@
                                         <th>Quantity</th>
                                         <th>Unit Price</th>
                                         <th>Total</th>
+                                        <th>Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1070,6 +1077,7 @@
                                         <td><input type="number" name="quantity" class="quantity-input" /></td>
                                         <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
                                         <td><input type="text" name="total" class="total-input" readonly /></td>
+                                        <td><input type="text" name="equipment_notes" class="equipment-notes" /></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1258,9 +1266,10 @@
                 const newRow = `
                     <tr>
                         <td><input type="text" id="equipmentNameClick" name="equipment_name_insert"/></td>
-                        <td><input type="number" name="quantity" class="quantity-input"/></td>
-                        <td><input type="number" name="unit_price" class="unit-price-input" readonly /></td>
-                        <td><input type="text" name="total" class="total-input" readonly /></td>
+                        <td><input type="number" name="quantity" class="quantity-input" style="width: 100%;"/></td>
+                        <td><input type="number" name="unit_price" class="unit-price-input" style="width: 100%;" readonly /></td>
+                        <td><input type="text" name="total" class="total-input" width="73%;" readonly /></td>
+                        <td><input type="text" name="equipment_notes_updated" class="equipment-update-notes" /></td>
                     </tr>
                 `;
 
