@@ -822,6 +822,55 @@ $(document).on('click', '.edit-list-sub-btn', function() {
         });
     });
 
+     function fetchSubEditCategories() {
+        $.ajax({
+            url: '/get-sub-categories/',
+            type: 'GET',
+            success: function(data) {
+                var dropdownMenu = $('#subCategoryEditDropdown');
+                dropdownMenu.empty();
+
+                $.each(data, function(index, item) {
+                    var listItem = $('<li>', {
+                        class: 'dropdown-item',
+                        text: item.name,
+                        'data-id': item.id,
+                        'data-category-name': item.category_name
+                    });
+
+                    listItem.on('click', function() {
+                        $('#equipmentEditSubCategory').val($(this).text());
+                        $('#equipmentEditCategory').val($(this).data('category-name'));
+                        $('#subCategoryEditDropdown').hide();
+                    });
+
+                    dropdownMenu.append(listItem);
+                });
+
+                $('#equipmentEditSubCategory').on('focus', function() {
+                    $('#subCategoryEditDropdown').show();
+                });
+
+                $(document).on('click', function(event) {
+                    if (!$(event.target).closest('.dropdown').length) {
+                        $('#subCategoryEditDropdown').hide();
+                    }
+                });
+            },
+            error: function(error) {
+                console.log("Error fetching sub-categories:", error);
+            }
+        });
+    }
+
+    $('#equipmentEditSubCategory').on('input', function() {
+    var filter = $(this).val().toLowerCase();
+    $('#subCategoryEditDropdown li').each(function() {
+        var text = $(this).text().toLowerCase();
+        $(this).toggle(text.indexOf(filter) > -1);
+    });
+});    
+
     $('.dimension').on('input', function () {
         calculateVolume();
     });
@@ -1780,11 +1829,11 @@ $('#nextPage').on('click', function () {
                                 <!-- First Dropdown -->
                                 <div class="col-xl-4 col-lg-4 col-md-6 mb-3">
                                     <div class="dropdown">
-                                        <label for="equipmentSubCategory" class="form-label">Sub Category</label>
+                                        <label for="equipmentEditSubCategory" class="form-label">Sub Category</label>
                                         <input type="text" class="form-control dropdown-toggle" id="equipmentEditSubCategory"
                                                data-bs-toggle="dropdown" aria-expanded="false"
                                                placeholder="Select Sub Category" autocomplete="off" name="subCategoryName">
-                                        <ul class="dropdown-menu" id="subCategoryDropdown" aria-labelledby="equipmentSubCategory">
+                                        <ul class="dropdown-menu" id="subCategoryEditDropdown" aria-labelledby="equipmentEditSubCategory">
                                             <!-- Dynamic options will be appended here -->
                                         </ul>
                                     </div>
