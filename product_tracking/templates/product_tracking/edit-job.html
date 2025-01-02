@@ -3505,12 +3505,12 @@ body {
                 .forEach(function(item) {
                     equipmentTableHtml += `
                         <tr>
-                             <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_name}</td>
-                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.quantity}</td>
-                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.rental_price}</td>
+                             <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.equipment_name}</td>
+                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.quantity}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.rental_price}</td>
                 <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.total_days}</td>
-                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.total_rental_price}</td>
-                <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${detail.equipment_notes}</td>
+                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.total_rental_price}</td>
+                <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.equipment_notes}</td>
                         </tr>
                     `;
                 });
