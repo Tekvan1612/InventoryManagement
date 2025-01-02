@@ -675,7 +675,7 @@ def modify_employee(request):
 
         if operation == 'update':
             # Extract employee details from the POST request
-            emp_employee_id = request.POST.get('employee_id') or None
+            emp_employee_id = request.POST.get('emp_id') or None
             emp_name = request.POST.get('name') or None
             emp_email = request.POST.get('email') or None
             emp_designation = request.POST.get('designation') or None
