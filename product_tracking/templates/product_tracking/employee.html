@@ -504,6 +504,7 @@
                     success: function (response) {
                         alert('Employee added successfully');
                         $('#offcanvasExample').offcanvas('hide');
+                        location.reload();
                         fetchEmployeeList(currentPage);
                     },
                     error: function (xhr) {
