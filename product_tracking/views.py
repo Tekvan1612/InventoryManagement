@@ -3961,7 +3961,7 @@ def submit_equipment(request):
     if request.method == 'POST':
         try:
             # Retrieve form data
-            equipment_name = request.POST.get('equipmentName')
+            equipment_name = request.POST.get('equipmentName').upper()
             equipment_SubCategory = request.POST.get('equipmentSubCategory')
             category_type = request.POST.get('equipmentCategory')
             dimension_h = request.POST.get('dimension_h')
