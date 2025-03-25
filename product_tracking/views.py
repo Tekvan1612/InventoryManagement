@@ -4200,7 +4200,7 @@ def update_equipment_details(request, equipment_id):
         )
 
         # Extract form data
-        equipment_name = request.POST.get('equipmentName')
+        equipment_name = request.POST.get('equipmentName').upper()
         sub_category_name = request.POST.get('subCategoryName')
         category_type = request.POST.get('categoryType')
         dimension_height = request.POST.get('dimension_h')
