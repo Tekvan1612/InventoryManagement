@@ -4034,8 +4034,7 @@ def submit_equipment(request):
             return JsonResponse({'status': 'success', 'equipment_id': equipment_list_id})
 
         except Exception as e:
-            print("Error:", str(e))
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+            return JsonResponse({'status': 'error', 'message': 'Equipment name already exists. Please choose a different name.'}, status=400)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
