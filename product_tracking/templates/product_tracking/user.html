@@ -7,31 +7,35 @@
         $(document).ready(function () {
             let currentPage = 1;
             const pageSize = 10;
+            let totalItems = 0;
             var csrftoken = getCookie('csrftoken');
 
-            function fetchUserList(page) {
+            // Fetch user list
+            function fetchUserList() {
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
+
                 $.ajax({
                     url: '/user_list/',
                     type: 'GET',
-                    data: {
-                        page: page,
-                        page_size: pageSize
-                    },
                     success: function (response) {
-                        console.log('Response:', response);
+                        response.data.sort((a, b) => a.user_id - b.user_id);
+                        totalItems = response.total_items;
+                        const currentPageData = response.data.slice(startIndex, endIndex);
+
                         $('#user-table-body').empty();
-                        $.each(response.data, function (index, user) {
+                        $.each(currentPageData, function (index, user) {
                             const modules = Array.isArray(user.modules) ? user.modules : [];
-                            var modulesList = '<ul style="list-style-type: disc; padding-left: 20px;">';
-                            modules.forEach(function (module) {
+                            let modulesList = '<ul style="list-style-type: disc; padding-left: 20px;">';
+                            modules.forEach(module => {
                                 if (module) {
                                     modulesList += '<li>' + module + '</li>';
                                 }
                             });
                             modulesList += '</ul>';
 
-                            var row = '<tr>' +
-                                '<td>' + ((page - 1) * pageSize + (index + 1)) + '</td>' +
+                            let row = '<tr>' +
+                                '<td>' + (startIndex + index + 1) + '</td>' +
                                 '<td style="display: none;">' + user.user_id + '</td>' +
                                 '<td>' + user.user_name + '</td>' +
                                 '<td>' + user.password + '</td>' +
@@ -44,10 +48,11 @@
                                 '<button class="btn btn-sm btn-danger delete-btn"><i class="fa fa-trash"></i></button>' +
                                 '</td>' +
                                 '</tr>';
+
                             $('#user-table-body').append(row);
                         });
 
-                        updatePaginationControls(response.total_items, response.current_page, response.total_pages);
+                        updatePaginationCount(totalItems);
                     },
                     error: function (xhr, status, error) {
                         console.error('Error fetching user data:', error);
@@ -55,36 +60,37 @@
                 });
             }
 
-            function updatePaginationControls(totalItems, currentPage, totalPages) {
-                $('#pagination-controls').html('');
+            // Update pagination count
+            function updatePaginationCount(totalItems) {
+                const totalPages = Math.ceil(totalItems / pageSize);
+                $('#pagination-count').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
 
-                if (currentPage > 1) {
-                    $('#pagination-controls').append('<button id="prev-page-btn" class="btn btn-primary">Previous</button>');
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
                 }
-
-                if (currentPage < totalPages) {
-                    $('#pagination-controls').append('<button id="next-page-btn" class="btn btn-primary">Next</button>');
-                }
-
-                const startItem = (currentPage - 1) * pageSize + 1;
-                const endItem = Math.min(currentPage * pageSize, totalItems);
-
-                $('#pagination-count').text(`Showing ${startItem} to ${endItem} of ${totalItems} entries`);
+                $('#prev-page-btn').prop('disabled', currentPage === 1);
+                $('#next-page-btn').prop('disabled', currentPage === totalPages);
             }
 
-            $(document).on('click', '#prev-page-btn', function () {
+            // Fetch user list on page load
+            fetchUserList();
+
+            // Pagination button functionality
+            $('#prev-page-btn').click(function () {
                 if (currentPage > 1) {
                     currentPage--;
-                    fetchUserList(currentPage);
+                    fetchUserList();
                 }
             });
 
-            $(document).on('click', '#next-page-btn', function () {
-                currentPage++;
-                fetchUserList(currentPage);
+            $('#next-page-btn').click(function () {
+                const totalPages = Math.ceil(totalItems / pageSize);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    fetchUserList();
+                }
             });
-            // Initial fetch of user list
-            fetchUserList(currentPage);
+            
             $('#usernameDropdown').on('change', function () {
                 var selectedOption = $(this).find('option:selected');
                 $('#emp_id_input').val(selectedOption.data('emp-id')); // Set emp_id based on selected option's data attribute
