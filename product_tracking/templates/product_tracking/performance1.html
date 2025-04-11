@@ -290,84 +290,108 @@ textarea {
 
     // Function to load master category list
     let currentMasterPage = 1;
-const masterPageSize = 15;
+const masterPageSize = 10;
 let totalMasterItems = 0;
+let allMasterCategories = [];
 
-// Load master category list on page load
+// Load category list on page load
 loadMasterCategoryList();
 
 function loadMasterCategoryList() {
-    const startIndex = (currentMasterPage - 1) * masterPageSize;
-    const endIndex = startIndex + masterPageSize;
-
     $.ajax({
         url: '{% url "category_list" %}',
         type: 'GET',
         success: function (response) {
             if (response && response.categories) {
                 response.categories.sort((a, b) => a.id - b.id);
-                totalItems = response.categories.length;
-                const currentPageData = response.categories.slice(startIndex, endIndex);
-
-                $('#master-category-table-body').empty();
-                currentPageData.forEach(function (category, index) {
-                    if (category.id) {
-                        $('#master-category-table-body').append(`
-                            <tr class="editable-row" data-category-id="${category.id}">
-                                <td>
-                                    <button class="btn btn-sm btn-primary edit-list-btn me-2" data-toggle="tooltip" title="Edit"><i class="fa fa-pencil"></i></button>
-                                    <button class="btn btn-sm btn-success edit-save-btn me-2" style="display:none;" data-toggle="tooltip" title="Save"><i class="fa fa-save"></i></button>
-                                    <button class="btn btn-sm btn-secondary edit-cancel-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel"><i class="fa fa-times"></i></button>
-                                    <button class="btn btn-sm btn-danger delete-btn me-2" data-toggle="tooltip" title="Delete"><i class="fa fa-trash"></i></button>
-                                </td>
-                                <td data-editable="true">${category.category_name}</td>
-                                <td>${category.created_by}</td>
-                                <td>${category.created_date}</td>
-                                <td data-editable-select="true">${category.status ? 'Active' : 'Inactive'}</td>
-                            </tr>
-                        `);
-                    } else {
-                        console.error('Category ID is missing:', category);
-                    }
-                });
-                updatePaginationCount(totalItems);
+                allMasterCategories = response.categories;
+                totalMasterItems = allMasterCategories.length;
+                renderMasterTable(filteredMasterList());
             } else {
-                console.error('Response is missing categories or is undefined:', response);
+                console.error('Invalid response:', response);
             }
         },
         error: function (xhr, status, error) {
-            console.error('Error loading master category list:', error);
+            console.error('Error loading category list:', error);
         }
     });
 }
 
-// Update pagination count
-function updatePaginationCount(totalMasterItems) {
-    const totalPages = Math.ceil(totalMasterItems / masterPageSize);
-    $('#pagination-count').text(`Showing ${currentMasterPage * masterPageSize - masterPageSize + 1} to ${Math.min(currentMasterPage * masterPageSize, totalMasterItems)} of ${totalMasterItems} entries`);
+function renderMasterTable(categoryData) {
+    const startIndex = (currentMasterPage - 1) * masterPageSize;
+    const endIndex = startIndex + masterPageSize;
+    const currentPageData = categoryData.slice(startIndex, endIndex);
 
-    if (currentMasterPage > totalPages) {
-        currentMasterPage = totalPages;
-    }
-    $('#prev-page-btn').prop('disabled', currentMasterPage === 1);
-    $('#next-page-btn').prop('disabled', currentMasterPage === totalPages);
+    $('#master-category-table-body').empty();
+
+    currentPageData.forEach(function (category, index) {
+        if (category.id) {
+            $('#master-category-table-body').append(`
+                <tr class="editable-row" data-category-id="${category.id}">
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-list-btn me-2" data-toggle="tooltip" title="Edit"><i class="fa fa-pencil"></i></button>
+                        <button class="btn btn-sm btn-success edit-save-btn me-2" style="display:none;" data-toggle="tooltip" title="Save"><i class="fa fa-save"></i></button>
+                        <button class="btn btn-sm btn-secondary edit-cancel-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel"><i class="fa fa-times"></i></button>
+                        <button class="btn btn-sm btn-danger delete-btn me-2" data-toggle="tooltip" title="Delete"><i class="fa fa-trash"></i></button>
+                    </td>
+                    <td data-editable="true">${category.category_name}</td>
+                    <td>${category.created_by}</td>
+                    <td>${category.created_date}</td>
+                    <td data-editable-select="true">${category.status ? 'Active' : 'Inactive'}</td>
+                </tr>
+            `);
+        }
+    });
+
+    updatePaginationCount(categoryData.length);
 }
 
-// Pagination button functionality
+function updatePaginationCount(filteredCount) {
+    const totalPages = Math.ceil(filteredCount / masterPageSize);
+    const start = filteredCount === 0 ? 0 : (currentMasterPage - 1) * masterPageSize + 1;
+    const end = Math.min(currentMasterPage * masterPageSize, filteredCount);
+    $('#pagination-count').text(`Showing ${start} to ${end} of ${filteredCount} entries`);
+
+    $('#prev-page-btn').prop('disabled', currentMasterPage === 1);
+    $('#next-page-btn').prop('disabled', currentMasterPage === totalPages || totalPages === 0);
+}
+
+// Pagination buttons
 $('#prev-page-btn').click(function () {
     if (currentMasterPage > 1) {
         currentMasterPage--;
-        loadMasterCategoryList();
+        renderMasterTable(filteredMasterList());
     }
 });
 
 $('#next-page-btn').click(function () {
-    const totalPages = Math.ceil(totalMasterItems / pageSize);
+    const totalPages = Math.ceil(filteredMasterList().length / masterPageSize);
     if (currentMasterPage < totalPages) {
         currentMasterPage++;
-        loadMasterCategoryList();
+        renderMasterTable(filteredMasterList());
     }
 });
+
+// Global search input
+$('#search-input').on('input', function () {
+    currentMasterPage = 1; // Reset page
+    renderMasterTable(filteredMasterList());
+});
+
+function filteredMasterList() {
+    const searchTerm = $('#search-input').val().toLowerCase();
+    if (!searchTerm) return allMasterCategories;
+
+    return allMasterCategories.filter(category => {
+        return (
+            category.category_name.toLowerCase().includes(searchTerm) ||
+            category.created_by.toLowerCase().includes(searchTerm) ||
+            category.created_date.toLowerCase().includes(searchTerm) ||
+            (category.status ? 'active' : 'inactive').includes(searchTerm)
+        );
+    });
+}
+        
     $(document).on('click', '.edit-btn', function () {
         const row = $(this).closest('tr');
         activateEditMode(row);
@@ -701,48 +725,23 @@ $('#next-page-btn').click(function () {
     }
         
 let currentSubPage = 1;
-const subPageSize = 15;
+const subPageSize = 10;
 let totalSubItems = 0;
+let allSubcategories = [];
 
 // Load subcategory list on page load
 loadSubCategoryList();
 
 function loadSubCategoryList() {
-    const startIndex = (currentSubPage - 1) * subPageSize;
-    const endIndex = startIndex + subPageSize;
-
     $.ajax({
         url: '{% url "subcategorytest_list" %}',
         type: 'GET',
         success: function (response) {
             if (response && response.subcategories) {
                 response.subcategories.sort((a, b) => a.id - b.id);
-                totalSubItems = response.subcategories.length;
-                const currentPageData = response.subcategories.slice(startIndex, endIndex);
-
-                $('#subcategory-table-body').empty();
-                currentPageData.forEach(function (subcategory, index) {
-                    if (subcategory.id) {
-                        $('#subcategory-table-body').append(`
-                            <tr class="editable-sub-row" data-subcategory-id="${subcategory.id}">
-                                <td>
-                                    <button class="btn btn-sm btn-primary edit-list-sub-btn me-2" data-toggle="tooltip" title="Edit"><i class="fa fa-pencil"></i></button>
-                            <button class="btn btn-sm btn-success save-sub-list-btn me-2" style="display:none;" data-toggle="tooltip" title="Save"><i class="fa fa-save"></i></button>
-                            <button class="btn btn-sm btn-secondary cancel-sub-list-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel"><i class="fa fa-times"></i></button>
-                            <button class="btn btn-sm btn-danger delete-sub-list-btn me-2" data-toggle="tooltip" title="Delete"><i class="fa fa-trash"></i></button>
-                                </td>
-                                <td data-editable="true">${subcategory.name}</td>
-                                <td>${subcategory.category_name}</td>
-                                <td>${subcategory.created_by}</td>
-                                <td>${subcategory.created_date}</td>
-                                <td data-editable-select="true">${subcategory.status ? 'Active' : 'Inactive'}</td>
-                            </tr>
-                        `);
-                    } else {
-                        console.error('Subcategory ID is missing:', subcategory);
-                    }
-                });
-                updateSubPaginationCount(totalSubItems);
+                allSubcategories = response.subcategories;
+                totalSubItems = allSubcategories.length;
+                renderSubCategoryTable(allSubcategories);
             } else {
                 console.error('Response is missing subcategories or is undefined:', response);
             }
@@ -753,34 +752,85 @@ function loadSubCategoryList() {
     });
 }
 
-// Update pagination count for subcategories
-function updateSubPaginationCount(totalSubItems) {
-    const totalSubPages = Math.ceil(totalSubItems / subPageSize);
-    $('#subcategory-pagination-count').text(`Showing ${currentSubPage * subPageSize - subPageSize + 1} to ${Math.min(currentSubPage * subPageSize, totalSubItems)} of ${totalSubItems} entries`);
+function renderSubCategoryTable(data) {
+    const startIndex = (currentSubPage - 1) * subPageSize;
+    const endIndex = startIndex + subPageSize;
+    const currentPageData = data.slice(startIndex, endIndex);
 
-    if (currentSubPage > totalSubPages) {
-        currentSubPage = totalSubPages;
-    }
-    $('#prev-sub-page-btn').prop('disabled', currentSubPage === 1);
-    $('#next-sub-page-btn').prop('disabled', currentSubPage === totalSubPages);
+    $('#subcategory-table-body').empty();
+    currentPageData.forEach(function (subcategory, index) {
+        if (subcategory.id) {
+            $('#subcategory-table-body').append(`
+                <tr class="editable-sub-row" data-subcategory-id="${subcategory.id}">
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-list-sub-btn me-2" data-toggle="tooltip" title="Edit"><i class="fa fa-pencil"></i></button>
+                        <button class="btn btn-sm btn-success save-sub-list-btn me-2" style="display:none;" data-toggle="tooltip" title="Save"><i class="fa fa-save"></i></button>
+                        <button class="btn btn-sm btn-secondary cancel-sub-list-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel"><i class="fa fa-times"></i></button>
+                        <button class="btn btn-sm btn-danger delete-sub-list-btn me-2" data-toggle="tooltip" title="Delete"><i class="fa fa-trash"></i></button>
+                    </td>
+                    <td data-editable="true">${subcategory.name}</td>
+                    <td>${subcategory.category_name}</td>
+                    <td>${subcategory.created_by}</td>
+                    <td>${subcategory.created_date}</td>
+                    <td data-editable-select="true">${subcategory.status ? 'Active' : 'Inactive'}</td>
+                </tr>
+            `);
+        } else {
+            console.error('Subcategory ID is missing:', subcategory);
+        }
+    });
+
+    updateSubPaginationCount(data.length);
 }
 
-// Pagination button functionality for subcategories
+function updateSubPaginationCount(filteredCount) {
+    const totalSubPages = Math.ceil(filteredCount / subPageSize);
+    $('#subcategory-pagination-count').text(`Showing ${filteredCount === 0 ? 0 : ((currentSubPage - 1) * subPageSize + 1)} to ${Math.min(currentSubPage * subPageSize, filteredCount)} of ${filteredCount} entries`);
+
+    $('#prev-sub-page-btn').prop('disabled', currentSubPage === 1);
+    $('#next-sub-page-btn').prop('disabled', currentSubPage === totalSubPages || totalSubPages === 0);
+}
+
+// Pagination buttons
 $('#prev-sub-page-btn').click(function () {
     if (currentSubPage > 1) {
         currentSubPage--;
-        loadSubCategoryList();
+        renderSubCategoryTable(filteredSubcategoryList());
     }
 });
 
 $('#next-sub-page-btn').click(function () {
-    const totalSubPages = Math.ceil(totalSubItems / subPageSize);
-    if (currentSubPage < totalSubPages) {
+    const totalPages = Math.ceil(filteredSubcategoryList().length / subPageSize);
+    if (currentSubPage < totalPages) {
         currentSubPage++;
-        loadSubCategoryList();
+        renderSubCategoryTable(filteredSubcategoryList());
     }
 });
 
+// Global search input
+$('#search-input').on('input', function () {
+    currentSubPage = 1;
+    renderSubCategoryTable(filteredSubcategoryList());
+});
+
+function filteredSubcategoryList() {
+    const searchTerm = $('#search-input').val().toLowerCase();
+
+    if (!searchTerm) {
+        return allSubcategories;
+    }
+
+    return allSubcategories.filter(subcategory => {
+        return (
+            subcategory.name.toLowerCase().includes(searchTerm) ||
+            subcategory.category_name.toLowerCase().includes(searchTerm) ||
+            subcategory.created_by.toLowerCase().includes(searchTerm) ||
+            subcategory.created_date.toLowerCase().includes(searchTerm) ||
+            (subcategory.status ? 'active' : 'inactive').includes(searchTerm)
+        );
+    });
+}
+        
 $(document).on('click', '.edit-list-sub-btn', function() {
     const row = $(this).closest('tr');
     row.find('td[data-editable]').each(function() {
@@ -1129,55 +1179,23 @@ $("#generalInformationForm").on("submit", function(e) {
 
 // Load Equipment List with Pagination
 let currentEquipmentPage = 1;
-const equipmentPageSize = 15;
+const equipmentPageSize = 10;
 let totalEquipmentItems = 0;
+let allEquipmentList = [];
 
 // Load equipment list on page load
 loadEquipmentList();
 
 function loadEquipmentList() {
-    const startIndex = (currentEquipmentPage - 1) * equipmentPageSize;
-    const endIndex = startIndex + equipmentPageSize;
-
     $.ajax({
         url: `{% url "fetch_equipment_list" %}`,
         type: 'GET',
         success: function (response) {
             if (response && response.equipment_list) {
                 response.equipment_list.sort((a, b) => a.id - b.id);
-                totalEquipmentItems = response.equipment_list.length;
-                const currentPageData = response.equipment_list.slice(startIndex, endIndex);
-
-                $('#equipment-table-body').empty();
-                currentPageData.forEach(function (equipment, index) {
-                    if (equipment.id) {
-                        $('#equipment-table-body').append(`
-                            <tr class="editable-equipment-row" data-equipment-id="${equipment.id}">
-                                <td>
-                                    <button class="btn btn-sm btn-primary edit-equipment-btn me-2" data-toggle="tooltip" title="Edit">
-                                        <i class="fa fa-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-success save-equipment-btn me-2" style="display:none;" data-toggle="tooltip" title="Save">
-                                        <i class="fa fa-save"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-secondary cancel-equipment-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel">
-                                        <i class="fa fa-times"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger delete-equipment-btn me-2" data-toggle="tooltip" title="Delete">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                </td>
-                                <td data-editable="true">${equipment.equipment_name}</td>
-                                <td>${equipment.subcategory_name}</td>
-                                <td>${equipment.created_by}</td>
-                                <td>${equipment.created_date}</td>
-                            </tr>
-                        `);
-                    } else {
-                        console.error('Equipment ID is missing:', equipment);
-                    }
-                });
-                updateEquipmentPaginationCount(totalEquipmentItems);
+                allEquipmentList = response.equipment_list;
+                totalEquipmentItems = allEquipmentList.length;
+                renderEquipmentTable(allEquipmentList);
             } else {
                 console.error('Response is missing equipment_list or is undefined:', response);
             }
@@ -1188,33 +1206,91 @@ function loadEquipmentList() {
     });
 }
 
-// Update pagination count for equipment list
-function updateEquipmentPaginationCount(totalEquipmentItems) {
-    const totalEquipmentPages = Math.ceil(totalEquipmentItems / equipmentPageSize);
-    $('#equipment-pagination-count').text(`Showing ${currentEquipmentPage * equipmentPageSize - equipmentPageSize + 1} to ${Math.min(currentEquipmentPage * equipmentPageSize, totalEquipmentItems)} of ${totalEquipmentItems} entries`);
+function renderEquipmentTable(equipmentData) {
+    const startIndex = (currentEquipmentPage - 1) * equipmentPageSize;
+    const endIndex = startIndex + equipmentPageSize;
+    const currentPageData = equipmentData.slice(startIndex, endIndex);
 
-    if (currentEquipmentPage > totalEquipmentPages) {
-        currentEquipmentPage = totalEquipmentPages;
-    }
-    $('#prev-equipment-page-btn').prop('disabled', currentEquipmentPage === 1);
-    $('#next-equipment-page-btn').prop('disabled', currentEquipmentPage === totalEquipmentPages);
+    $('#equipment-table-body').empty();
+
+    currentPageData.forEach(function (equipment, index) {
+        if (equipment.id) {
+            $('#equipment-table-body').append(`
+                <tr class="editable-equipment-row" data-equipment-id="${equipment.id}">
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-equipment-btn me-2" data-toggle="tooltip" title="Edit">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success save-equipment-btn me-2" style="display:none;" data-toggle="tooltip" title="Save">
+                            <i class="fa fa-save"></i>
+                        </button>
+                        <button class="btn btn-sm btn-secondary cancel-equipment-btn me-2" style="display:none;" data-toggle="tooltip" title="Cancel">
+                            <i class="fa fa-times"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-equipment-btn me-2" data-toggle="tooltip" title="Delete">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                    <td data-editable="true">${equipment.equipment_name}</td>
+                    <td>${equipment.subcategory_name}</td>
+                    <td>${equipment.created_by}</td>
+                    <td>${equipment.created_date}</td>
+                </tr>
+            `);
+        } else {
+            console.error('Equipment ID is missing:', equipment);
+        }
+    });
+
+    updateEquipmentPaginationCount(equipmentData.length);
 }
 
-// Pagination button functionality for equipment list
+function updateEquipmentPaginationCount(filteredCount) {
+    const totalEquipmentPages = Math.ceil(filteredCount / equipmentPageSize);
+    $('#equipment-pagination-count').text(`Showing ${filteredCount === 0 ? 0 : ((currentEquipmentPage - 1) * equipmentPageSize + 1)} to ${Math.min(currentEquipmentPage * equipmentPageSize, filteredCount)} of ${filteredCount} entries`);
+
+    $('#prev-equipment-page-btn').prop('disabled', currentEquipmentPage === 1);
+    $('#next-equipment-page-btn').prop('disabled', currentEquipmentPage === totalEquipmentPages || totalEquipmentPages === 0);
+}
+
+// Pagination button handlers
 $('#prev-equipment-page-btn').click(function () {
     if (currentEquipmentPage > 1) {
         currentEquipmentPage--;
-        loadEquipmentList();
+        renderEquipmentTable(filteredEquipmentList());
     }
 });
 
 $('#next-equipment-page-btn').click(function () {
-    const totalEquipmentPages = Math.ceil(totalEquipmentItems / equipmentPageSize);
-    if (currentEquipmentPage < totalEquipmentPages) {
+    const totalPages = Math.ceil(filteredEquipmentList().length / equipmentPageSize);
+    if (currentEquipmentPage < totalPages) {
         currentEquipmentPage++;
-        loadEquipmentList();
+        renderEquipmentTable(filteredEquipmentList());
     }
 });
+
+// Search input (global filter)
+$('#search-input').on('input', function () {
+    currentEquipmentPage = 1; // Reset to first page
+    renderEquipmentTable(filteredEquipmentList());
+});
+
+function filteredEquipmentList() {
+    const searchTerm = $('#search-input').val().toLowerCase();
+
+    if (!searchTerm) {
+        return allEquipmentList;
+    }
+
+    return allEquipmentList.filter(equipment => {
+        return (
+            equipment.equipment_name.toLowerCase().includes(searchTerm) ||
+            equipment.subcategory_name.toLowerCase().includes(searchTerm) ||
+            equipment.created_by.toLowerCase().includes(searchTerm) ||
+            equipment.created_date.toLowerCase().includes(searchTerm)
+        );
+    });
+}
 
 
     $(document).on('click', '.delete-equipment-btn', function () {
@@ -1382,22 +1458,6 @@ $("#generalInformationEditForm").submit(function(event) {
     }
 
     adjustModalContent();
-
-    $('#search-input').on('input', function () {
-        let searchTerm = $(this).val().toLowerCase();
-
-        $('#master-category-table-body tr').each(function () {
-            $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
-        });
-
-        $('#subcategory-table-body tr').each(function () {
-            $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
-        });
-
-        $('#equipment-table-body tr').each(function () {
-            $(this).toggle($(this).text().toLowerCase().indexOf(searchTerm) > -1);
-        });
-    });
 
     // Function to get CSRF token from cookies
     function getCookie(name) {
