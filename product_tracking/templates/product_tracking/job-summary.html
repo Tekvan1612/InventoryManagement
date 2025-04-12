@@ -1,0 +1,374 @@
+{% include 'product_tracking/head.html' %}
+{% load static %}
+{% block content %}
+    <style>
+        .dropdown-item {
+            width: 370px; /* Set a fixed width for dropdown items */
+            white-space: normal; /* Allow text to wrap */
+            overflow: hidden; /* Hide overflow text */
+            text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+            word-wrap: break-word; /* Break long words */
+        }
+
+        .spaced-btn {
+            margin-right: 10px;
+        }
+
+        /* Remove the margin from the last button if needed */
+        .spaced-btn:last-child {
+            margin-right: 0;
+        }
+    </style>
+
+    <style>
+        .form-floating > .form-select:focus ~ label,
+        .form-floating > .form-select:not(:placeholder-shown) ~ label,
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            transform: translateY(-1.5rem) scale(0.85);
+            color: #000000;
+            opacity: 1;
+        }
+
+        .form-floating > .select2-container--default .select2-selection--single {
+            height: calc(3.5rem + 2px);
+            padding: .75rem 1rem;
+        }
+
+        .form-floating > .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 2.25rem;
+            font-size: 0.85rem;
+            color: black !important;
+        }
+
+        .form-floating > .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(3.5rem + 2px);
+        }
+
+        .select2-selection__clear {
+            display: none;
+        }
+
+        .form-floating > label {
+            z-index: 1;
+            pointer-events: none;
+            left: 1rem;
+        }
+
+        .form-floating > .form-select,
+        .form-floating > .form-control {
+            z-index: 2;
+        }
+
+        .select2-selection__placeholder {
+            color: black !important;
+            font-size: 0.85rem;
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Job Number Dropdown
+            $('.select2').select2();
+
+            // Extract Id & Job Reference Number
+            $.ajax({
+                url: '/fetch_job_reference_numbers/',  // URL from urls.py
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    const jobReferences = response.job_references;
+                    const jobSelect = $('#job_number');
+
+                    // Clear previous options except the first
+                    jobSelect.find('option:not(:first)').remove();
+
+                    // Append new options
+                    jobReferences.forEach(function (item) {
+                        jobSelect.append(`<option value="${item.id}">${item.job_reference_no}</option>`);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.error("Failed to load job references:", error);
+                }
+            });
+
+            // Based on Job Number fetch details
+            let currentPage = 1;
+            const pageSize = 10;
+            let totalItems = 0;
+            let transactionData = [];
+
+            // Fetch transaction data based on job ID
+            function fetchTransactionList(jobId) {
+                $.ajax({
+                    url: '/fetch_transaction_details/',
+                    type: 'GET',
+                    data: {
+                        job_id: jobId
+                    },
+                    dataType: 'json',
+                    success: function (response) {
+                        transactionData = response.transactions || [];
+                        totalItems = transactionData.length;
+                        currentPage = 1; // Reset to first page
+                        renderTransactionTable();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error fetching transaction data:", error);
+                        $('#scan-table-body').html(`
+                <tr>
+                    <td colspan="5">Error loading data.</td>
+                </tr>
+            `);
+                    }
+                });
+            }
+
+            // Render table based on current page
+            function renderTransactionTable() {
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
+                const currentPageData = transactionData.slice(startIndex, endIndex);
+
+                let scanTableBody = $('#scan-table-body');
+                scanTableBody.empty();
+
+                if (currentPageData.length > 0) {
+                    currentPageData.forEach((item, index) => {
+                        let row = `
+                            <tr>
+                                <td>${startIndex + index + 1}</td>
+                                <td>${item.equipment_name || ''}</td>
+                                <td>${item.barcode || ''}</td>
+                                <td>${item.scan_out_date_time || '-'}</td>
+                                <td>${item.scan_in_date_time || '-'}</td>
+                            </tr>
+                        `;
+                        scanTableBody.append(row);
+                    });
+                } else {
+                    scanTableBody.append(`
+            <tr>
+                <td colspan="5">No transaction data found for the selected job.</td>
+            </tr>
+        `);
+                }
+
+                updatePaginationCount();
+            }
+
+            // Update pagination count
+            function updatePaginationCount() {
+                const totalPages = Math.ceil(totalItems / pageSize);
+                const start = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+                const end = Math.min(currentPage * pageSize, totalItems);
+
+                $('#pagination-count').text(`Showing ${start} to ${end} of ${totalItems} entries`);
+
+                $('#prev-page-btn').prop('disabled', currentPage === 1);
+                $('#next-page-btn').prop('disabled', currentPage === totalPages || totalItems === 0);
+            }
+
+            // When job number changes
+            $('#job_number').on('change', function () {
+                const jobId = $(this).val();
+                if (jobId !== 'Select Job Number') {
+                    fetchTransactionList(jobId);
+                }
+            });
+
+            // Pagination button functionality
+            $('#prev-page-btn').click(function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTransactionTable();
+                }
+            });
+
+            $('#next-page-btn').click(function () {
+                const totalPages = Math.ceil(totalItems / pageSize);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTransactionTable();
+                }
+            });
+        });
+    </script>
+    <body>
+
+    <!--*******************
+        Preloader start
+    ********************-->
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <!--*******************
+        Preloader end
+    ********************-->
+
+    <!--**********************************
+        Main wrapper start
+    ***********************************-->
+    <div id="main-wrapper">
+        <!--**********************************
+            Nav header start
+        ***********************************-->
+        {% include 'product_tracking/navheader.html' %}
+        <!--**********************************
+            Nav header end
+        ***********************************-->
+
+        <!--**********************************
+                    Header start
+        ***********************************-->
+        {% include 'product_tracking/header.html' %}
+        <!--**********************************
+                    Header end
+        ***********************************-->
+
+        <!--**********************************
+            Sidebar start
+        ***********************************-->
+        {% include 'product_tracking/sidebar.html' %}
+        <!--**********************************
+            Sidebar end
+        ***********************************-->
+
+        <!--**********************************
+            Content body start
+        ***********************************-->
+        <div class="content-body">
+            <!-- row -->
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title">Order book</h5></li>
+                    <li class="breadcrumb-item"><a href="javascript:void(0)">
+                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
+                                  stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        Home </a>
+                    </li>
+                    <!-- <li class="breadcrumb-item active"><a href="javascript:void(0)">Task</a></li> -->
+                </ol>
+            </div>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Job Summary</h5>
+                    <div class="d-flex align-items-center">
+                        <div class="icon-box  icon-box-sm task-tab me-2">
+                            <a href="{% url 'task' %}">
+                                <svg width="20" height="20" viewBox="0 0 21 21" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8.50032 3H2.66699V8.83333H8.50032V3Z" stroke="white" stroke-width="1.5"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M17.6668 3H11.8335V8.83333H17.6668V3Z" stroke="white" stroke-width="1.5"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M17.6668 12.1667H11.8335V18H17.6668V12.1667Z" stroke="white"
+                                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8.50032 12.1667H2.66699V18H8.50032V12.1667Z" stroke="white"
+                                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row task">
+                                    {#                                    <div class="col-xl-3 col-sm-4">#}
+                                    {#                                        <div class="task-summary">#}
+                                    {#                                            <div class="d-flex align-items-baseline">#}
+                                    {#                                                <label style="color: #0c0c0c;">Job Number</label>#}
+                                    {#                                            </div>#}
+                                    {#                                        </div>#}
+                                    {#                                    </div>#}
+                                    <div class="col-lg-3">
+                                        <div class="form-floating">
+                                            <select class="form-select select2" id="job_number" name="job_number"
+                                                    aria-label="Floating label select example">
+                                                <option selected>Select Job Number</option>
+                                                <!-- Dynamic item codes will be appended here -->
+                                            </select>
+                                            <label for="job_number">Job Number</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">Task</h4>
+                        </div><!-- end card header -->
+                        <div class="card-body">
+                            <div class="table-responsive table-card">
+                                <table class="table primary-table-bordered"
+                                       id="contact-table">
+                                    <thead class="thead-primary" style="text-align: center;">
+                                    <tr>
+                                        <th scope="col" style="width: 15px;">SR NO</th>
+                                        <th scope="col">Equipment Name</th>
+                                        <th scope="col">Barcode Number</th>
+                                        <th scope="col">Scan Out</th>
+                                        <th scope="col">Scan In</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="scan-table-body" style="text-align: center;">
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div><!-- end card-body -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
+                            <div style="padding-bottom: 10px;margin: 5px;">
+                                <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>
+                                <button id="next-page-btn" class="btn btn-primary">Next</button>
+                            </div>
+                        </div>
+                    </div><!-- end card -->
+                </div>
+
+            </div>
+        </div>
+        <!--**********************************
+            Content body end
+        ***********************************-->
+
+        <!--**********************************
+                Add Content start
+        ***********************************-->
+
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        {% include 'product_tracking/footer.html' %}
+        <!--**********************************
+            Footer end
+        ***********************************-->
+
+    </div>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <!--**********************************
+
+
+    Main wrapper end
+    ***********************************-->
+
+    </body>
+{% endblock %}
