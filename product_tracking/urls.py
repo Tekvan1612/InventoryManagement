@@ -243,5 +243,7 @@ urlpatterns = [
                   path('update-crew-allocation-delivery/', views.update_crew_allocation_delivery,
                        name='update_crew_allocation_delivery'),
                   path('fetch-temp-crew-details/', views.fetch_temp_crew_details, name='fetch_temp_crew_details'),
-
+                  path('job_summary/', views.job_summary, name='job_summary'),
+                  path('fetch_job_reference_numbers/', views.fetch_job_reference_numbers, name='fetch_job_reference_numbers'),
+                  path('fetch_transaction_details/', views.fetch_transaction_details, name='fetch_transaction_details'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
