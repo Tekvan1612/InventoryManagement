@@ -6230,3 +6230,48 @@ def update_crew_allocation_delivery(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
+
+# Job Summary
+def job_summary(request):
+    username = request.session.get('username')
+    return render(request, 'product_tracking/job-summary.html', {'username': username})
+
+
+def fetch_job_reference_numbers(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT id, job_reference_no FROM temp")
+        rows = cursor.fetchall()
+
+    # Prepare response as list of dicts
+    data = [{'id': row[0], 'job_reference_no': row[1]} for row in rows]
+    return JsonResponse({'job_references': data})
+
+
+@csrf_exempt
+def fetch_transaction_details(request):
+    print('Check the transaction_details is working')
+    job_id = request.GET.get('job_id')
+    print('Check the job ID:', job_id)
+    data = []
+
+    if job_id:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM get_transaction_details(%s)", [job_id])
+            rows = cursor.fetchall()
+            print('Check the row:', rows)
+
+        for row in rows:
+            scan_out_time = row[4].strftime('%I:%M %p') if row[4] else ''
+            scan_in_time = row[6].strftime('%I:%M %p') if row[6] else ''
+            data.append({
+                'job_ref_no': row[0],
+                'equipment_name': row[1],
+                'barcode': row[2],
+                'scan_out_by': row[3],
+                'scan_out_date_time': scan_out_time,
+                'scan_in_by': row[5],
+                'scan_in_date_time': scan_in_time,
+            })
+        print('Transaction Details:', data)
+
+    return JsonResponse({'transactions': data})
