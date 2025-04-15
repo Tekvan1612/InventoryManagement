@@ -2309,7 +2309,6 @@ def add_warehouse_master(request):
     if request.method == 'POST':
         company_name = request.POST.get('warehouseCompanyName')
         phone_no = request.POST.get('warehousePhoneNo')
-	phone_no = request.POST.get('warehousePhoneNo')
         address = request.POST.get('warehouseName')
 
         with connection.cursor() as cursor:
