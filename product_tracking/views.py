@@ -2308,11 +2308,12 @@ def warehouse_master(request):
 def add_warehouse_master(request):
     if request.method == 'POST':
         company_name = request.POST.get('warehouseCompanyName')
+        warehouse_name = request.POST.get('warehouseAddName')
         phone_no = request.POST.get('warehousePhoneNo')
         address = request.POST.get('warehouseName')
 
         with connection.cursor() as cursor:
-            cursor.callproc('warehouse_master', ['CREATE', None, company_name, phone_no, address])
+            cursor.callproc('warehouse_master', ['CREATE', None, company_name, warehouse_name, phone_no, address])
             warehouse = cursor.fetchall()
             print('Fetch warehouse:', warehouse)
             return redirect('warehouse_master')
