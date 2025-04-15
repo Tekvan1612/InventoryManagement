@@ -533,6 +533,9 @@
                 var attachmentsHtml = '';
                 if (employee.attachments && employee.attachments.length > 0) {
                     $.each(employee.attachments, function (index, attachment) {
+                        if (attachment.startsWith('/media/https://')) {
+                            attachment = attachment.replace('/media/', '');
+                        }
                         // Ensure that each attachment URL is properly set
                         attachmentsHtml += `
                 <div style="margin: 10px; display: inline-block;">
