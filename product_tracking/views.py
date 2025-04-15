@@ -2391,6 +2391,7 @@ def company_master(request):
         name = request.POST.get('companyName')
         gst_no = request.POST.get('companyGstNo')
         email = request.POST.get('companyEmail')
+	phone_no = request.POST.get('companyPhoneNo')
         company_logo = request.FILES.get('companyLogo')
         address = request.POST.get('companyAddress')
 
@@ -2410,7 +2411,7 @@ def company_master(request):
         try:
             with connection.cursor() as cursor:
                 cursor.callproc('company_master',
-                                ['CREATE', None, name, gst_no, email, company_logo_attachment_url, address])
+                                ['CREATE', None, name, gst_no, email, phone_no, company_logo_attachment_url, address])
                 company = cursor.fetchall()
                 print('Inserted values are:', company)
                 return redirect('warehouse_master')
