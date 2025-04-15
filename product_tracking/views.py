@@ -2393,6 +2393,7 @@ def company_master(request):
         email = request.POST.get('companyEmail')
         company_logo = request.FILES.get('companyLogo')
         address = request.POST.get('companyAddress')
+	contact_no = request.POST.get('companyPhoneNo')
 
         # Assuming you're using Cloudinary, adjust the size limits as needed
         company_logo_attachment_url = None
@@ -2410,7 +2411,7 @@ def company_master(request):
         try:
             with connection.cursor() as cursor:
                 cursor.callproc('company_master',
-                                ['CREATE', None, name, gst_no, email, company_logo_attachment_url, address])
+                                ['CREATE', None, name, gst_no, email, company_logo_attachment_url, address, contact_no])
                 company = cursor.fetchall()
                 print('Inserted values are:', company)
                 return redirect('warehouse_master')
@@ -2427,7 +2428,7 @@ def company_master_list(request):
     try:
         with connection.cursor() as cursor:
             cursor.callproc('company_master',
-                            ['READ', None, None, None, None, None, None])
+                            ['READ', None, None, None, None, None, None, None])
             rows = cursor.fetchall()
 
             for row in rows:
@@ -2438,6 +2439,7 @@ def company_master_list(request):
                     'email': row[3],
                     'company_logo': row[4],
                     'address': row[5],
+		    'contact_no': row[6],		
                 })
     except Exception as e:
         print("Error fetching Company Master List:", e)
@@ -2454,7 +2456,7 @@ def update_company(request, id):
         try:
             with connection.cursor() as cursor:
                 cursor.callproc('company_master',
-                                ['UPDATE', id, name, CompanyGstNo, companyEmailId, None, company_address])
+                                ['UPDATE', id, name, CompanyGstNo, companyEmailId, None, company_address, None])
                 updated_company_id = cursor.fetchone()
             return JsonResponse(
                 {'message': 'Company details updated successfully', 'updated_company_id': updated_company_id})
@@ -2467,7 +2469,7 @@ def update_company(request, id):
 def delete_company_master(request, id):
     if request.method == 'POST':
         with connection.cursor() as cursor:
-            cursor.callproc('company_master', ['DELETE', id, None, None, None, None, None])
+            cursor.callproc('company_master', ['DELETE', id, None, None, None, None, None, None])
         return JsonResponse({'message': 'Company list deleted successfully'}, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
