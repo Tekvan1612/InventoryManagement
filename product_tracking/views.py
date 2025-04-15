@@ -2326,15 +2326,16 @@ def warehouse_master_list(request):
     try:
         with connection.cursor() as cursor:
             cursor.callproc('warehouse_master',
-                            ['READ', None, None, None, None])
+                            ['READ', None, None, None, None, None])
             rows = cursor.fetchall()
 
             for row in rows:
                 warehouse_master_listing.append({
                     'id': row[0],
                     'company_name': row[1],
-                    'phone_no': row[2],
-                    'address': row[3],
+                    'warehouse_name': row[2],
+                    'phone_no': row[3],
+                    'address': row[4],
                 })
     except Exception as e:
         print("Error fetching Warehouse Master List:", e)
