@@ -2308,7 +2308,7 @@ def warehouse_master(request):
 def add_warehouse_master(request):
     if request.method == 'POST':
         company_name = request.POST.get('warehouseCompanyName')
-	    warehouse_name = request.POST.get('warehouseAddName')    
+	warehouseName = request.POST.get('warehouseCompanyName')    
         phone_no = request.POST.get('warehousePhoneNo')
         address = request.POST.get('warehouseName')
 
