@@ -2456,7 +2456,7 @@ def update_company(request, id):
         try:
             with connection.cursor() as cursor:
                 cursor.callproc('company_master',
-                                ['UPDATE', id, name, CompanyGstNo, companyEmailId, None, company_address, None])
+                                ['UPDATE', id, name, CompanyGstNo, companyEmailId, None, company_address])
                 updated_company_id = cursor.fetchone()
             return JsonResponse(
                 {'message': 'Company details updated successfully', 'updated_company_id': updated_company_id})
