@@ -2439,9 +2439,9 @@ def company_master_list(request):
                     'name': row[1],
                     'gst_no': row[2],
                     'email': row[3],
-                    'company_logo': row[4],
-                    'address': row[5],
-                    'contact_no': row[6],
+                    'contact_no': row[4],
+                    'company_logo': row[5],
+                    'address': row[6],
                 })
     except Exception as e:
         print("Error fetching Company Master List:", e)
