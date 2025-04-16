@@ -1,16 +1,778 @@
 {% include 'product_tracking/head.html' %}
 {% load static %}
 {% block content %}
-<body>
+    <style>
+        .dropdown-item {
+            width: 370px; /* Set a fixed width for dropdown items */
+            white-space: normal; /* Allow text to wrap */
+            overflow: hidden; /* Hide overflow text */
+            text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+            word-wrap: break-word; /* Break long words */
+        }
+
+        .spaced-btn {
+            margin-right: 10px;
+        }
+
+        /* Remove the margin from the last button if needed */
+        .spaced-btn:last-child {
+            margin-right: 0;
+        }
+
+        .quantity-click {
+            color: #3232c1;
+            text-decoration: underline;
+        }
+
+        .form-floating > .form-select:focus ~ label,
+        .form-floating > .form-select:not(:placeholder-shown) ~ label,
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            transform: translateY(-1.5rem) scale(0.85);
+            color: #000000;
+            opacity: 1;
+        }
+
+        .form-floating > .select2-container--default .select2-selection--single {
+            height: calc(3.5rem + 2px);
+            padding: .75rem 1rem;
+        }
+
+        .form-floating > .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 2.25rem;
+            font-size: 0.85rem;
+            color: black !important;
+        }
+
+        .form-floating > .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: calc(3.5rem + 2px);
+        }
+
+        .select2-selection__clear {
+            display: none;
+        }
+
+        .form-floating > label {
+            z-index: 1;
+            pointer-events: none;
+            left: 1rem;
+        }
+
+        .form-floating > .form-select,
+        .form-floating > .form-control {
+            z-index: 2;
+        }
+
+        .select2-selection__placeholder {
+            color: black !important;
+            font-size: 0.85rem;
+        }
+
+        .container-popup {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header-popup {
+            background-color: #f2f2f2;
+            padding: 1px;
+            border-bottom: 1px solid #ddd;
+
+        }
+
+        .header-popup h1 {
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .content-popup {
+            flex: 1;
+            padding: 0;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            height: 420px; /* Set your desired fixed height here */
+            overflow-y: auto; /* Add vertical scrollbar if content exceeds the height */
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 2px;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .footer-popup {
+            padding: 1px;
+            border-top: 1px solid #ddd;
+            background-color: #f2f2f2;
+        }
+
+        .search-bar {
+            margin-left: 0;
+            padding: 3px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 75%;
+        }
+
+        /* Popup container */
+        .popup {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
+        }
+
+        /* Popup content */
+        .popup-content {
+            background-color: #fff;
+            margin: 4% auto;
+            border: 1px solid #ddd;
+            width: 80%;
+            max-width: 400px;
+            height: 80%;
+            max-height: 800px;
+        }
+
+        .popup-content .header {
+            background-color: #f2f2f2;
+        }
+
+        .table-responsive {
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .modal-dialog {
+            max-width: 75%; /* Ensures the modal doesn't exceed screen width */
+            margin: 1.75rem auto; /* Centers the modal with some margin on top and bottom */
+        }
+
+        .modal-content {
+            padding: 15px;
+        }
+
+        .modal-body {
+            padding-bottom: 10px;
+            overflow-y: scroll; /* Enables scrolling if content overflows */
+            max-height: 85vh; /* Limits the modal height to 70% of the viewport height */
+        }
+
+        @media (min-width: 768px) {
+            .modal-lg {
+                max-width: 80%; /* Adjusts for larger screens */
+            }
+
+            .modal-body {
+                max-height: 80vh; /* Increases max height for larger screens */
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .modal-dialog {
+                max-width: 100%; /* Ensures modal fits within small screens */
+                margin: 10px; /* Adds some margin for extra small devices */
+            }
+
+            .modal-body {
+                max-height: 60vh; /* Reduces max height for smaller screens */
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .modal-content {
+                padding: 10px; /* Reduces padding for small screens */
+            }
+
+            .modal-body {
+                max-height: 50vh; /* Further reduces max height for extra small screens */
+            }
+        }
+
+        .nav-tabs .nav-link {
+            font-size: 1rem;
+            border-radius: 5px;
+            font-weight: 600;
+            padding: 10px 20px;
+            color: #495057;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #ffffff;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: #ffffff;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: #ffffff;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #fff !important;
+            background-color: #007bff !important;
+            border-color: #007bff #007bff #fff !important;
+            border-radius: 5px;
+        }
+
+        .table thead th {
+            background-color: #343a40; /* Dark background for table headers */
+            color: #ffffff; /* White text color for headers */
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table tbody td {
+            color: #212529; /* Dark text for table data */
+            border-top: 1px solid #dee2e6;
+        }
+
+        .plus-icon {
+            cursor: pointer;
+            color: #ffffff;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            font-size: 1.2rem;
+        }
+
+        .table .edit-btn,
+        .table .save-btn,
+        .table .cancel-btn,
+        .table .delete-btn {
+            font-size: 1rem;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .editable-cell {
+            cursor: pointer;
+        }
+
+        .form-inline {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-control {
+            border: 1px solid #ced4da; /* Border color for inputs */
+            border-radius: 5px; /* Rounded corners */
+            padding: 10px;
+            font-size: 1rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.875rem; /* Slightly smaller label size */
+        }
+
+        .custom-margin {
+            margin-top: 10px; /* Keep the margin controlled */
+        }
+
+        .modal-dialog {
+            max-width: 75%;
+            margin: 1.75rem auto;
+        }
+
+        .modal-content {
+            padding: 15px;
+        }
+
+        .modal-header {
+            background-color: #343a40;
+            color: #ffffff;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+        }
+
+        .col-xl-4, .col-lg-4, .col-md-6, .col-xl-3 {
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+
+        .custom-margin {
+            margin-top: 5px; /* Reduced margin to minimize space taken */
+        }
+
+        #attachments .col-md-4 {
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            max-height: 60vh; /* Adjust this value to suit your design */
+        }
+
+        @media (min-width: 768px) {
+            .modal-body {
+                max-height: 70vh; /* Higher height for larger screens */
+            }
+        }
+
+        textarea {
+            max-height: 150px; /* Limit the height of text areas */
+            overflow-y: auto;
+        }
+
+        #attachments img {
+            max-width: 100%; /* Ensures images do not overflow */
+            height: auto; /* Maintains aspect ratio */
+        }
+
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Trigger on page load or when needed
+            fetchEquipmentData();
+
+            $('.select2').select2();
+
+            $('#sort_by').change(function () {
+                var sortBy = $(this).val();
+                if (sortBy === 'date') {
+                    $('#date_sort_fields').show();
+                    $('#category_sort_fields').hide();
+                    $('#sub_category_sort_fields').hide();
+                    $('#individual_sort_fields').hide();
+                    $('#item_code').val(''); // Clear item code selection
+                } else if (sortBy === 'category') {
+                    $('#date_sort_fields').hide();
+                    $('#category_sort_fields').show();
+                    $('#sub_category_sort_fields').hide();
+                    $('#individual_sort_fields').hide();
+                } else if (sortBy === 'sub_category') {
+                    $('#date_sort_fields').hide();
+                    $('#category_sort_fields').hide();
+                    $('#sub_category_sort_fields').show();
+                    $('#individual_sort_fields').hide();
+                } else if (sortBy === 'individual') {
+                    $('#date_sort_fields').hide();
+                    $('#category_sort_fields').hide();
+                    $('#sub_category_sort_fields').hide();
+                    $('#individual_sort_fields').show();
+                } else {
+                    $('#date_sort_fields').hide();
+                    $('#item_code_sort_fields').hide();
+                    $('#sub_category_sort_fields').hide();
+                    $('#individual_sort_fields').hide();
+                    $('#item_code').val(''); // Clear item code selection
+                }
+            });
+
+            // Extract ID & Category Names
+            $.ajax({
+                url: '/category_dropdown/',  // URL from urls.py
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    const categories = response.categories;
+                    const categorySelect = $('#category_dropdown'); // Make sure this is your actual <select> ID
+                    console.log('check the sub category:', categorySelect)
+
+                    // Clear previous options except the first
+                    categorySelect.find('option:not(:first)').remove();
+
+                    // Append new options
+                    categories.forEach(function (item) {
+                        categorySelect.append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.error("Failed to load categories:", error);
+                }
+            });
+
+            // Extract ID & Sub Category Name
+            $.ajax({
+                url: '/sub_category_dropdown/',  // URL from urls.py
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    const sub_categories = response.sub_categories;
+                    const subCategorySelect = $('#sub_category_dropdown'); // Make sure this is your actual <select> ID
+                    console.log('check the sub category:', subCategorySelect)
+
+                    // Clear previous options except the first
+                    subCategorySelect.find('option:not(:first)').remove();
+
+                    // Append new options
+                    sub_categories.forEach(function (item) {
+                        subCategorySelect.append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.error("Failed to load categories:", error);
+                }
+            });
+
+            // Equipment Dropdown
+            $.ajax({
+                url: '/equipment_dropdown/',  // URL from urls.py
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    const equipment_names = response.equipment_names;
+                    const equipmentNamesSelect = $('#equipment_dropdown'); // Make sure this is your actual <select> ID
+                    console.log('check the Equipment:', equipmentNamesSelect)
+
+                    // Clear previous options except the first
+                    equipmentNamesSelect.find('option:not(:first)').remove();
+
+                    // Append new options
+                    equipment_names.forEach(function (item) {
+                        equipmentNamesSelect.append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.error("Failed to load equipment:", error);
+                }
+            });
+
+
+            // Layout Change based on inventory dropdown select option
+            let fetchedData = []; // Global variable to store the fetched data
+
+            // Fetch data when category changes
+            $('#category_dropdown').on('change', function () {
+                let categoryId = $(this).val();
+
+                if (categoryId && categoryId !== "Select Category") {
+                    $.ajax({
+                        url: '/fetch_equipment_by_category/',
+                        data: {category_id: categoryId},
+                        method: 'GET',
+                        success: function (response) {
+                            fetchedData = response.data || [];
+                            renderTable($('#sort_by').val()); // Render based on current sort
+                        },
+                        error: function (xhr) {
+                            alert('Error fetching data: ' + xhr.responseJSON?.error);
+                        }
+                    });
+                }
+            });
+
+            // Fetch data when sub-category changes
+            $('#sub_category_dropdown').on('change', function () {
+                let subCategoryId = $(this).val();
+
+                if (subCategoryId && subCategoryId !== "Select Sub Category") {
+                    $.ajax({
+                        url: '/fetch_equipment_by_sub_category/',
+                        data: {sub_category_id: subCategoryId},
+                        method: 'GET',
+                        success: function (response) {
+                            fetchedData = response.data || [];
+                            renderTable($('#sort_by').val()); // Render based on current sort
+                        },
+                        error: function (xhr) {
+                            alert('Error fetching data: ' + xhr.responseJSON?.error);
+                        }
+                    });
+                }
+            });
+
+            // Fetch data when equipment_name = individual changes
+            $('#equipment_dropdown').on('change', function () {
+                let equipmentNameId = $(this).val();
+
+                if (equipmentNameId && equipmentNameId !== "Select Equipment Name") {
+                    $.ajax({
+                        url: '/fetch_equipment_by_equipment_name/',
+                        data: {equipment_id: equipmentNameId},
+                        method: 'GET',
+                        success: function (response) {
+                            fetchedData = response.data || [];
+                            renderTable($('#sort_by').val()); // Render based on current sort
+                        },
+                        error: function (xhr) {
+                            alert('Error fetching data: ' + xhr.responseJSON?.error);
+                        }
+                    });
+                }
+            });
+
+            function fetchEquipmentData() {
+                $.ajax({
+                    url: '/fetch_equipment_with_unscanned_count/',  // Replace with the actual URL of your Django view
+                    method: 'GET',
+                    success: function (response) {
+                        console.log('Response from server:', response);  // Log the full response
+                        fetchedData = response.equipment_data || [];  // Access the correct key 'equipment_data'
+                        console.log('Fetched equipment data:', fetchedData);
+
+                        renderTable('default');  // Render the table with default sorting
+                    },
+                    error: function (error) {
+                        console.error('Error fetching data:', error);
+                    }
+                });
+            }
+
+
+            // Render table based on selected sort option
+            $('#sort_by').on('change', function () {
+                renderTable($(this).val());
+            });
+
+            // Function to render table using fetchedData
+            function renderTable(sortBy) {
+                const $thead = $('#contact-table thead tr');
+                const $tbody = $('#scan-table-body');
+
+                $thead.empty();
+                $tbody.empty();
+
+                if (!fetchedData.length) {
+                    $thead.append(`<th colspan="4">No data to display</th>`);
+                    return;
+                }
+
+                if (!sortBy || sortBy === "default") {
+                    // Default layout: Equipment Name, Sub Category, Category, Quantity
+                    $thead.append(`
+                        <th>Equipment Name</th>
+                        <th>Sub Category</th>
+                        <th>Category</th>
+                        <th>Quantity</th>
+                    `);
+
+                    fetchedData.forEach(item => {
+                        $tbody.append(`
+                            <tr>
+                                <td>${item.equipment_name}</td>
+                                <td>${item.sub_category_name}</td>
+                                <td>${item.category_name}</td>
+                                <td>
+                                    <a href="#" class="quantity-click" data-equipment-id="${item.equipment_id}">
+                                        ${item.quantity}
+                                    </a>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                } else if (sortBy === 'category') {
+                    $thead.append(`
+                        <th>Equipment Name</th>
+                        <th>Sub Category</th>
+                        <th>Quantity</th>
+                    `);
+
+                    fetchedData.forEach(item => {
+                        $tbody.append(`
+                <tr>
+                    <td>${item.equipment_name}</td>
+                    <td>${item.sub_category_name}</td>
+                    <td>
+                        <a href="#" class="quantity-click" data-equipment-id="${item.equipment_id}">
+                            ${item.quantity}
+                        </a>
+                    </td>
+                </tr>
+            `);
+                    });
+                } else if (sortBy === 'sub_category') {
+                    $thead.append(`
+                        <th>Equipment Name</th>
+                        <th>Category</th>
+                        <th>Quantity</th>
+                    `);
+
+                    fetchedData.forEach(item => {
+                        $tbody.append(`
+                            <tr>
+                                <td>${item.equipment_name}</td>
+                                <td>${item.category_type}</td>
+                                <td>
+                                    <a href="#" class="quantity-click" data-equipment-id="${item.equipment_id}">
+                                        ${item.quantity}
+                                    </a>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                } else if (sortBy === 'individual') {
+                    $thead.append(`
+                        <th>Equipment Name</th>
+                        <th>Sub Category</th>
+                        <th>Category</th>
+                        <th>Quantity</th>
+                    `);
+
+                    fetchedData.forEach(item => {
+                        $tbody.append(`
+                            <tr>
+                                <td>${item.equipment_name}</td>
+                                <td>${item.sub_category_name}</td>
+                                <td>${item.category_type}</td>
+                                <td>
+                                    <a href="#" class="quantity-click" data-equipment-id="${item.equipment_id}">
+                                        ${item.quantity}
+                                    </a>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                }
+            }
+
+            // Attach a click event to the quantity link
+            let currentPageStock = 1;
+            let rowsPerPage = 10;
+            let stockData = [];
+
+            function renderStockTablePage(page = 1) {
+                const start = (page - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+                const pageData = stockData.slice(start, end);
+
+                $('#stock-details-table-body').empty();
+
+                if (pageData.length === 0) {
+                    $('#stock-details-table-body').append('<tr><td colspan="7" class="text-center">No stock found</td></tr>');
+                } else {
+                    pageData.forEach(item => {
+                        const row = `
+                            <tr>
+                                <td>${item.vender_name}</td>
+                                <td>${item.purchase_date}</td>
+                                <td>${item.unit_price}</td>
+                                <td>${item.rental_price}</td>
+                                <td>${item.serial_no}</td>
+                                <td>${item.barcode_no}</td>
+                            </tr>
+                        `;
+                        $('#stock-details-table-body').append(row);
+                    });
+                }
+
+                // Update page indicators
+                const totalPagesStock = Math.ceil(stockData.length / rowsPerPage);
+                $('#currentPageStock').text(page);
+                $('#totalPagesStock').text(totalPagesStock);
+
+                // Enable/disable buttons
+                $('#prevPageStock').prop('disabled', page <= 1);
+                $('#nextPageStock').prop('disabled', page >= totalPagesStock);
+            }
+
+            $(document).on('click', '.quantity-click', function (e) {
+                e.preventDefault();
+
+                var equipmentId = $(this).data('equipment-id');
+                $('#quantityModel').modal('show');
+                $('#stock-details-table-body').empty();
+                $('#currentPageStock').text('1');
+                $('#totalPagesStock').text('1');
+                currentPageStock = 1;
+
+                $.ajax({
+                    url: '/get_stock_details_reports/',
+                    method: 'GET',
+                    data: {equipment_id: equipmentId},
+                    success: function (response) {
+                        stockData = response.stock_details || [];
+                        renderStockTablePage(currentPageStock);
+                    },
+                    error: function () {
+                        alert('Failed to fetch stock details.');
+                    }
+                });
+            });
+
+            // Pagination Buttons
+            $('#prevPageStock').on('click', function () {
+                if (currentPageStock > 1) {
+                    currentPageStock--;
+                    renderStockTablePage(currentPageStock);
+                }
+            });
+
+            $('#nextPageStock').on('click', function () {
+                const totalPagesStock = Math.ceil(stockData.length / rowsPerPage);
+                if (currentPageStock < totalPagesStock) {
+                    currentPageStock++;
+                    renderStockTablePage(currentPageStock);
+                }
+            });
+
+            // Download Excel Sheet
+            document.getElementById('download-btn').addEventListener('click', function () {
+                // Prepare table data for export
+                const tableData = fetchedData.map(item => {
+                    return {
+                        "Equipment Name": item.equipment_name,
+                        "Sub Category": item.sub_category_name,
+                        "Category": item.category_name,
+                        "Quantity": item.quantity,
+                    };
+                });
+
+                // Create a worksheet from the data
+                const ws = XLSX.utils.json_to_sheet(tableData);
+
+                // Set the column widths
+                const columnWidths = [
+                    {wch: 30},  // "Equipment Name" column width
+                    {wch: 30},  // "Sub Category" column width
+                    {wch: 20},  // "Category" column width
+                    {wch: 10}   // "Quantity" column width
+                ];
+
+                // Apply the column widths to the worksheet
+                ws['!cols'] = columnWidths;
+
+                // Create a new workbook and append the worksheet
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Equipment Data");
+
+                // Generate the Excel file and trigger the download
+                XLSX.writeFile(wb, "equipment_data.xlsx");
+            });
+
+        });
+    </script>
+    <body>
 
     <!--*******************
         Preloader start
     ********************-->
-   <div id="preloader">
-		<div class="lds-ripple">
-			<div></div>
-			<div></div>
-		</div>
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
     </div>
     <!--*******************
         Preloader end
@@ -23,1399 +785,269 @@
         <!--**********************************
             Nav header start
         ***********************************-->
-         {% include 'product_tracking/navheader.html' %}
+        {% include 'product_tracking/navheader.html' %}
         <!--**********************************
             Nav header end
         ***********************************-->
-		
-		<!--**********************************
-            Chat box start
-        ***********************************-->
-		<div class="chatbox">
-			<div class="chatbox-close"></div>
-			<div class="custom-tab-1">
-				
-				<ul class="nav nav-tabs">
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#notes">Notes</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#alerts">Alerts</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link active" data-bs-toggle="tab" href="#chat">Chat</a>
-					</li>
-				</ul>
-				<div class="tab-content">
-					<div class="tab-pane fade active show" id="chat">
-						<div class="card mb-sm-3 mb-md-0 contacts_card dz-chat-user-box">
-							<div class="card-header chat-list-header text-center">
-								<a href="javascript:void(0);"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><rect fill="#000000" x="4" y="11" width="16" height="2" rx="1"/><rect fill="#000000" opacity="1.0" transform="translate(12.000000, 12.000000) rotate(-270.000000) translate(-12.000000, -12.000000) " x="4" y="11" width="16" height="2" rx="1"/></g></svg></a>
-								<div>
-									<h6 class="mb-1">Chat List</h6>
-									<p class="mb-0">Show All</p>
-								</div>
-								<a href="javascript:void(0);"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><rect x="0" y="0" width="24" height="24"/><circle fill="#000000" cx="5" cy="12" r="2"/><circle fill="#000000" cx="12" cy="12" r="2"/><circle fill="#000000" cx="19" cy="12" r="2"/></g></svg></a>
-							</div>
-							<div class="card-body contacts_body p-0 dz-scroll  " id="DZ_W_Contacts_Body">
-								<ul class="contacts">
-									<li class="name-first-letter">A</li>
-									<li class="active dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/1.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon"></span>
-											</div>
-											<div class="user_info">
-												<span>Archie Parker</span>
-												<p>Kalid is online</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/2.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Alfie Mason</span>
-												<p>Taherah left 7 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/3.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon"></span>
-											</div>
-											<div class="user_info">
-												<span>AharlieKane</span>
-												<p>Sami is online</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/4.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Athan Jacoby</span>
-												<p>Nargis left 30 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="name-first-letter">B</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/5.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Bashid Samim</span>
-												<p>Rashid left 50 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/1.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon"></span>
-											</div>
-											<div class="user_info">
-												<span>Breddie Ronan</span>
-												<p>Kalid is online</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/2.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Ceorge Carson</span>
-												<p>Taherah left 7 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="name-first-letter">D</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/3.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon"></span>
-											</div>
-											<div class="user_info">
-												<span>Darry Parker</span>
-												<p>Sami is online</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/4.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Denry Hunter</span>
-												<p>Nargis left 30 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="name-first-letter">J</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/5.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Jack Ronan</span>
-												<p>Rashid left 50 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/1.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon"></span>
-											</div>
-											<div class="user_info">
-												<span>Jacob Tucker</span>
-												<p>Kalid is online</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/2.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>James Logan</span>
-												<p>Taherah left 7 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/3.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon"></span>
-											</div>
-											<div class="user_info">
-												<span>Joshua Weston</span>
-												<p>Sami is online</p>
-											</div>
-										</div>
-									</li>
-									<li class="name-first-letter">O</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/4.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Oliver Acker</span>
-												<p>Nargis left 30 mins ago</p>
-											</div>
-										</div>
-									</li>
-									<li class="dz-chat-user">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont">
-												<img src="images/avatar/5.jpg" class="rounded-circle user_img" alt="">
-												<span class="online_icon offline"></span>
-											</div>
-											<div class="user_info">
-												<span>Oscar Weston</span>
-												<p>Rashid left 50 mins ago</p>
-											</div>
-										</div>
-									</li>
-								</ul>
-							</div>
-						</div>
-						<div class="card chat dz-chat-history-box d-none">
-							<div class="card-header chat-list-header text-center">
-								<a href="javascript:void(0);" class="dz-chat-history-back">
-									<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><polygon points="0 0 24 0 24 24 0 24"/><rect fill="#000000" opacity="0.3" transform="translate(15.000000, 12.000000) scale(-1, 1) rotate(-90.000000) translate(-15.000000, -12.000000) " x="14" y="7" width="2" height="10" rx="1"/><path d="M3.7071045,15.7071045 C3.3165802,16.0976288 2.68341522,16.0976288 2.29289093,15.7071045 C1.90236664,15.3165802 1.90236664,14.6834152 2.29289093,14.2928909 L8.29289093,8.29289093 C8.67146987,7.914312 9.28105631,7.90106637 9.67572234,8.26284357 L15.6757223,13.7628436 C16.0828413,14.136036 16.1103443,14.7686034 15.7371519,15.1757223 C15.3639594,15.5828413 14.7313921,15.6103443 14.3242731,15.2371519 L9.03007346,10.3841355 L3.7071045,15.7071045 Z" fill="#000000" fill-rule="nonzero" transform="translate(9.000001, 11.999997) scale(-1, -1) rotate(90.000000) translate(-9.000001, -11.999997) "/></g></svg>
-								</a>
-								<div>
-									<h6 class="mb-1">Chat with Khelesh</h6>
-									<p class="mb-0 text-success">Online</p>
-								</div>							
-								<div class="dropdown">
-									<a href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><rect x="0" y="0" width="24" height="24"/><circle fill="#000000" cx="5" cy="12" r="2"/><circle fill="#000000" cx="12" cy="12" r="2"/><circle fill="#000000" cx="19" cy="12" r="2"/></g></svg></a>
-									<ul class="dropdown-menu dropdown-menu-end">
-										<li class="dropdown-item"><i class="fa fa-user-circle text-primary me-2"></i> View profile</li>
-										<li class="dropdown-item"><i class="fa fa-users text-primary me-2"></i> Add to btn-close friends</li>
-										<li class="dropdown-item"><i class="fa fa-plus text-primary me-2"></i> Add to group</li>
-										<li class="dropdown-item"><i class="fa fa-ban text-primary me-2"></i> Block</li>
-									</ul>
-								</div>
-							</div>
-							<div class="card-body msg_card_body dz-scroll" id="DZ_W_Contacts_Body3">
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										Hi, how are you samim?
-										<span class="msg_time">8:40 AM, Today</span>
-									</div>
-								</div>
-								<div class="d-flex justify-content-end mb-4">
-									<div class="msg_cotainer_send">
-										Hi Khalid i am good tnx how about you?
-										<span class="msg_time_send">8:55 AM, Today</span>
-									</div>
-									<div class="img_cont_msg">
-								<img src="images/avatar/2.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-								</div>
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										I am good too, thank you for your chat template
-										<span class="msg_time">9:00 AM, Today</span>
-									</div>
-								</div>
-								<div class="d-flex justify-content-end mb-4">
-									<div class="msg_cotainer_send">
-										You are welcome
-										<span class="msg_time_send">9:05 AM, Today</span>
-									</div>
-									<div class="img_cont_msg">
-								<img src="images/avatar/2.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-								</div>
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										I am looking for your next templates
-										<span class="msg_time">9:07 AM, Today</span>
-									</div>
-								</div>
-								<div class="d-flex justify-content-end mb-4">
-									<div class="msg_cotainer_send">
-										Ok, thank you have a good day
-										<span class="msg_time_send">9:10 AM, Today</span>
-									</div>
-									<div class="img_cont_msg">
-										<img src="images/avatar/2.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-								</div>
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										Bye, see you
-										<span class="msg_time">9:12 AM, Today</span>
-									</div>
-								</div>
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										Hi, how are you samim?
-										<span class="msg_time">8:40 AM, Today</span>
-									</div>
-								</div>
-								<div class="d-flex justify-content-end mb-4">
-									<div class="msg_cotainer_send">
-										Hi Khalid i am good tnx how about you?
-										<span class="msg_time_send">8:55 AM, Today</span>
-									</div>
-									<div class="img_cont_msg">
-								<img src="images/avatar/2.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-								</div>
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										I am good too, thank you for your chat template
-										<span class="msg_time">9:00 AM, Today</span>
-									</div>
-								</div>
-								<div class="d-flex justify-content-end mb-4">
-									<div class="msg_cotainer_send">
-										You are welcome
-										<span class="msg_time_send">9:05 AM, Today</span>
-									</div>
-									<div class="img_cont_msg">
-								<img src="images/avatar/2.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-								</div>
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										I am looking for your next templates
-										<span class="msg_time">9:07 AM, Today</span>
-									</div>
-								</div>
-								<div class="d-flex justify-content-end mb-4">
-									<div class="msg_cotainer_send">
-										Ok, thank you have a good day
-										<span class="msg_time_send">9:10 AM, Today</span>
-									</div>
-									<div class="img_cont_msg">
-										<img src="images/avatar/2.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-								</div>
-								<div class="d-flex justify-content-start mb-4">
-									<div class="img_cont_msg">
-										<img src="images/avatar/1.jpg" class="rounded-circle user_img_msg" alt="">
-									</div>
-									<div class="msg_cotainer">
-										Bye, see you
-										<span class="msg_time">9:12 AM, Today</span>
-									</div>
-								</div>
-							</div>
-							<div class="card-footer type_msg">
-								<div class="input-group">
-									<textarea class="form-control" placeholder="Type your message..."></textarea>
-									<div class="input-group-append">
-										<button type="button" class="btn btn-primary"><i class="fa fa-location-arrow"></i></button>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="tab-pane fade" id="alerts">
-						<div class="card mb-sm-3 mb-md-0 contacts_card">
-							<div class="card-header chat-list-header text-center">
-								<a href="javascript:void(0);"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><rect x="0" y="0" width="24" height="24"/><circle fill="#000000" cx="5" cy="12" r="2"/><circle fill="#000000" cx="12" cy="12" r="2"/><circle fill="#000000" cx="19" cy="12" r="2"/></g></svg></a>
-								<div>
-									<h6 class="mb-1">Notications</h6>
-									<p class="mb-0">Show All</p>
-								</div>
-								<a href="javascript:void(0);"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><rect x="0" y="0" width="24" height="24"/><path d="M14.2928932,16.7071068 C13.9023689,16.3165825 13.9023689,15.6834175 14.2928932,15.2928932 C14.6834175,14.9023689 15.3165825,14.9023689 15.7071068,15.2928932 L19.7071068,19.2928932 C20.0976311,19.6834175 20.0976311,20.3165825 19.7071068,20.7071068 C19.3165825,21.0976311 18.6834175,21.0976311 18.2928932,20.7071068 L14.2928932,16.7071068 Z" fill="#000000" fill-rule="nonzero" opacity="1"/><path d="M11,16 C13.7614237,16 16,13.7614237 16,11 C16,8.23857625 13.7614237,6 11,6 C8.23857625,6 6,8.23857625 6,11 C6,13.7614237 8.23857625,16 11,16 Z M11,18 C7.13400675,18 4,14.8659932 4,11 C4,7.13400675 7.13400675,4 11,4 C14.8659932,4 18,7.13400675 18,11 C18,14.8659932 14.8659932,18 11,18 Z" fill="#000000" fill-rule="nonzero"/></g></svg></a>
-							</div>
-							<div class="card-body contacts_body p-0 dz-scroll" id="DZ_W_Contacts_Body1">
-								<ul class="contacts">
-									<li class="name-first-letter">SEVER STATUS</li>
-									<li class="active">
-										<div class="d-flex bd-highlight">
-											<div class="img_cont primary">KK</div>
-											<div class="user_info">
-												<span>David Nester Birthday</span>
-												<p class="text-primary">Today</p>
-											</div>
-										</div>
-									</li>
-									<li class="name-first-letter">SOCIAL</li>
-									<li>
-										<div class="d-flex bd-highlight">
-											<div class="img_cont success">RU</div>
-											<div class="user_info">
-												<span>Perfection Simplified</span>
-												<p>Jame Smith commented on your status</p>
-											</div>
-										</div>
-									</li>
-									<li class="name-first-letter">SEVER STATUS</li>
-									<li>
-										<div class="d-flex bd-highlight">
-											<div class="img_cont primary">AU</div>
-											<div class="user_info">
-												<span>AharlieKane</span>
-												<p>Sami is online</p>
-											</div>
-										</div>
-									</li>
-									<li>
-										<div class="d-flex bd-highlight">
-											<div class="img_cont info">MO</div>
-											<div class="user_info">
-												<span>Athan Jacoby</span>
-												<p>Nargis left 30 mins ago</p>
-											</div>
-										</div>
-									</li>
-								</ul>
-							</div>
-							<div class="card-footer"></div>
-						</div>
-					</div>
-					<div class="tab-pane fade" id="notes">
-						<div class="card mb-sm-3 mb-md-0 note_card">
-							<div class="card-header chat-list-header text-center">
-								<a href="javascript:void(0);"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><rect fill="#000000" x="4" y="11" width="16" height="2" rx="1"/><rect fill="#000000" opacity="1.0" transform="translate(12.000000, 12.000000) rotate(-270.000000) translate(-12.000000, -12.000000) " x="4" y="11" width="16" height="2" rx="1"/></g></svg></a>
-								<div>
-									<h6 class="mb-1">Notes</h6>
-									<p class="mb-0">Add New Nots</p>
-								</div>
-								<a href="javascript:void(0);"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18px" height="18px" viewBox="0 0 24 24" version="1.1"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><rect x="0" y="0" width="24" height="24"/><path d="M14.2928932,16.7071068 C13.9023689,16.3165825 13.9023689,15.6834175 14.2928932,15.2928932 C14.6834175,14.9023689 15.3165825,14.9023689 15.7071068,15.2928932 L19.7071068,19.2928932 C20.0976311,19.6834175 20.0976311,20.3165825 19.7071068,20.7071068 C19.3165825,21.0976311 18.6834175,21.0976311 18.2928932,20.7071068 L14.2928932,16.7071068 Z" fill="#000000" fill-rule="nonzero" opacity="1"/><path d="M11,16 C13.7614237,16 16,13.7614237 16,11 C16,8.23857625 13.7614237,6 11,6 C8.23857625,6 6,8.23857625 6,11 C6,13.7614237 8.23857625,16 11,16 Z M11,18 C7.13400675,18 4,14.8659932 4,11 C4,7.13400675 7.13400675,4 11,4 C14.8659932,4 18,7.13400675 18,11 C18,14.8659932 14.8659932,18 11,18 Z" fill="#000000" fill-rule="nonzero"/></g></svg></a>
-							</div>
-							<div class="card-body contacts_body p-0 dz-scroll" id="DZ_W_Contacts_Body2">
-								<ul class="contacts">
-									<li class="active">
-										<div class="d-flex bd-highlight">
-											<div class="user_info">
-												<span>New order placed..</span>
-												<p>10 Aug 2020</p>
-											</div>
-											<div class="ms-auto">
-												<a href="javascript:void(0);" class="btn btn-primary btn-xs sharp me-1"><i class="fas fa-pencil-alt"></i></a>
-												<a href="javascript:void(0);" class="btn btn-danger btn-xs sharp"><i class="fa fa-trash"></i></a>
-											</div>
-										</div>
-									</li>
-									<li>
-										<div class="d-flex bd-highlight">
-											<div class="user_info">
-												<span>Youtube, a video-sharing website..</span>
-												<p>10 Aug 2020</p>
-											</div>
-											<div class="ms-auto">
-												<a href="javascript:void(0);" class="btn btn-primary btn-xs sharp me-1"><i class="fas fa-pencil-alt"></i></a>
-												<a href="javascript:void(0);" class="btn btn-danger btn-xs sharp"><i class="fa fa-trash"></i></a>
-											</div>
-										</div>
-									</li>
-									<li>
-										<div class="d-flex bd-highlight">
-											<div class="user_info">
-												<span>john just buy your product..</span>
-												<p>10 Aug 2020</p>
-											</div>
-											<div class="ms-auto">
-												<a href="javascript:void(0);" class="btn btn-primary btn-xs sharp me-1"><i class="fas fa-pencil-alt"></i></a>
-												<a href="javascript:void(0);" class="btn btn-danger btn-xs sharp"><i class="fa fa-trash"></i></a>
-											</div>
-										</div>
-									</li>
-									<li>
-										<div class="d-flex bd-highlight">
-											<div class="user_info">
-												<span>Athan Jacoby</span>
-												<p>10 Aug 2020</p>
-											</div>
-											<div class="ms-auto">
-												<a href="javascript:void(0);" class="btn btn-primary btn-xs sharp me-1"><i class="fas fa-pencil-alt"></i></a>
-												<a href="javascript:void(0);" class="btn btn-danger btn-xs sharp"><i class="fa fa-trash"></i></a>
-											</div>
-										</div>
-									</li>
-								</ul>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!--**********************************
-            Chat box End
-        ***********************************-->
-		
-		<!--**********************************
-            Header start
-        ***********************************-->
-		{% include 'product_tracking/header.html' %}
+
         <!--**********************************
-            Header end ti-comment-alt
+                    Header start
+        ***********************************-->
+        {% include 'product_tracking/header.html' %}
+        <!--**********************************
+                    Header end
         ***********************************-->
 
         <!--**********************************
             Sidebar start
         ***********************************-->
-       {% include 'product_tracking/sidebar.html' %}
-		
+        {% include 'product_tracking/sidebar.html' %}
         <!--**********************************
             Sidebar end
         ***********************************-->
-		
-		<!--**********************************
+
+        <!--**********************************
             Content body start
         ***********************************-->
         <div class="content-body">
-            <!-- row -->	
-			<div class="page-titles">
-				<ol class="breadcrumb">
-					<li><h5 class="bc-title">Generated Report</h5></li>
-					<li class="breadcrumb-item"><a href="javascript:void(0)">
-						<svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-						Home </a>
-					</li>
-					<!-- <li class="breadcrumb-item active"><a href="javascript:void(0)">Report</a></li> -->
-				</ol>
-				<!-- <a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#offcanvasExample1" role="button" aria-controls="offcanvasExample1">+ Add Task</a> -->
-			</div>
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col-xl-12">
-						<div class="card">
-							<div class="card-body p-0">
-								<div class="table-responsive active-projects manage-client">
-								<div class="tbl-caption">
-									<h4 class="heading mb-0">Generated Report</h4>
-								</div>
-									<table id="reports-tbl" class="table">
-										<thead>
-											<tr>
-												<th>Invoice #</th>
-												<th>Customer</th>
-												<th>Date</th>
-												<th>Due Date</th>
-												<th>Amount</th>
-												<th>Discount</th>
-												<th>Amount Open</th>
-												<th>Adjustment</th>
-												<th>Status</th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00002</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>17 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Feb 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00005</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>20 Feb 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00004</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00003</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Feb 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00002</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00005</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00004</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00003</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00002</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00005</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00004</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00003</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00002</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00005</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Success</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00001</a>
-												</td>
-												<td><span>Ricky Antony</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00004</a>
-												</td>
-												<td><span>Jack John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-danger light border-0">Pending</span>
-												</td>
-											</tr>
-											<tr>
-												<td>
-													<a href="javascript:void(0)" class="text-primary">INV-00003</a>
-												</td>
-												<td><span>Harry John</span></td>
-												<td>
-													<span>14 Jan 2023</span>
-												</td>
-												<td>
-													<span>20 Jan 2023</span>
-												</td>	
-												<td>
-													<span class="text-secondary">105 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">5 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">120 $</span>
-												</td>
-												<td>
-													<span class="text-secondary">0.00</span>
-												</td>
-												<td>
-													<span class="badge badge-success light border-0">Active</span>
-												</td>
-											</tr>
-										</tbody>
-										
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+            <!-- row -->
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title">Reports</h5></li>
+                    <li class="breadcrumb-item"><a href="javascript:void(0)">
+                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
+                                  stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        Home </a>
+                    </li>
+                    <!-- <li class="breadcrumb-item active"><a href="javascript:void(0)">Task</a></li> -->
+                </ol>
+            </div>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Reports</h5>
+                    <div class="d-flex align-items-center">
+                        <div class="icon-box  icon-box-sm task-tab me-2">
+                            <a href="{% url 'task' %}">
+                                <svg width="20" height="20" viewBox="0 0 21 21" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8.50032 3H2.66699V8.83333H8.50032V3Z" stroke="white" stroke-width="1.5"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M17.6668 3H11.8335V8.83333H17.6668V3Z" stroke="white" stroke-width="1.5"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M17.6668 12.1667H11.8335V18H17.6668V12.1667Z" stroke="white"
+                                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8.50032 12.1667H2.66699V18H8.50032V12.1667Z" stroke="white"
+                                          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row task">
+                                    <div class="col-lg-3">
+                                        <div class="form-floating">
+                                            <select class="form-select" id="sort_by" name="sort_by"
+                                                    aria-label="Sort By">
+                                                <option value="default" selected>Select Option</option>
+                                                {#                                                <option value="date">Date</option>#}
+                                                <option value="category">Category</option>
+                                                <option value="sub_category">Sub Category</option>
+                                                <option value="individual">Individual</option>
+                                            </select>
+                                            <label for="sort_by">Inventory</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Date -->
+                                    <div class="col-lg-4" id="date_sort_fields"
+                                         style="display: none;">
+                                        <label for="start_date">From:</label>
+                                        <input class="form-control datepicker" type="date" id="start_date"
+                                               name="start_date">
+                                        <br/>
+                                        <label for="end_date">To:</label>
+                                        <input class="form-control datepicker" type="date" id="end_date"
+                                               name="end_date">
+                                    </div>
+
+                                    <!-- Category -->
+                                    <div class="col-lg-4" id="category_sort_fields" style="display: none;">
+                                        <div class="form-floating">
+                                            <select class="form-select select2" id="category_dropdown"
+                                                    name="category_dropdown"
+                                                    aria-label="Floating label select example">
+                                                <option selected>Select Category</option>
+                                                <!-- Dynamic item codes will be appended here -->
+                                            </select>
+                                            <label for="category_dropdown">Category</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sub category -->
+                                    <div class="col-lg-4" id="sub_category_sort_fields" style="display: none;">
+                                        <div class="form-floating">
+                                            <select class="form-select select2" id="sub_category_dropdown"
+                                                    name="sub_category_dropdown"
+                                                    aria-label="Floating label select example">
+                                                <option selected>Select Sub Category</option>
+                                                <!-- Dynamic item codes will be appended here -->
+                                            </select>
+                                            <label for="sub_category_dropdown">Sub Category</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Individual -->
+                                    <div class="col-lg-4" id="individual_sort_fields" style="display: none;">
+                                        <div class="form-floating">
+                                            <select class="form-select select2" id="equipment_dropdown"
+                                                    name="equipment_dropdown"
+                                                    aria-label="Floating label select example">
+                                                <option selected>Select Individual</option>
+                                                <!-- Dynamic item codes will be appended here -->
+                                            </select>
+                                            <label for="equipment_dropdown">Individual</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">Task</h4>
+                            <button id="download-btn" class="btn btn-primary">Download</button>
+                        </div><!-- end card header -->
+                        <div class="card-body">
+                            <div class="table-responsive table-card">
+                                <table class="table primary-table-bordered"
+                                       id="contact-table">
+                                    <thead class="thead-primary" style="text-align: center;">
+                                    <tr>
+                                        <th scope="col" style="width: 15px;">Equipment Name</th>
+                                        <th scope="col">Sub Category</th>
+                                        <th scope="col">Category</th>
+                                        <th scope="col">Quantity</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="scan-table-body" style="text-align: center;">
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div><!-- end card-body -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
+                            <div style="padding-bottom: 10px;margin: 5px;">
+                                <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>
+                                <button id="next-page-btn" class="btn btn-primary">Next</button>
+                            </div>
+                        </div>
+                    </div><!-- end card -->
+                </div>
+            </div>
         </div>
-		
         <!--**********************************
             Content body end
         ***********************************-->
-		<!-- Scrollable modal -->
-		<div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample1">
-		  <div class="offcanvas-header">
-		  <h5 class="modal-title" id="#gridSystemModal1">Add New Task</h5>
-			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
-				<i class="fa-solid fa-xmark"></i>
-			</button>
-		  </div>
-		  <div class="offcanvas-body">
-			<div class="container-fluid">
-				<form>
-					<div class="row">
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInputfirst" class="form-label">Title<span class="text-danger">*</span></label>
-							<input type="text" class="form-control" id="exampleFormControlInputfirst" placeholder="Title">
-						</div>	
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Project<span class="text-danger">*</span></label>
-                            <label>
-                                <select class="default-select form-control">
-                                    <option  data-display="Select">Project</option>
-                                    <option value="html">Salesmate</option>
-                                    <option value="css">ActiveCampaign</option>
-                                    <option value="javascript">Insightly</option>
-                                </select>
-                            </label>
-                        </div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInputthree" class="form-label">Start Date<span class="text-danger">*</span></label>
-							<input type="date" class="form-control" id="exampleFormControlInputthree">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label for="exampleFormControlInputfour" class="form-label">End Date<span class="text-danger">*</span></label>
-							<input type="date" class="form-control" id="exampleFormControlInputfour">
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Estimated Hour<span class="text-danger">*</span></label>
-							<div class="input-group">
-                                <label>
-                                    <input type="text" class="form-control" value="09:30">
-                                </label><span class="input-group-text"><i
-											class="fas fa-clock"></i></span>
-                            </div>
-						</div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Status<span class="text-danger">*</span></label>
-                            <label>
-                                <select class="default-select form-control">
-                                    <option  data-display="Select">Status</option>
-                                    <option value="html">In Progess</option>
-                                    <option value="css">Pending</option>
-                                    <option value="javascript">Completed</option>
-                                </select>
-                            </label>
-                        </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">priority<span class="text-danger">*</span></label>
-                            <label>
-                                <select class="default-select form-control">
-                                    <option  data-display="Select">priority</option>
-                                    <option value="html">Hight</option>
-                                    <option value="css">Medium</option>
-                                    <option value="javascript">Low</option>
-                                </select>
-                            </label>
-                        </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Category<span class="text-danger">*</span></label>
-                            <label>
-                                <select class="default-select form-control">
-                                    <option  data-display="Select">Category</option>
-                                    <option value="html">Designing</option>
-                                    <option value="css">Development</option>
-                                    <option value="javascript">react developer</option>
-                                </select>
-                            </label>
-                        </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Permission<span class="text-danger">*</span></label>
-                            <label>
-                                <select class="default-select form-control">
-                                    <option  data-display="Select">Permission</option>
-                                    <option value="html">Public</option>
-                                    <option value="css">Private</option>
-                                </select>
-                            </label>
-                        </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Deadline add<span class="text-danger">*</span></label>
-                            <label>
-                                <select class="default-select form-control">
-                                    <option  data-display="Select">Deadline</option>
-                                    <option value="html">Yes</option>
-                                    <option value="css">No</option>
-                                </select>
-                            </label>
-                        </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Assigned to<span class="text-danger">*</span></label>
-                            <label>
-                                <select class="default-select form-control">
-                                    <option  data-display="Select">Assigned</option>
-                                    <option value="html">Bernard</option>
-                                    <option value="css">Sergey Brin</option>
-                                    <option value="javascript"> Larry Ellison</option>
-                                </select>
-                            </label>
-                        </div>
-						<div class="col-xl-6 mb-3">
-							<label class="form-label">Responsible Person<span class="text-danger">*</span></label>
-                            <label>
-                                <input name="tagify" class="form-control py-0 ps-0" value='James, Harry'>
-                            </label>
 
+        <!--**********************************
+            Quantity click body start
+        ***********************************-->
+        <div class="modal fade" id="quantityModel" tabindex="-1" aria-labelledby="quantityModelLabel"
+             aria-hidden="true">
+            <div class="modal-dialog custom-modal-width">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="categoryEditModalLabel" style="color: #ffffff;">Stock Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs custom-tab" id="equipmentEditTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" id="stock-tab" data-bs-toggle="tab"
+                                   href="#stock" role="tab" aria-controls="stock"
+                                   aria-selected="false">Stock Details</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <!-- Stock Details Section -->
+                            <div class="tab-pane fade show active" id="stock" role="tabpanel"
+                                 aria-labelledby="stock-tab">
+                                <div class="row my-3">
+                                    <div class="col-md-6">
+                                        <input type="text" id="stock-search-input" class="form-control"
+                                               placeholder="Search stock details...">
+                                    </div>
+                                </div>
+                                <div class="table-responsive mt-4">
+                                    <table class="table table-striped table-hover table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th>Vendor Name</th>
+                                            <th>Purchase Date</th>
+                                            <th>Unit Price</th>
+                                            <th>Rental Price</th>
+                                            <th>Serial Number</th>
+                                            <th>Barcode Number</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="stock-details-table-body">
+                                        <!-- Rows will be appended here by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <button id="prevPageStock" class="btn btn-primary">Previous</button>
+                                    <span>Page <span id="currentPageStock">1</span> of <span
+                                            id="totalPagesStock">1</span></span>
+                                    <button id="nextPageStock" class="btn btn-primary">Next</button>
+                                </div>
+                            </div>
                         </div>
-						<div class="col-xl-12 mb-3">
-							<label class="form-label">Description<span class="text-danger">*</span></label>
-                            <label>
-                                <textarea rows="3" class="form-control"></textarea>
-                            </label>
-                        </div>
-						<div class="col-xl-12 mb-3">
-							<label class="form-label">Summary<span class="text-danger">*</span></label>
-                            <label>
-                                <textarea rows="3" class="form-control"></textarea>
-                            </label>
-                        </div>
-						
-					</div>
-					<div>
-						<button class="btn btn-primary me-1">Help Desk</button>
-						<button class="btn btn-danger light ms-1">Cancel</button>
-					</div>
-				</form>
-			  </div>
-		  </div>
-		</div>	
-		
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--**********************************
+            Quantity click body end
+        ***********************************-->
+
+
+        <!--**********************************
+                Add Content start
+        ***********************************-->
+
+
         <!--**********************************
             Footer start
         ***********************************-->
-         {% include 'product_tracking/footer.html' %}
+        {% include 'product_tracking/footer.html' %}
         <!--**********************************
             Footer end
         ***********************************-->
 
-		<!--**********************************
-           Support ticket button start
-        ***********************************-->
-		
-        <!--**********************************
-           Support ticket button end
-        ***********************************-->
+    </div>
 
-
-	</div>
-    <!--**********************************
-        Main wrapper end
-    ***********************************-->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 
     <!--**********************************
-        Scripts
+
+
+    Main wrapper end
     ***********************************-->
 
-</body>
+    </body>
 {% endblock %}
