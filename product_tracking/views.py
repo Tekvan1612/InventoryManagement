@@ -6280,6 +6280,239 @@ def fetch_transaction_details(request):
         print('Transaction Details:', data)
 
     return JsonResponse({'transactions': data})
+	
+	
+def sub_category_dropdown(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT id, name FROM sub_category')
+            sub_categories = [{'id': row[0], 'name': row[1]} for row in cursor.fetchall()]
+            return JsonResponse({'sub_categories': sub_categories}, safe=False)
+    except Exception as e:
+        # Handle exceptions, maybe log the error for debugging
+        print("Error fetching sub_categories:", e)
+        return JsonResponse({'sub_categories': []})
+
+
+def equipment_dropdown(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT id, equipment_name FROM equipment_list')
+            equipment_names = [{'id': row[0], 'name': row[1]} for row in cursor.fetchall()]
+            return JsonResponse({'equipment_names': equipment_names}, safe=False)
+    except Exception as e:
+        # Handle exceptions, maybe log the error for debugging
+        print("Error fetching equipment_names:", e)
+        return JsonResponse({'equipment_names': []})
+
+
+def fetch_equipment_by_category(request):
+    category_id = request.GET.get('category_id')
+
+    if not category_id:
+        return JsonResponse({'error': 'Category ID is required'}, status=400)
+
+    with connection.cursor() as cursor:
+        # Step 1: Get category name
+        cursor.execute("SELECT category_name FROM master_category WHERE category_id = %s", [category_id])
+        row = cursor.fetchone()
+        if not row:
+            return JsonResponse({'error': 'Category not found'}, status=404)
+
+        category_name = row[0]
+
+        # Step 2: Get equipment with matching category_type and fetch sub_category name
+        cursor.execute(""" 
+            SELECT el.id, el.equipment_name, el.sub_category_id, el.category_type, sc.name AS sub_category_name
+            FROM equipment_list el
+            JOIN sub_category sc ON el.sub_category_id = sc.id
+            WHERE el.category_type = %s AND sc.category_id = %s
+        """, [category_name, category_id])
+        equipment_data = cursor.fetchall()
+
+        result = []
+
+        # Step 3: Loop through each equipment and fetch stock count based on barcode_no
+        for equip in equipment_data:
+            equip_id, equip_name, sub_cat_id, category_type, sub_cat_name = equip
+
+            # Get count of barcode_no for this equipment_id
+            cursor.execute("""
+                SELECT COUNT(DISTINCT barcode_no) AS quantity
+                FROM stock_details
+                WHERE equipment_id = %s
+                AND scan_flag = FALSE
+            """, [equip_id])
+            stock_count = cursor.fetchone()
+
+            # Append the result with sub_category_name and quantity
+            if stock_count:
+                result.append({
+                    'equipment_id': equip_id,
+                    'equipment_name': equip_name,
+                    'sub_category_id': sub_cat_id,
+                    'sub_category_name': sub_cat_name,  # Added sub_category name
+                    'category_type': category_type,
+                    'quantity': stock_count[0]  # This is the count of distinct barcode_no
+                })
+
+        print('check result:', result)
+
+    return JsonResponse({'data': result})
+
+
+def fetch_equipment_by_sub_category(request):
+    sub_category_id = request.GET.get('sub_category_id')
+
+    if not sub_category_id:
+        return JsonResponse({'error': 'Sub Category ID is required'}, status=400)
+
+    with connection.cursor() as cursor:
+        # Step 1: Get equipment with the selected sub_category_id
+        cursor.execute("""
+            SELECT id, equipment_name, category_type, sub_category_id
+            FROM equipment_list
+            WHERE sub_category_id = %s
+        """, [sub_category_id])
+        equipment_data = cursor.fetchall()
+
+        result = []
+
+        # Step 2: Loop through each equipment and fetch stock count based on barcode_no
+        for equip in equipment_data:
+            equip_id, equip_name, category_type, sub_cat_id = equip
+
+            # Get count of barcode_no for this equipment_id with scan_flag = FALSE
+            cursor.execute("""
+                SELECT COUNT(DISTINCT barcode_no) AS quantity
+                FROM stock_details
+                WHERE equipment_id = %s
+                AND scan_flag = FALSE
+            """, [equip_id])
+            stock_count = cursor.fetchone()
+
+            # Append the result with required data
+            if stock_count:
+                result.append({
+                    'equipment_id': equip_id,
+                    'equipment_name': equip_name,
+                    'sub_category_id': sub_cat_id,
+                    'category_type': category_type,
+                    'sub_category_name': sub_category_id,  # You can fetch the name of the sub-category here if needed
+                    'quantity': stock_count[0]  # This is the count of distinct barcode_no
+                })
+
+    return JsonResponse({'data': result})
+
+
+def fetch_equipment_by_equipment_name(request):
+    equipment_id = request.GET.get('equipment_id')
+
+    if not equipment_id:
+        return JsonResponse({'error': 'Equipment ID is required'}, status=400)
+
+    with connection.cursor() as cursor:
+        # Step 1: Get equipment details based on equipment_id
+        cursor.execute("""
+            SELECT e.id, e.equipment_name, e.category_type, e.sub_category_id, sc.name AS sub_category_name
+            FROM equipment_list e
+            JOIN sub_category sc ON e.sub_category_id = sc.id
+            WHERE e.id = %s
+        """, [equipment_id])
+        equipment_data = cursor.fetchone()
+
+        if not equipment_data:
+            return JsonResponse({'error': 'Equipment not found'}, status=404)
+
+        equip_id, equip_name, category_type, sub_cat_id, sub_cat_name = equipment_data
+
+        # Step 2: Count distinct barcode_no in stock_details with scan_flag = FALSE
+        cursor.execute("""
+            SELECT COUNT(DISTINCT barcode_no)
+            FROM stock_details
+            WHERE equipment_id = %s
+              AND scan_flag = FALSE
+        """, [equip_id])
+        stock_count = cursor.fetchone()
+
+        result = {
+            'equipment_id': equip_id,
+            'equipment_name': equip_name,
+            'category_type': category_type,
+            'sub_category_id': sub_cat_id,
+            'sub_category_name': sub_cat_name,
+            'quantity': stock_count[0] if stock_count else 0
+        }
+
+    return JsonResponse({'data': [result]})
+
+
+def get_stock_details_reports(request):
+    equipment_id = request.GET.get('equipment_id')
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT vender_name, purchase_date, unit_price, rental_price, serial_no, barcode_no
+            FROM stock_details
+            WHERE equipment_id = %s
+                AND scan_flag = FALSE
+        """, [equipment_id])
+
+        rows = cursor.fetchall()
+
+    data = [
+        {
+            'vender_name': row[0],
+            'purchase_date': row[1].strftime('%Y-%m-%d'),
+            'unit_price': float(row[2]),
+            'rental_price': float(row[3]),
+            'serial_no': row[4],
+            'barcode_no': row[5],
+        } for row in rows
+    ]
+
+    return JsonResponse({'stock_details': data})
+
+
+def fetch_equipment_with_unscanned_count(request):
+    print('Check the function is work.')
+    with connection.cursor() as cursor:
+        print('cursor oject is working.')
+        cursor.execute("""
+            SELECT 
+    e.id AS equipment_id,
+    e.equipment_name,
+    s.name AS sub_category_name,
+    e.category_type,
+    COUNT(sd.barcode_no) FILTER (WHERE sd.scan_flag IS FALSE) AS unscanned_count
+FROM 
+    equipment_list e
+LEFT JOIN 
+    sub_category s ON e.sub_category_id = s.id
+LEFT JOIN 
+    stock_details sd ON e.id = sd.equipment_id
+GROUP BY 
+    e.id, e.equipment_name, s.name, e.category_type
+ORDER BY 
+    e.equipment_name;
+        """)
+        rows = cursor.fetchall()
+        print('Check the rows of equipment:', rows)
+
+    data = [
+        {
+            'equipment_id': row[0],
+            'equipment_name': row[1],
+            'sub_category_name': row[2],
+            'category_name': row[3],
+            'quantity': row[4]
+        }
+        for row in rows
+    ]
+    print('equipment data:', data)
+
+    return JsonResponse({'equipment_data': data})
+
 
 def transport_master(request):
     return render(request, 'product_tracking/transport-master.html')
