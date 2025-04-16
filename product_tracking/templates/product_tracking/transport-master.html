@@ -1,0 +1,731 @@
+{% include 'product_tracking/head.html' %}
+{% load static %}
+{% block content %}
+    <style>
+        .header-row {
+            background-color: red;
+            color: blue;
+        }
+
+        .employee-details {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .employee-details th {
+            text-align: left;
+        }
+
+        .modal-dialog modal-lg-custom {
+            max-width: 55%; /* Adjust the percentage to increase or decrease the width */
+        }
+
+
+        .employee-name {
+            color: #0D99FF;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* Container for attachments */
+        .attachments-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* Thumbnail styling */
+        .attachments-container img {
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .attachments-container img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Lightbox styling */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .lightbox-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        #caption {
+            margin: 10px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            color: #fff;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal {
+            z-index: 1050;
+        }
+
+    </style>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileInput = document.getElementById('exampleFormControlInput88');
+
+            mobileInput.addEventListener('input', function () {
+                // Remove non-digit characters and limit to 10 digits
+                const value = this.value.replace(/\D/g, '').slice(0, 10);
+                this.value = value;
+            });
+
+            mobileInput.addEventListener('blur', function () {
+                if (this.value.length !== 10) {
+                    alert('Mobile number must be exactly 10 digits long.');
+                    this.focus();
+                }
+            });
+        });
+
+        $(document).ready(function () {
+            loadTransportData()
+            // Add Transport Details
+            $('#transport-form').on('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+
+                $.ajax({
+                    url: '/add_transport/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        alert('Vehicle added successfully');
+                        $('#offcanvasExample').offcanvas('hide');
+                        location.reload();
+                        {#fetchEmployeeList(currentPage);#}
+
+                    },
+                    error: function (xhr) {
+                        const response = JSON.parse(xhr.responseText);
+                        alert(response.error);
+                    }
+                });
+            });
+
+            // add Form Cancel Button
+            $('#cancel-button').on('click', function (e) {
+                e.preventDefault();
+                $('#offcanvasExample').removeClass('show');
+                $('body').removeClass('offcanvas-open');
+                $('.offcanvas-backdrop').remove();
+            });
+
+            let currentPage = 1;
+            const pageSize = 10;
+            let totalTransportItems = 0;
+
+            // Transport Listing
+            function loadTransportData() {
+                $.ajax({
+                    url: '/fetch_transport_data/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (response) {
+                        const tbody = $('#transport-table-body');
+                        tbody.empty();
+
+                        if (response.data && response.data.length > 0) {
+                            totalTransportItems = response.data.length;
+                            const startIndex = (currentPage - 1) * pageSize;
+                            const endIndex = startIndex + pageSize;
+                            const currentData = response.data.slice(startIndex, endIndex);
+
+                            currentData.forEach(function (item, index) {
+                                const row = `
+                        <tr>
+                            <td style="display:none;" class="transport-id">${item.id}</td>
+                            <td>${startIndex + index + 1}</td>
+                            <td>${item.vehicle_name}</td>
+                            <td><a href="#" class="employee-name" data-employee='${JSON.stringify(item)}'>${item.vehicle_number}</a></td>
+                            <td>${item.load_capacity}</td>
+                            <td>${item.created_by_name}</td>
+                            <td>${item.created_date}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-btn me-2" data-id="${item.id}" data-employee='${JSON.stringify(item)}'><i class="fa fa-pencil"></i></button>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="${item.id}"><i class="fa fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                                tbody.append(row);
+                            });
+
+                            updateTransportPaginationCount();
+
+                        } else {
+                            tbody.append('<tr><td colspan="8">No records found</td></tr>');
+                            $('#pagination-count').text('Showing 0 to 0 of 0 entries');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error loading transport data:", error);
+                    }
+                });
+            }
+
+            function updateTransportPaginationCount() {
+                const start = (currentPage - 1) * pageSize + 1;
+                const end = Math.min(currentPage * pageSize, totalTransportItems);
+                const totalPages = Math.ceil(totalTransportItems / pageSize);
+
+                $('#pagination-count').text(`Showing ${start} to ${end} of ${totalTransportItems} entries`);
+
+                $('#prev-page-btn').prop('disabled', currentPage === 1);
+                $('#next-page-btn').prop('disabled', currentPage === totalPages || totalTransportItems === 0);
+            }
+
+            $('#prev-page-btn').click(function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadTransportData();
+                }
+            });
+
+            $('#next-page-btn').click(function () {
+                const totalPages = Math.ceil(totalTransportItems / pageSize);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadTransportData();
+                }
+            });
+
+
+            // Show Attachments after click on .employee-name
+            $(document).on('click', '.employee-name', function (event) {
+                event.preventDefault();
+
+                const row = $(this).closest('tr');
+                const transportId = row.find('.transport-id').text().trim();
+                const transportData = $(this).data('employee');
+
+                // Fetch attachments using transport ID
+                $.ajax({
+                    url: '/fetch_transport_attachments/',
+                    type: 'GET',
+                    data: {transport_id: transportId},
+                    dataType: 'json',
+                    success: function (response) {
+                        console.log('Attachments fetched:', response);
+
+                        let attachmentsHtml = '';
+
+                        if (response.attachments && response.attachments.length > 0) {
+                            response.attachments.forEach((attachment, index) => {
+                                const attachmentUrl = attachment.url;
+                                const attachmentId = attachment.id;
+                                // Fix incorrect /media/ prefix
+                                if (attachmentUrl.startsWith('/media/https://')) {
+                                    attachment = attachmentUrl.replace('/media/', '');
+                                }
+
+                                attachmentsHtml += `
+                        <div style="margin: 10px; display: inline-block; position: relative;">
+                            <input type="hidden" class="attachment-id-hidden" value="${attachmentId}">
+                            <img src="${attachment}" alt="Attachment ${index + 1}" width="100" height="100"
+                                 style="margin-right: 10px; max-height: 200px;"
+                                 class="attachment-thumbnail img-thumbnail">
+                        </div>`;
+                            });
+                        } else {
+                            attachmentsHtml = '<p>No attachments available</p>';
+                        }
+
+                        $('#modal_attachments_container').html(attachmentsHtml);
+
+                        // Lightbox functionality
+                        const lightbox = $('#lightbox');
+                        const lightboxImg = $('#lightbox-img');
+                        const captionText = $('#caption');
+
+                        $(document).on('click', '.attachment-thumbnail', function () {
+                            lightbox.show();
+                            lightboxImg.attr('src', $(this).attr('src'));
+                            captionText.text($(this).attr('alt'));
+                        });
+
+                        $('.close').on('click', function () {
+                            lightbox.hide();
+                        });
+
+                        // Show the modal
+                        $('#transportDetailsModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching attachments:', error);
+                    }
+                });
+            });
+
+            // Attachment Details Close Button
+            $('#closeAttachmentDetailsBtn').on('click', function () {
+                $('#transportDetailsModal').modal('hide');
+            });
+
+            // Edit Button Functionality
+            $(document).on('click', '.edit-btn', function () {
+                const item = $(this).data('employee');
+                const transportId = item.id;
+
+                console.log('Editing transport:', item);
+
+                // Fill modal fields
+                $('#editTransportIdHidden').val(item.id);
+                $('#editVehicleName').val(item.vehicle_name);
+                $('#editVehicleNumber').val(item.vehicle_number);
+                $('#editLoadCapacity').val(item.load_capacity);
+
+                const attachmentContainer = $('#attachments-list');
+                attachmentContainer.find('.existing-attachments-preview').remove();
+
+                // Fetch attachments using transport ID
+                $.ajax({
+                    url: '/fetch_transport_attachments/',
+                    type: 'GET',
+                    data: {transport_id: transportId},
+                    dataType: 'json',
+                    success: function (response) {
+                        console.log('Attachments fetched for edit:', response);
+
+                        if (response.attachments && response.attachments.length > 0) {
+                            let previewHtml = '<div class="row existing-attachments-preview mt-3"><label>Existing Attachments:</label>';
+
+                            response.attachments.forEach((att, index) => {
+                                const attachmentId = att.id;
+                                let attachmentUrl = att.url;
+
+                                // Fix incorrect /media/ prefix if needed
+                                if (attachmentUrl.startsWith('/media/https://')) {
+                                    attachmentUrl = attachmentUrl.replace('/media/', '');
+                                }
+
+                                previewHtml += `
+                        <div class="col-md-3 text-center">
+                            <input type="hidden" class="attachment-id-hidden" value="${attachmentId}">
+                            <img src="${attachmentUrl}" alt="Attachment ${index + 1}" class="img-thumbnail mb-2" style="max-height: 120px;">
+                            <br>
+                            <button class="btn btn-sm btn-danger remove-attachment" id="deleteImage" data-attachment-id="${attachmentId}">
+                                <i class="fa fa-times"></i> Remove
+                            </button>
+                        </div>`;
+                            });
+
+                            previewHtml += '</div>';
+                            attachmentContainer.append(previewHtml);
+                        } else {
+                            attachmentContainer.append('<p class="text-muted existing-attachments-preview">No attachments found</p>');
+                        }
+
+                        // Show modal after attachments are loaded
+                        $('#editTransportModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching attachments:', error);
+                        attachmentContainer.append('<p class="text-danger">Failed to load attachments</p>');
+
+                        // Still show modal even if attachments fail
+                        $('#editTransportModal').modal('show');
+                    }
+                });
+            });
+
+            // Edit Form Close Button
+            $('#closeFormBtn').on('click', function () {
+                $('#editTransportModal').modal('hide');
+            });
+
+            // Save Changes after click on Save Changes Button
+            $('#saveChangesBtn').on('click', function (e) {
+                e.preventDefault();
+
+                const formData = new FormData($('#editTransportForm')[0]); // Get form fields including files
+
+                $.ajax({
+                    url: '/update_transport/', // View to update transport
+                    type: 'POST',
+                    data: formData,
+                    processData: false, // Important for file upload
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            alert('Transport updated successfully!');
+                            $('#editTransportModal').modal('hide');
+                            loadTransportData();
+                        } else {
+                            alert('Update failed: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Update error:', error);
+                        alert('An error occurred while updating the transport.');
+                    }
+                });
+            });
+
+            // Delete Attachment Image after click on remove button
+            $(document).on('click', '.remove-attachment', function () {
+                const button = $(this);
+                const attachmentId = button.data('attachment-id');
+
+                if (confirm("Are you sure you want to delete this attachment?")) {
+                    $.ajax({
+                        url: '/delete_transport_attachment/',
+                        type: 'POST',
+                        data: {
+                            attachment_id: attachmentId,
+                            csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                button.closest('.col-md-3').remove(); // remove image preview
+                            } else {
+                                alert(response.error || 'Failed to delete attachment.');
+                            }
+                        },
+                        error: function () {
+                            alert('An error occurred while deleting the attachment.');
+                        }
+                    });
+                }
+            });
+
+            // Delete transport row after click on delete-btn
+            $(document).on('click', '.delete-btn', function () {
+                const transportId = $(this).data('id');
+
+                if (confirm('Are you sure you want to delete this transport entry?')) {
+                    $.ajax({
+                        url: '/delete_transport/',
+                        type: 'POST',
+                        data: {
+                            'transport_id': transportId,
+                            'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+                        },
+                        success: function (response) {
+                            alert('Deleted successfully!');
+                            loadTransportData();
+                            {#location.reload(); // or refresh your table#}
+                        },
+                        error: function (xhr, status, error) {
+                            alert('Failed to delete transport. Please try again.');
+                            console.error('Delete error:', error);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
+    <body>
+
+    <!--*******************
+        Preloader start
+    ********************-->
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <!--*******************
+        Preloader end
+    ********************-->
+
+    <!--**********************************
+        Main wrapper start
+    ***********************************-->
+    <div id="main-wrapper">
+        <!--**********************************
+            Nav header start
+        ***********************************-->
+        {% include 'product_tracking/navheader.html' %}
+        <!--**********************************
+
+            Header start
+        ***********************************-->
+        {% include 'product_tracking/header.html' %}
+        <!--**********************************
+            Header end ti-comment-alt
+        ***********************************-->
+
+        <!--**********************************
+            Sidebar start
+        ***********************************-->
+        {% include 'product_tracking/sidebar.html' %}
+
+        <!--**********************************
+            Sidebar end
+        ***********************************-->
+
+        <!--**********************************
+            Content body start
+        ***********************************-->
+        <div class="content-body">
+            <!-- row -->
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title">Transport Master</h5></li>
+                    <li class="breadcrumb-item"><a href="javascript:void(0)">
+                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
+                                  stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        Home </a>
+                    </li>
+                </ol>
+                <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas"
+                   href="#offcanvasExample" role="button" aria-controls="offcanvasExample">+
+                    Add Transport Details</a>
+            </div>
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title mb-0">Transport List</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive table-card">
+                                    <table class="table primary-table-bordered" id="transport-table">
+                                        <thead class="thead-primary">
+                                        <tr>
+                                            <th>SR NO</th>
+                                            <th>Vehicle Name</th>
+                                            <th>Vehicle Number</th>
+                                            <th>Load Capacity</th>
+                                            <th>Created By</th>
+                                            <th>Created Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="transport-table-body">
+
+                                        </tbody>
+
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
+                                <div style="padding-bottom: 10px;margin: 5px;">
+                                    <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>
+                                    <button id="next-page-btn" class="btn btn-primary">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--**********************************
+            Content body end
+        ***********************************-->
+
+        <!-- Transport Attachments Modal -->
+        <div class="modal fade" id="transportDetailsModal" tabindex="-1" role="dialog"
+             aria-labelledby="employeeDetailsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="employeeDetailsModalLabel">Attachment Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <!-- Attachments section -->
+                            <h4 class="mt-4">Attachments:</h4>
+                            <div id="modal_attachments_container" class="attachments-container"></div>
+
+                            <!-- Lightbox Modal for viewing attachments -->
+                            <div id="lightbox" class="lightbox">
+                                <span class="close">&times;</span>
+                                <img class="lightbox-content" id="lightbox-img">
+                                <div id="caption"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="closeAttachmentDetailsBtn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Edit Transport Modal -->
+        <div class="modal fade" id="editTransportModal" tabindex="-1" role="dialog"
+             aria-labelledby="editTransportModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editTransportModalLabel">Edit Transport Details</h5>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Employee Edit Form -->
+                        <form id="editTransportForm" method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" id="editTransportIdHidden" name="id">
+
+                            <div class="row">
+
+                                <div class="col-xl-6 mb-3">
+                                    <label for="editVehicleName" class="form-label">Vehicle Name<span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editVehicleName"
+                                           name="edit_vehicle_name"
+                                           placeholder="" required>
+                                </div>
+                                <div class="col-xl-6 mb-3">
+                                    <label for="editVehicleNumber" class="form-label">Vehicle Number<span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editVehicleNumber"
+                                           name="edit_vehicle_number"
+                                           placeholder="" required>
+                                </div>
+                                <div class="col-xl-6 mb-3">
+                                    <label class="form-label">Load Capacity</label>
+                                    <select class="form-control" id="editLoadCapacity" name="edit_load_capacity">
+                                        <option value="14 Feet">14 Feet</option>
+                                        <option value="17 Feet">17 Feet</option>
+                                        <option value="20 Feet">20 Feet</option>
+                                        <option value="24 Feet">24 Feet</option>
+                                        <option value="32 Feet">32 Feet</option>
+                                    </select>
+                                </div>
+                                <div id="attachments-list" class="col-xl-6 mb-3" style="margin-top: 18px;">
+                                    <label>Attachments(Driving License/ Registration Certificate (RC)/ PUC/ Insurance
+                                        Certificate):</label>
+                                    <div class="input-group">
+                                        <input type="file" id="editTransportAttachments" name="attachments"
+                                               accept=".jpg, .jpeg, .png" multiple>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="closeFormBtn">Close</button>
+                        <button type="button" class="btn btn-primary" id="saveChangesBtn">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        {% include 'product_tracking/footer.html' %}
+        <!--**********************************
+            Footer end
+        ***********************************-->
+
+        <!-- Add Transport Button Section-->
+        <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas"
+           href="#offcanvasExample" role="button" aria-controls="offcanvasExample" id="addTransportBtn">+
+            Add Transport Details</a>
+
+        <!-- Add Transport Form Section -->
+        <div class="offcanvas offcanvas-end customeoff" tabindex="-1" id="offcanvasExample">
+            <div class="offcanvas-header">
+                <h5 class="modal-title" id="#gridSystemModal">Add Transport Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="offcanvas-body">
+                <form id="transport-form" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-xl-6 mb-3">
+                            <label for="vehicleNameInput" class="form-label">Vehicle Name<span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vehicleNameInput" name="vehicle_name"
+                                   placeholder="" required>
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label for="vehicleNumberInput" class="form-label">Vehicle Number<span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vehicleNumberInput" name="vehicle_number"
+                                   placeholder="" required>
+                        </div>
+                        <div class="col-xl-6 mb-3">
+                            <label class="form-label">Load Capacity</label>
+                            <select class="form-control" name="load_capacity">
+                                <option data-display="Select">Please Select</option>
+                                <option value="14 Feet" selected>14 Feet</option>
+                                <option value="17 Feet">17 Feet</option>
+                                <option value="20 Feet">20 Feet</option>
+                                <option value="24 Feet">24 Feet</option>
+                                <option value="32 Feet">32 Feet</option>
+                            </select>
+                        </div>
+                        <div id="attachments" class="col-xl-6 mb-3" style="margin-top: 18px;">
+                            <label>Attachments(Driving License/ Registration Certificate (RC)/ PUC/ Insurance
+                                Certificate):</label>
+                            <div class="input-group">
+                                <input type="file" name="attachments[]" accept=".jpg, .jpeg, .png" multiple>
+                            </div>
+                        </div>
+                        {% if error %}
+                            <div class="error">{{ error }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <button class="btn btn-primary me-1">Submit</button>
+                        <button class="btn btn-danger light ms-1" id="cancel-button">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- End Add Employee Section -->
+
+
+    </div>
+    <!--**********************************
+        Main wrapper end
+    ***********************************-->
+
+
+    </body>
+{% endblock %}
+
