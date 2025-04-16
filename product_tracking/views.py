@@ -122,9 +122,9 @@ def employee(request):
         username = request.user.username
     return render(request, 'product_tracking/employee.html', {'username': username})
 
-def reports(request):
+def performance(request):
     username = request.session.get('username')
-    return render(request, 'product_tracking/reports.html', {'username': username})
+    return render(request, 'product_tracking/performance.html', {'username': username})
 
 def task(request):
     username = request.session.get('username')
