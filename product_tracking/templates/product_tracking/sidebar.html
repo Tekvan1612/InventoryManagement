@@ -39,7 +39,6 @@
                         <li><a href="{% url 'add_employee' %}">Employees</a></li>
                         <li><a href="{% url 'add_user' %}">User Management</a></li>
                         <li><a href="{% url 'warehouse_master' %}">Warehouse Master</a></li>
-                        <li><a href="{% url 'transport_master' %}">Transport Master</a></li>
                     </ul>
                 </li>
             {% else %}
@@ -181,8 +180,8 @@
                     <span class="nav-text">Order Book</span>
                 </a>
                     <ul aria-expanded="false">
-                        <li><a href="{% url 'task' %}">Job Book</a></li>
-                        <li><a href="{% url 'job_summary' %}">Job Summary</a></li>
+                        <li><a href="{% url 'task' %}">Orders Summary</a></li>
+                        <li><a href="#">Incoming Orders</a></li>
 
                     </ul>
                 </li>
@@ -267,7 +266,7 @@
             {% endif %}
 
             {% if 'Reports' in request.session.modules %}
-                <li><a href="{% url 'reports' %}" class="" aria-expanded="false">
+                <li><a href="{% url 'performance' %}" class="" aria-expanded="false">
                     <div class="menu-icon">
                         <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path fill-rule="evenodd" clip-rule="evenodd"
@@ -285,7 +284,7 @@
                 </a>
                 </li>
             {% else %}
-                <li><a href="{% url 'reports' %}" class="" aria-expanded="false">
+                <li><a href="{% url 'performance' %}" class="" aria-expanded="false">
                     <div class="menu-icon">
                         <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path fill-rule="evenodd" clip-rule="evenodd"
