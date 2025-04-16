@@ -6280,3 +6280,221 @@ def fetch_transaction_details(request):
         print('Transaction Details:', data)
 
     return JsonResponse({'transactions': data})
+
+def transport_master(request):
+    return render(request, 'product_tracking/transport-master.html')
+
+
+def add_transport(request):
+    username = request.session.get('username')
+
+    if request.method == 'POST':
+        try:
+            # Debugging logs
+            print("Received POST data:", request.POST)
+            print("Received FILES data:", request.FILES)
+
+            # Extract form data
+            vehicle_name = request.POST.get('vehicle_name')
+            vehicle_number = request.POST.get('vehicle_number')
+            load_capacity = request.POST.get('load_capacity')
+            created_by = request.session.get('user_id')
+            created_date = datetime.now().replace(tzinfo=None)
+
+            # Extract uploaded images
+            attachment_images = request.FILES.getlist('attachments[]')
+            print(
+                f"Extract Data from Add Transport Form: {vehicle_name}, {vehicle_number}, {load_capacity}, {created_by}, {created_date}, {attachment_images}")
+
+            # Upload to Cloudinary and get URLs
+            image_urls = []
+            for image in attachment_images:
+                if image:
+                    upload_result = cloudinary.uploader.upload(image, folder="uploads/")
+                    image_urls.append(upload_result['secure_url'])
+
+            print("Uploaded image URLs:", image_urls)
+
+            # Call PostgreSQL function with image URL array
+            with connection.cursor() as cursor:
+                cursor.callproc('add_transport', [
+                    vehicle_name,
+                    vehicle_number,
+                    load_capacity,
+                    created_by,
+                    created_date,
+                    image_urls  # Pass as array
+                ])
+
+            return JsonResponse({'success': 'Transport added successfully'}, status=200)
+
+        except IntegrityError as e:
+            return JsonResponse({'error': 'Integrity error occurred: ' + str(e)}, status=400)
+        except Exception as e:
+            print(f"An unexpected error occurred: {str(e)}")
+            return JsonResponse({'error': 'An unexpected error occurred: ' + str(e)}, status=500)
+
+    # GET request: render form
+    return render(request, 'product_tracking/transport-master.html', {
+        'transport': get_all_employees(),  # Assuming this is defined elsewhere
+        'username': username
+    })
+
+
+def fetch_transport_data(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    t.id, 
+                    t.vehicle_name, 
+                    t.vehicle_number, 
+                    t.load_capacity, 
+                    t.created_by, 
+                    u.user_name, 
+                    t.created_date
+                FROM transport_master t
+                LEFT JOIN user_master u ON t.created_by = u.user_id
+                ORDER BY t.id DESC
+            """)
+            rows = cursor.fetchall()
+            print('Check the creted_by', rows)
+
+            transport_data = []
+            for row in rows:
+                transport_data.append({
+                    'id': row[0],
+                    'vehicle_name': row[1],
+                    'vehicle_number': row[2],
+                    'load_capacity': row[3],
+                    'created_by': row[4],
+                    'created_by_name': row[5],  # user_name from user_master
+                    'created_date': row[6].strftime('%Y-%m-%d') if row[6] else ''
+                })
+
+        return JsonResponse({'data': transport_data}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def fetch_transport_attachments(request):
+    transport_id = request.GET.get('transport_id')
+    attachments = []
+    print(f"Check the transport data: {transport_id}")
+
+    if transport_id:
+        with connection.cursor() as cursor:
+            # Fetch both id and attachment path
+            cursor.execute("""
+                SELECT id, attachment 
+                FROM transport_master_attachment 
+                WHERE transport_master_id = %s
+            """, [transport_id])
+            rows = cursor.fetchall()
+            print('Fetched rows:', rows)
+
+            for row in rows:
+                attachment_id = row[0]
+                attachment_url = row[1]
+
+                if attachment_url:
+                    # Optional: Ensure proper media prefix
+                    if not attachment_url.startswith('/media/'):
+                        attachment_url = f'/media/{attachment_url}'
+
+                    attachments.append({
+                        'id': attachment_id,
+                        'url': attachment_url
+                    })
+
+    print(f"Final attachments with ID: {attachments}")
+    return JsonResponse({'attachments': attachments})
+
+
+@csrf_exempt
+def update_transport(request):
+    if request.method == 'POST':
+        try:
+            transport_id = request.POST.get('id')
+            vehicle_name = request.POST.get('edit_vehicle_name')
+            vehicle_number = request.POST.get('edit_vehicle_number')
+            load_capacity = request.POST.get('edit_load_capacity')
+            attachments = request.FILES.getlist('attachments')
+
+            # Update main transport_master table
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE transport_master
+                    SET vehicle_name = %s,
+                        vehicle_number = %s,
+                        load_capacity = %s
+                    WHERE id = %s
+                """, [vehicle_name, vehicle_number, load_capacity, transport_id])
+
+            # Save attachments (optional: delete existing if needed)
+            for file in attachments:
+                if file:
+                    try:
+                        # Upload to Cloudinary
+                        upload_result = cloudinary.uploader.upload(
+                            file,
+                            folder="uploads/transport/"
+                        )
+                        secure_url = upload_result['secure_url']  # Cloudinary image URL
+
+                        # Insert into DB (use secure_url in place of local path)
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                INSERT INTO transport_master_attachment (transport_master_id, attachment)
+                                VALUES (%s, %s)
+                            """, [transport_id, secure_url])
+
+                    except Exception as e:
+                        print(f"Cloudinary upload error: {e}")
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@csrf_exempt
+def delete_transport_attachment(request):
+    if request.method == 'POST':
+        attachment_id = request.POST.get('attachment_id')
+
+        try:
+            with connection.cursor() as cursor:
+                # First, optionally fetch the file path if you want to delete the file from disk
+                cursor.execute("SELECT attachment FROM transport_master_attachment WHERE id = %s", [attachment_id])
+                row = cursor.fetchone()
+                file_path = row[0] if row else None
+
+                # Delete from the table
+                cursor.execute("DELETE FROM transport_master_attachment WHERE id = %s", [attachment_id])
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+
+@csrf_exempt
+def delete_transport(request):
+    if request.method == 'POST':
+        transport_id = request.POST.get('transport_id')
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT delete_transport_data(%s)", [transport_id])
+                result = cursor.fetchone()
+
+            return JsonResponse({'message': result[0]}, status=200)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+	
