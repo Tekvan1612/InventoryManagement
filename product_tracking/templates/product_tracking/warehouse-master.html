@@ -232,6 +232,7 @@
                                 '<td>' + (index + 1) + '</td>' +
                                 '<td style="display: none;">' + warehouse.id + '</td>' +
                                 '<td>' + warehouse.company_name + '</a></td>' +
+                                '<td>' + warehouse.warehouse_name + '</a></td>' +
                                 '<td>' + warehouse.phone_no + '</td>' +
                                 '<td>' + warehouse.address + '</td>' +
                                 '<td>' +
@@ -253,11 +254,13 @@
                 var row = $(this).closest('tr');
                 var jobId = row.find('td:eq(1)').text().trim();
                 var jobReferenceNo = row.find('td:eq(2)').text().trim();
-                var title = row.find('td:eq(3)').text().trim();
-                var valuesShow = row.find('td:eq(4)').text().trim();
+                var editWarehouseName = row.find('td:eq(3)').text().trim();
+                var title = row.find('td:eq(4)').text().trim();
+                var valuesShow = row.find('td:eq(5)').text().trim();
 
                 $('#editJobsId').val(jobId);
                 $('#editJobsReferenceNo').val(jobReferenceNo);
+                $('#editWarehouseName').val(editWarehouseName);
                 $('#editJobsTitle').val(title);
                 $('#editJobsAddress').val(valuesShow);
 
@@ -271,6 +274,7 @@
             function updateWarehouseInDatabase() {
                 var jobId = $('#editJobsId').val();
                 var jobReferenceNo = $('#editJobsReferenceNo').val().trim();
+                var editWarehouseName = $('#editWarehouseName').val().trim();
                 var title = $('#editJobsTitle').val().trim();
                 var valuesShow = $('#editJobsAddress').val().trim();
 
@@ -278,6 +282,7 @@
                 formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
                 formData.append('jobId', jobId);
                 formData.append('jobReferenceNo', jobReferenceNo);
+                formData.append('editWarehouseName', editWarehouseName);
                 formData.append('title', title);
                 formData.append('valuesShow', valuesShow);
 
@@ -575,6 +580,7 @@
                                 <tr>
                                     <th>SR NO</th>
                                     <th>Company Name</th>
+                                    <th>Warehouse Name</th>
                                     <th>Phone No</th>
                                     <th>Warehouse Address</th>
                                     <th>Action</th>
@@ -657,8 +663,13 @@
                                            name="jobReferenceNo">
                                 </div>
                                 <div class="col-xl-4 mb-3">
+                                    <label for="editWarehouseName">Warehouse Name</label>
+                                    <input type="text" class="form-control" id="editWarehouseName"
+                                           name="editWarehouseName">
+                                </div>
+                                <div class="col-xl-4 mb-3">
                                     <label for="editJobsTitle" class="form-label">Phone No</label>
-                                    <input type="text" class="form-control" id="editJobsTitle" name="title">
+                                    <input type="text" class="form-control" id="editJobsTitle" name="title" pattern="\d{10}" maxlength="10">
                                 </div>
                                 <div class="col-xl-4 mb-3">
                                     <label for="editJobsAddress" class="form-label">Address</label>
