@@ -2342,20 +2342,16 @@ def warehouse_master_list(request):
 
 def update_warehouse(request, id):
     if request.method == 'POST':
-        print('Received POST request to update Jobs details')
         company_name = request.POST.get('jobReferenceNo')
+        warehouse_name = request.POST.get('editWarehouseName')
         phone_no = request.POST.get('title')
         address_name = request.POST.get('valuesShow')
-        print(id, company_name, phone_no, address_name)
+        
         try:
-            print('inside the try block')
             with connection.cursor() as cursor:
-                print('inside the cursor')
                 cursor.callproc('warehouse_master',
-                                ['UPDATE', id, company_name, phone_no, address_name])
-                print('inside the callproc', id, address_name)
+                                ['UPDATE', id, company_name, warehouse_name, phone_no, address_name])
                 updated_jobs_id = cursor.fetchone()
-                print(updated_jobs_id)
             return JsonResponse(
                 {'message': 'Jobs details updated successfully', 'updated_jobs_id': updated_jobs_id})
         except Exception as e:
@@ -2367,7 +2363,7 @@ def update_warehouse(request, id):
 def delete_warehouse_master(request, id):
     if request.method == 'POST':
         with connection.cursor() as cursor:
-            cursor.callproc('warehouse_master', ['DELETE', id, None, None, None])
+            cursor.callproc('warehouse_master', ['DELETE', id, None, None, None, None])
         return JsonResponse({'message': 'Job deleted successfully'}, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
