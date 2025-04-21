@@ -3129,7 +3129,7 @@ response.equipment_details.forEach(function(detail) {
         response.equipment_details
             .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
             .forEach(function(item) {
-                totalSectionPrice += parseFloat(item.rental_price || 0);
+                totalSectionPrice += parseFloat(item.total_rental_price || 0);
 
                 equipmentTableHtml += `
                     <tr>
@@ -3541,7 +3541,7 @@ response.equipment_details.forEach(function(detail) {
         response.equipment_details
             .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
             .forEach(function(item) {
-                totalSectionPrice += parseFloat(item.rental_price || 0);
+                totalSectionPrice += parseFloat(item.total_rental_price || 0);
 
                 equipmentTableHtml += `
                     <tr>
