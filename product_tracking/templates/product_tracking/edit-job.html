@@ -3146,6 +3146,7 @@ response.equipment_details.forEach(function(detail) {
         // Calculate discounted section total
         let discountPercentage = parseFloat(response.job.discount) || 0;
         let discountedSectionPrice = totalSectionPrice - (totalSectionPrice * (discountPercentage / 100));
+        discountedSectionPrice = Math.round(discountedSectionPrice);
 
         // Add total row
         equipmentTableHtml += `
@@ -3456,8 +3457,8 @@ body {
                                     <div class="job_left" style="width: 300px;">
                                         <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                                         <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
-                                        <p><b>Name:</b><span> ${response.job.client_name}</span></p>
-                                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
+                                        <p><b>Client Name:</b><span> ${response.job.client_name}</span></p>
+                                        <p><b>Client Contact:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
 
                                     </div>
                                     <div class="job_right" style="width: 200px;">
@@ -3558,6 +3559,7 @@ response.equipment_details.forEach(function(detail) {
         // Calculate discounted section total
         let discountPercentage = parseFloat(response.job.discount) || 0;
         let discountedSectionPrice = totalSectionPrice - (totalSectionPrice * (discountPercentage / 100));
+        discountedSectionPrice = Math.round(discountedSectionPrice);
 
         // Add total row
         equipmentTableHtml += `
@@ -3892,9 +3894,9 @@ response.equipment_details.forEach(function(detail) {
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                     <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Name:</b><span> ${response.job.client_name}</span></p>
+                    <p><b>Client Name:</b><span> ${response.job.client_name}</span></p>
 
-                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
+                    <p><b>Client Contact:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
                 </div>
                 <div class="job_right" style="width: 200px;">
                     <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
