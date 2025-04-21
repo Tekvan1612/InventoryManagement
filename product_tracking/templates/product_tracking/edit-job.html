@@ -1016,14 +1016,14 @@
             // $('#total_amount').on('input', function () {
             //     calculateAmounts();
             // });
-            function calculateAmounts() {
+            function calculateFromDiscountedAmount() {
     var totalAmount = parseFloat($('#total_amount').val());
     var discountedAmount = parseFloat($('#discounted_amount').val());
 
     if (!isNaN(totalAmount) && !isNaN(discountedAmount) && totalAmount !== 0) {
         // Calculate the discount percentage
         var discountPercentage = ((totalAmount - discountedAmount) / totalAmount) * 100;
-        $('#discount').val(discountPercentage.toFixed(2)); // or Math.round()
+        $('#discount').val(discountPercentage.toFixed(3));
 
         // Apply 18% GST to the discounted amount
         var totalAmountWithGST = discountedAmount * 1.18;
@@ -1033,7 +1033,7 @@
 
 // Trigger when discounted amount changes
 $('#discounted_amount').on('input', function () {
-    calculateAmounts();
+    calculateFromDiscountedAmount();
 });
 
             // Equipment Details Section
