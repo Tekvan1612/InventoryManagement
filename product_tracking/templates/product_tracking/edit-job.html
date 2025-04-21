@@ -3526,12 +3526,12 @@ response.equipment_details.forEach(function(detail) {
             <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
                 <thead>
                     <tr>
-                        <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
-                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
-                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
-                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Days</th>
-                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total</th>
-                        <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                        <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; ">Equipment Name</th>
+                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; ">Qty</th>
+                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; ">Per Unit</th>
+                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; ">Days</th>
+                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; ">Total</th>
+                        <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; ">Notes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -3546,12 +3546,12 @@ response.equipment_details.forEach(function(detail) {
 
                 equipmentTableHtml += `
                     <tr>
-                        <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_name}</td>
-                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.quantity}</td>
-                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.rental_price}</td>
-                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
-                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.total_rental_price}</td>
-                        <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_notes}</td>
+                        <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20;">${item.equipment_name}</td>
+                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20;">${item.quantity}</td>
+                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20;">${item.rental_price}</td>
+                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20;">${response.total_days}</td>
+                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20;">${item.total_rental_price}</td>
+                        <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20;">${item.equipment_notes}</td>
                     </tr>
                 `;
             });
@@ -4363,9 +4363,9 @@ body {
                             <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
                                 <thead>
                                     <tr>
-                                        <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px;">Equipment Name</th>
-                                <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px;">Qty</th>
-                                <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px;">Notes</th>
+                                        <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px; color: #0d0c0c; background-color: #ffffff; ">Equipment Name</th>
+                                <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px; color: #0d0c0c; background-color: #ffffff; ">Qty</th>
+                                <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px; color: #0d0c0c; background-color: #ffffff; ">Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -4377,9 +4377,9 @@ body {
                             .forEach(function(item) {
                                 equipmentTableHtml += `
                                     <tr>
-                                         <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px;">${item.equipment_name}</td>
-                            <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px;">${item.quantity}</td>
-                            <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px;">${item.equipment_notes}</td>
+                                         <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px; color: #1a1d20;">${item.equipment_name}</td>
+                            <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px; color: #1a1d20;">${item.quantity}</td>
+                            <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; font-size: 12px; color: #1a1d20;">${item.equipment_notes}</td>
                                     </tr>
                                 `;
                             });
