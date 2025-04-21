@@ -6010,8 +6010,7 @@ def print_jobs(request):
 
         rental_price = int(detail[6]) if detail[6] is not None else 0
         total_days_price = int(detail[1]) * rental_price if rental_price else 'Not Available'
-        total_rental_price = int(detail[1]) * int(
-            job_data['total_days']) * rental_price if rental_price else 'Not Available'
+        total_rental_price = int(detail[1]) * rental_price if rental_price else 'Not Available'
 
         if isinstance(total_rental_price, int):
             total_rental_sum += total_rental_price
