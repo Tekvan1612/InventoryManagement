@@ -3102,48 +3102,66 @@ $('#discounted_amount').on('input', function () {
             function handleEquipmentQuotation(response) {
 
     let equipmentDetailsHtml = "";
-    let processedIds = new Set();
+let processedIds = new Set();
 
-    response.equipment_details.forEach(function(detail) {
-        if (!processedIds.has(detail.equipment_detail_id)) {
-            processedIds.add(detail.equipment_detail_id);
+response.equipment_details.forEach(function(detail) {
+    if (!processedIds.has(detail.equipment_detail_id)) {
+        processedIds.add(detail.equipment_detail_id);
 
-            // Generate equipment details HTML for each unique equipment_detail_id
-            let equipmentTableHtml = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-                    <thead>
-                        <tr>
-                            <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+        // Start table
+        let equipmentTableHtml = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                <thead>
+                    <tr>
+                        <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
                         <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
                         <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
                         <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Days</th>
                         <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total</th>
                         <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
-            // Loop through and add only rows matching this equipment_detail_id
-            response.equipment_details
-                .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
-                .forEach(function(item) {
-                    equipmentTableHtml += `
-                        <tr>
-                            <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_name}</td>
-                    <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.quantity}</td>
-                    <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.rental_price}</td>
-                    <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
-                    <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.total_rental_price}</td>
-                    <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_notes}</td>
-                        </tr>
-                    `;
-                });
+        let totalSectionPrice = 0;
 
-            equipmentTableHtml += `
-                    </tbody>
-                </table>
-            `;
+        response.equipment_details
+            .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
+            .forEach(function(item) {
+                totalSectionPrice += parseFloat(item.rental_price || 0);
+
+                equipmentTableHtml += `
+                    <tr>
+                        <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_name}</td>
+                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.quantity}</td>
+                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.rental_price}</td>
+                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
+                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.total_rental_price}</td>
+                        <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_notes}</td>
+                    </tr>
+                `;
+            });
+
+        // Calculate discounted section total
+        let discountPercentage = parseFloat(response.job.discount) || 0;
+        let discountedSectionPrice = totalSectionPrice - (totalSectionPrice * (discountPercentage / 100));
+
+        // Add total row
+        equipmentTableHtml += `
+                <tr>
+                    <td colspan="4" style="border: 1px solid #ddd; padding: 6px 10px; text-align: right; font-weight: bold;">Section Total Amount:</td>
+                    <td style="border: 1px solid #ddd; padding: 6px 10px; font-weight: bold;">${totalSectionPrice}</td>
+                    <td style="border: 1px solid #ddd;"></td>
+                </tr>
+<tr>
+                    <td colspan="4" style="border: 1px solid #ddd; padding: 6px 10px; text-align: right; font-weight: bold;">After ${discountPercentage}% Discount:</td>
+                    <td style="border: 1px solid #ddd; padding: 6px 10px; font-weight: bold; color: green;">${discountedSectionPrice}</td>
+                    <td style="border: 1px solid #ddd;"></td>
+                </tr>
+            </tbody>
+        </table>
+        `;
 
             equipmentDetailsHtml += `
                 <div class="equipment-details">
@@ -3496,48 +3514,66 @@ body {
 
             function handleEquipmentQuotationPdf(response) {
                 let equipmentDetailsHtml = "";
-    let processedIds = new Set();
+let processedIds = new Set();
 
-    response.equipment_details.forEach(function(detail) {
-        if (!processedIds.has(detail.equipment_detail_id)) {
-            processedIds.add(detail.equipment_detail_id);
+response.equipment_details.forEach(function(detail) {
+    if (!processedIds.has(detail.equipment_detail_id)) {
+        processedIds.add(detail.equipment_detail_id);
 
-            // Generate equipment details HTML for each unique equipment_detail_id
-            let equipmentTableHtml = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
-                    <thead>
-                        <tr>
-                            <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Equipment Name</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Qty</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Per Unit</th>
-                    <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Days</th>
-                    <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Total</th>
-                    <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+        // Start table
+        let equipmentTableHtml = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                <thead>
+                    <tr>
+                        <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
+                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
+                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
+                        <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Days</th>
+                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Total</th>
+                        <th style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
-            // Loop through and add only rows matching this equipment_detail_id
-            response.equipment_details
-                .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
-                .forEach(function(item) {
-                    equipmentTableHtml += `
-                        <tr>
-                             <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.equipment_name}</td>
-                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.quantity}</td>
-                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.rental_price}</td>
-                <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${response.total_days}</td>
-                <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.total_rental_price}</td>
-                <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.equipment_notes}</td>
-                        </tr>
-                    `;
-                });
+        let totalSectionPrice = 0;
 
-            equipmentTableHtml += `
-                    </tbody>
-                </table>
-            `;
+        response.equipment_details
+            .filter(item => item.equipment_detail_id === detail.equipment_detail_id)
+            .forEach(function(item) {
+                totalSectionPrice += parseFloat(item.rental_price || 0);
+
+                equipmentTableHtml += `
+                    <tr>
+                        <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_name}</td>
+                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.quantity}</td>
+                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.rental_price}</td>
+                        <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${response.total_days}</td>
+                        <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.total_rental_price}</td>
+                        <td style="width: 45%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_notes}</td>
+                    </tr>
+                `;
+            });
+
+        // Calculate discounted section total
+        let discountPercentage = parseFloat(response.job.discount) || 0;
+        let discountedSectionPrice = totalSectionPrice - (totalSectionPrice * (discountPercentage / 100));
+
+        // Add total row
+        equipmentTableHtml += `
+                <tr>
+                    <td colspan="4" style="border: 1px solid #ddd; padding: 6px 10px; text-align: right; font-weight: bold;">Section Total Amount:</td>
+                    <td style="border: 1px solid #ddd; padding: 6px 10px; font-weight: bold;">${totalSectionPrice}</td>
+                    <td style="border: 1px solid #ddd;"></td>
+                </tr>
+<tr>
+                    <td colspan="4" style="border: 1px solid #ddd; padding: 6px 10px; text-align: right; font-weight: bold;">After ${discountPercentage}% Discount:</td>
+                    <td style="border: 1px solid #ddd; padding: 6px 10px; font-weight: bold; color: green;">${discountedSectionPrice}</td>
+                    <td style="border: 1px solid #ddd;"></td>
+                </tr>
+            </tbody>
+        </table>
+        `;
 
             equipmentDetailsHtml += `
                 <div class="equipment-details">
