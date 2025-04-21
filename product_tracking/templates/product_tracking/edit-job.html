@@ -990,32 +990,51 @@
             }
 
             // Function to calculate discount and total amounts
+            // function calculateAmounts() {
+            //     // Get the values of the total amount and discount
+            //     var totalAmount = parseFloat($('#total_amount').val());
+            //     var discount = parseFloat($('#discount').val());
+
+            //     // Check if both totalAmount and discount are numbers
+            //     if (!isNaN(totalAmount) && !isNaN(discount)) {
+            //         // Calculate the discounted amount
+            //         var discountedAmount = totalAmount - (totalAmount * discount / 100);
+            //         $('#discounted_amount').val(discountedAmount);
+
+            //         // Calculate the total amount with GST
+            //         var totalAmountWithGST = discountedAmount * 1.18;
+            //         $('#total_amount_cal').val(Math.round(totalAmountWithGST));
+            //     }
+            // }
+
+            // // Trigger the calculation when the discount value changes
+            // $('#discount').on('input', function () {
+            //     calculateAmounts();
+            // });
+
+            // // You can also trigger the calculation when the total amount changes
+            // $('#total_amount').on('input', function () {
+            //     calculateAmounts();
+            // });
             function calculateAmounts() {
-                // Get the values of the total amount and discount
-                var totalAmount = parseFloat($('#total_amount').val());
-                var discount = parseFloat($('#discount').val());
+    var totalAmount = parseFloat($('#total_amount').val());
+    var discountedAmount = parseFloat($('#discounted_amount').val());
 
-                // Check if both totalAmount and discount are numbers
-                if (!isNaN(totalAmount) && !isNaN(discount)) {
-                    // Calculate the discounted amount
-                    var discountedAmount = totalAmount - (totalAmount * discount / 100);
-                    $('#discounted_amount').val(discountedAmount);
+    if (!isNaN(totalAmount) && !isNaN(discountedAmount) && totalAmount !== 0) {
+        // Calculate the discount percentage
+        var discountPercentage = ((totalAmount - discountedAmount) / totalAmount) * 100;
+        $('#discount').val(Math.floor(discountPercentage)); // or Math.round()
 
-                    // Calculate the total amount with GST
-                    var totalAmountWithGST = discountedAmount * 1.18;
-                    $('#total_amount_cal').val(Math.round(totalAmountWithGST));
-                }
-            }
+        // Apply 18% GST to the discounted amount
+        var totalAmountWithGST = discountedAmount * 1.18;
+        $('#total_amount_cal').val(Math.floor(totalAmountWithGST));
+    }
+}
 
-            // Trigger the calculation when the discount value changes
-            $('#discount').on('input', function () {
-                calculateAmounts();
-            });
-
-            // You can also trigger the calculation when the total amount changes
-            $('#total_amount').on('input', function () {
-                calculateAmounts();
-            });
+// Trigger when discounted amount changes
+$('#discounted_amount').on('input', function () {
+    calculateAmounts();
+});
 
             // Equipment Details Section
             if (jobId) {
