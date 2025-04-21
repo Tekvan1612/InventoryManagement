@@ -1023,7 +1023,7 @@
     if (!isNaN(totalAmount) && !isNaN(discountedAmount) && totalAmount !== 0) {
         // Calculate the discount percentage
         var discountPercentage = ((totalAmount - discountedAmount) / totalAmount) * 100;
-        $('#discount').val(Math.floor(discountPercentage)); // or Math.round()
+        $('#discount').val(discountPercentage.toFixed(2)); // or Math.round()
 
         // Apply 18% GST to the discounted amount
         var totalAmountWithGST = discountedAmount * 1.18;
