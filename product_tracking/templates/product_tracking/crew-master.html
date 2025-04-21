@@ -99,7 +99,7 @@
             loadUsers();
 
             let currentPage = 1;
-            const pageSize = 5;
+            const pageSize = 10;
             let allCrewData = []; // Array to store all crew data
 
             function loadUsers() {
@@ -215,20 +215,6 @@
                     }
                 });
             });
-
-            {#function loadUsers() {#}
-            {#    $.ajax({#}
-            {#        url: "{% url 'crew_master_action' %}",#}
-            {#        type: "GET",#}
-            {#        success: function (data) {#}
-            {#            console.log("🔄 Reloading Users", data);#}
-            {#            $("#userTableBody").html(data); // Ensure correct table ID#}
-            {#        },#}
-            {#        error: function (xhr, status, error) {#}
-            {#            console.error("❌ Error Loading Users:", xhr.responseText);#}
-            {#        }#}
-            {#    });#}
-            {# }#}
 
             // ✅ Make editUser globally accessible
             window.editCrew = function (crewId) {
