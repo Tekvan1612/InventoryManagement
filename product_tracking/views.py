@@ -6721,5 +6721,98 @@ ORDER BY
     print('equipment data:', data)
 
     return JsonResponse({'equipment_data': data})
+
+
+def crew_master_action(request):
+    if request.method == "POST":
+        action = request.POST.get("action")
+        created_by = request.session.get('user_id')
+        crew_designation = request.POST.get("crew_designation")
+        crew_id = request.POST.get("crew_id")  
+
+        try:
+            with connection.cursor() as cursor:
+                if action == "INSERT":
+                    cursor.execute(
+                        "SELECT manage_crew_master(%s, NULL, %s, %s)",
+                        ['INSERT', crew_designation, created_by]
+                    )
+                    return JsonResponse({"message": "Crew added successfully!"})
+
+                elif action == "UPDATE":
+                    cursor.execute(
+                        "SELECT manage_crew_master(%s, %s, %s, NULL)",
+                        ['UPDATE', crew_id, crew_designation]
+                    )
+                    return JsonResponse({"message": "Crew updated successfully!"})
+
+                elif action == "DELETE":
+                    cursor.execute(
+                        "SELECT manage_crew_master(%s, %s, NULL, NULL)",
+                        ['DELETE', crew_id]
+                    )
+                    return JsonResponse({"message": "Crew deleted successfully!"})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        # Handle GET request to fetch a single user (for editing)
+    elif request.method == "GET" and "crew_id" in request.GET:
+        crew_id = request.GET.get("crew_id")
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                    SELECT cm.id, cm.crew_designation, um.user_name AS created_by, cm.created_date::date
+                    FROM crew_master cm
+                    LEFT JOIN user_master um ON um.user_id = cm.created_by
+                    WHERE cm.id = %s
+                """, [crew_id])
+            crew_row = cursor.fetchone()
+
+        if crew_row:
+            return JsonResponse({
+                "crew_id": crew_row[0],
+                "crew_designation": crew_row[1],
+            })
+        else:
+            return JsonResponse({"error": "Crew not found"}, status=404)
+
+    # Fetch all users for listing
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT cm.id, cm.crew_designation, um.user_name AS created_by, cm.created_date::date
+            FROM crew_master cm
+            LEFT JOIN user_master um ON um.user_id = cm.created_by
+            ORDER BY cm.id DESC
+        """)
+        crew_rows = cursor.fetchall()
+
+    crew_data = []
+    for row in crew_rows:
+        created_date = row[3].strftime('%Y-%m-%d') if row[3] else ''
+        crew_data.append({
+            "id": row[0],
+            "crew_designation": row[1],
+            "created_by": row[2],
+            "created_date": created_date,
+        })
+
+    return JsonResponse({"crew_data": crew_data})
+
+
+def delete_crew_master(request, crew_id):
+    if request.method == "DELETE":
+        try:
+            print(f"✅ Deleting Crew ID: {crew_id}")
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT manage_crew_master(%s, %s, NULL, NULL)", ['DELETE', crew_id])
+
+            return JsonResponse({"message": "Crew deleted successfully!"})
+
+        except Exception as e:
+            print(f"❌ Database Error: {str(e)}")
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 	
 	
