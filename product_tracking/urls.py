@@ -260,4 +260,7 @@ path('fetch_transport_attachments/', views.fetch_transport_attachments, name='fe
 path('update_transport/', views.update_transport, name='update_transport'),
 path('delete_transport_attachment/', views.delete_transport_attachment, name='delete_transport_attachment'),
 path('delete_transport/', views.delete_transport, name='delete_transport'),
+                  path('crew_master/', views.crew_master, name='crew_master'),
+                  path('crew_master_action/', views.crew_master_action, name='crew_master_action'),
+                  path('delete_crew_master/delete/<int:crew_id>/', views.delete_crew_master, name='delete_crew_master'),  
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
