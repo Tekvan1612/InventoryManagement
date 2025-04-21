@@ -3452,24 +3452,24 @@ body {
                                     ${equipmentDetailsHtml}
 
                                 <div style="height:30px;" class="color-amount">
-                                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_with_gst}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
                                 </div>
                                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
     <tbody>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total INR </td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_rental_sum}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.job.amount_row}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">After Discount INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_after_discount}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.job.amount_after_discount}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total Amount with 18% GST INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_with_gst}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.job.total_amount}</td>
         </tr>
     </tbody>
 </table>
@@ -3868,24 +3868,24 @@ body {
             </div>
              ${equipmentDetailsHtml} <!-- Include equipment details here -->
             <div style="height:30px;" class="color-amount">
-                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
                                 </div>
                                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
     <tbody>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">Total INR </td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_rental_sum}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.job.amount_row}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">After Discount INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_after_discount}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.job.amount_after_discount}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">Total Amount with 18% GST INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_with_gst}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.job.total_amount}</td>
         </tr>
     </tbody>
 </table>
@@ -3925,7 +3925,6 @@ body {
                         <tr>
                             <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Equipment Name</th>
                         <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Qty</th>
-                        <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Per Unit</th>
                         <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">Notes</th>
                         </tr>
                     </thead>
@@ -3940,7 +3939,6 @@ body {
                         <tr>
                             <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_name}</td>
                     <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.quantity}</td>
-                    <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.rental_price}</td>
                     <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left;">${item.equipment_notes}</td>
                         </tr>
                     `;
@@ -4241,8 +4239,8 @@ body {
                                     <div class="job_left" style="width: 300px;">
                                         <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                                         <p><b>Job Reference:</b><span> ${response.job.job_reference_no}</span></p>
-                                        <p><b>Name:</b><span> ${response.job.client_name}</span></p>
-                                        <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
+                                        <p><b>Client Name:</b><span> ${response.job.client_name}</span></p>
+                                        <p><b>Client Contact:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
 
                                     </div>
                                     <div class="job_right" style="width: 200px;">
@@ -4255,24 +4253,24 @@ body {
                                     ${equipmentDetailsHtml}
 
                                 <div style="height:30px;" class="color-amount">
-                                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_with_gst}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px; padding-top: 6px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
                                 </div>
                                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
     <tbody>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total INR </td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_rental_sum}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.job.amount_row}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">After Discount INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_after_discount}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.job.amount_after_discount}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">Total Amount with 18% GST INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.total_with_gst}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px;">RS.${response.job.total_amount}</td>
         </tr>
     </tbody>
 </table>
@@ -4312,7 +4310,6 @@ body {
                                     <tr>
                                         <th style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Equipment Name</th>
                                 <th style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Qty</th>
-                                <th style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Per Unit</th>
                                 <th style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #0d0c0c; background-color: #ffffff; font-size: 12px;">Notes</th>
                                     </tr>
                                 </thead>
@@ -4327,7 +4324,6 @@ body {
                                     <tr>
                                          <td style="width: 25%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.equipment_name}</td>
                             <td style="width: 5%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.quantity}</td>
-                            <td style="width: 10%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.rental_price}</td>
                             <td style="width: 60%; border: 1px solid #ddd; padding: 4px 4px 4px 10px; text-align: left; color: #1a1d20; font-size: 12px;">${item.equipment_notes}</td>
                                     </tr>
                                 `;
@@ -4655,9 +4651,9 @@ body {
                 <div class="job_left" style="width: 400px;">
                     <p><b>Job Title:</b><span> ${response.job.title}</span></p>
                     <p><b>Job Ref:</b><span> ${response.job.job_reference_no}</span></p>
-                    <p><b>Name:</b><span> ${response.job.client_name}</span></p>
+                    <p><b>Client Name:</b><span> ${response.job.client_name}</span></p>
 
-                    <p><b>Sales Person:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
+                    <p><b>Client Contact:</b><span> ${response.job.contact_person_name} - ${response.job.contact_person_number}</span></p>
                 </div>
                 <div class="job_right" style="width: 200px;">
                     <p><b>Venue:</b><span> ${response.job.venue_name}<br/>${response.job.venue_address}</span></p>
@@ -4667,24 +4663,24 @@ body {
             </div>
              ${equipmentDetailsHtml} <!-- Include equipment details here -->
             <div style="height:30px;" class="color-amount">
-                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.total_rental_sum}</b></p>
+                                    <p style="text-align: right; color: black; margin-right: 5px;"><b>Total for AUDIO EQUIPMENT INR RS. ${response.job.total_amount}</b></p>
                                 </div>
                                 <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
     <tbody>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">Total INR </td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_rental_sum}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.job.amount_row}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">After Discount INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_after_discount}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.job.amount_after_discount}</td>
         </tr>
         <tr>
 <td style="text-align: right; border: 1px solid #ddd; padding: 8px; width: 55%; color: 050505;"></td> <!-- New Column -->
             <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">Total Amount with 18% GST INR</td>
-            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.total_with_gst}</td>
+            <td style="text-align: right; border: 1px solid #ddd; padding: 8px; color: 050505;">RS.${response.job.total_amount}</td>
         </tr>
     </tbody>
 </table>
@@ -6260,12 +6256,12 @@ body {
                                 <div class="col-xl-3 mb-3">
                                     <label for="total_amount" class="form-label">Amount</label>
                                     <input type="number" class="form-control" id="total_amount"
-                                           name="amount_row">
+                                           name="amount_row" readonly>
                                 </div>
                                 <div class="col-xl-3 mb-3">
                                     <label for="discount" class="form-label">Discount(%)</label>
                                     <input type="number" class="form-control" id="discount"
-                                           name="discount">
+                                           name="discount" readonly>
                                 </div>
                                 <div class="col-xl-3 mb-3">
                                     <label for="discounted_amount" class="form-label">Amount After
@@ -6277,7 +6273,7 @@ body {
                                     <label for="total_amount_cal" class="form-label">Total Amount
                                         (18% GST)</label>
                                     <input type="number" class="form-control" id="total_amount_cal"
-                                           name="total_amount">
+                                           name="total_amount" readonly>
                                 </div>
                             </div>
                         </div>
