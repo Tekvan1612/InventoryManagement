@@ -6723,6 +6723,11 @@ ORDER BY
     return JsonResponse({'equipment_data': data})
 
 
+# Crew Master Module
+def crew_master(request):
+    return render(request, 'product_tracking/crew-master.html')
+
+
 def crew_master_action(request):
     if request.method == "POST":
         action = request.POST.get("action")
