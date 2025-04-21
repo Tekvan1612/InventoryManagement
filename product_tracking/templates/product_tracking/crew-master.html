@@ -1,0 +1,455 @@
+{% include 'product_tracking/head.html' %}
+{% load static %}
+{% block content %}
+    <style>
+        .header-row {
+            background-color: red;
+            color: blue;
+        }
+
+        .employee-details {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .employee-details th {
+            text-align: left;
+        }
+
+        .modal-dialog modal-lg-custom {
+            max-width: 55%; /* Adjust the percentage to increase or decrease the width */
+        }
+
+
+        .employee-name {
+            color: #0D99FF;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* Container for attachments */
+        .attachments-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* Thumbnail styling */
+        .attachments-container img {
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .attachments-container img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Lightbox styling */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .lightbox-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        #caption {
+            margin: 10px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            color: #fff;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal {
+            z-index: 1050;
+        }
+
+    </style>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Initial load
+            loadUsers();
+
+            let currentPage = 1;
+            const pageSize = 5;
+            let allCrewData = []; // Array to store all crew data
+
+            function loadUsers() {
+                $.ajax({
+                    url: "{% url 'crew_master_action' %}",
+                    type: "GET",
+                    success: function (data) {
+                        console.log("🔄 Reloading Users", data);
+                        allCrewData = data.crew_data; // Store all the data in the global variable
+
+                        // Paginate and render the data
+                        paginateAndRenderData(currentPage);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("❌ Error Loading Users:", xhr.responseText);
+                    }
+                });
+            }
+
+            function paginateAndRenderData(page) {
+                // Calculate start and end indices for the current page
+                const start = (page - 1) * pageSize;
+                const end = Math.min(start + pageSize, allCrewData.length);
+
+                // Get the data for the current page
+                const currentPageData = allCrewData.slice(start, end);
+
+                // Update the table with the current page's data
+                let crewDataHTML = "";
+                currentPageData.forEach(row => {
+                    crewDataHTML += `
+            <tr>
+                <td>${row.crew_designation}</td>
+                <td>${row.created_by}</td>
+                <td>${row.created_date}</td>
+                <td>
+                    <button onclick='editCrew(${row.id})' class='btn btn-primary btn-sm'>Edit</button>
+                    <button onclick='deleteCrew(${row.id})' class='btn btn-danger btn-sm'>Delete</button>
+                </td>
+            </tr>
+        `;
+                });
+                $("#userTableBody").html(crewDataHTML);
+
+                // Update pagination count
+                const totalRows = allCrewData.length;
+                const endCount = end > totalRows ? totalRows : end;
+                $("#pagination-count").text(`Showing ${start + 1} to ${endCount} of ${totalRows} entries`);
+
+                // Update pagination buttons
+                updatePaginationButtons();
+            }
+
+            function updatePaginationButtons() {
+                const totalPages = Math.ceil(allCrewData.length / pageSize);
+
+                // Enable or disable the previous and next buttons
+                if (currentPage <= 1) {
+                    $("#prev-page-btn").prop("disabled", true);
+                } else {
+                    $("#prev-page-btn").prop("disabled", false);
+                }
+
+                if (currentPage >= totalPages) {
+                    $("#next-page-btn").prop("disabled", true);
+                } else {
+                    $("#next-page-btn").prop("disabled", false);
+                }
+            }
+
+            // Previous page button
+            $("#prev-page-btn").click(function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    paginateAndRenderData(currentPage);
+                }
+            });
+
+            // Next page button
+            $("#next-page-btn").click(function () {
+                const totalPages = Math.ceil(allCrewData.length / pageSize);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    paginateAndRenderData(currentPage);
+                }
+            });
+
+
+            {#loadUsers(); // Load users on page load#}
+
+            $("#crewForm").submit(function (e) {
+                e.preventDefault(); // Prevent default form submission
+
+                let action = $("#action").val(); // Get the current action (INSERT/UPDATE)
+                let formData = $("#crewForm").serialize(); // Serialize form data
+
+                console.log(`🔵 Sending User Data (Action: ${action}):`, formData); // Debugging
+
+                $.ajax({
+                    url: "{% url 'crew_master_action' %}",
+                    type: "POST",
+                    data: formData,
+                    success: function (response) {
+                        console.log("✅ Success:", response);
+                        alert(response.message);
+                        loadUsers(); // Reload user table
+                        $("#crewForm")[0].reset(); // Reset form after success
+                        $("#action").val("INSERT"); // Reset action to INSERT
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("❌ Error:", xhr.responseText);
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            });
+
+            {#function loadUsers() {#}
+            {#    $.ajax({#}
+            {#        url: "{% url 'crew_master_action' %}",#}
+            {#        type: "GET",#}
+            {#        success: function (data) {#}
+            {#            console.log("🔄 Reloading Users", data);#}
+            {#            $("#userTableBody").html(data); // Ensure correct table ID#}
+            {#        },#}
+            {#        error: function (xhr, status, error) {#}
+            {#            console.error("❌ Error Loading Users:", xhr.responseText);#}
+            {#        }#}
+            {#    });#}
+            {# }#}
+
+            // ✅ Make editUser globally accessible
+            window.editCrew = function (crewId) {
+                $.ajax({
+                    url: "{% url 'crew_master_action' %}",
+                    type: "GET",
+                    data: {crew_id: crewId},
+                    success: function (response) {
+                        console.log("📩 Editing Crew Data:", response);
+                        $("#crew_id").val(response.crew_id);
+                        $("#crewDesignation").val(response.crew_designation);
+                        $("#action").val("UPDATE");
+                    },
+                    error: function (xhr) {
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            };
+
+            function getCSRFToken() {
+                return $("input[name=csrfmiddlewaretoken]").val();
+            }
+
+            // ✅ Make deleteUser globally accessible
+            window.deleteCrew = function (crewId) {
+                if (!confirm("Are you sure you want to delete this crew?")) return;
+
+                console.log("🗑 Deleting Crew ID:", crewId);
+
+                $.ajax({
+                    url: `/delete_crew_master/delete/${crewId}/`,  // ✅ Use user_id in URL
+                    type: "DELETE",  // ✅ Send DELETE request
+                    headers: {"X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val()}, // ✅ CSRF token included
+                    success: function (response) {
+                        console.log("🗑 Crew Deleted Successfully:", response);
+                        alert(response.message);
+                        loadUsers(); // Reload user list
+                    },
+                    error: function (xhr) {
+                        console.error("❌ Error Deleting Crew:", xhr.responseText);
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            };
+
+        });
+    </script>
+
+    <body>
+
+    <!--*******************
+        Preloader start
+    ********************-->
+    <div id="preloader">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <!--*******************
+        Preloader end
+    ********************-->
+
+    <!--**********************************
+        Main wrapper start
+    ***********************************-->
+    <div id="main-wrapper">
+        <!--**********************************
+            Nav header start
+        ***********************************-->
+        {% include 'product_tracking/navheader.html' %}
+        <!--**********************************
+
+            Header start
+        ***********************************-->
+        {% include 'product_tracking/header.html' %}
+        <!--**********************************
+            Header end ti-comment-alt
+        ***********************************-->
+
+        <!--**********************************
+            Sidebar start
+        ***********************************-->
+        {% include 'product_tracking/sidebar.html' %}
+
+        <!--**********************************
+            Sidebar end
+        ***********************************-->
+
+        <!--**********************************
+            Content body start
+        ***********************************-->
+        <div class="content-body">
+            <!-- row -->
+            <div class="page-titles">
+                <ol class="breadcrumb">
+                    <li><h5 class="bc-title">Crew Master</h5></li>
+                    <li class="breadcrumb-item"><a href="javascript:void(0)">
+                        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z"
+                                  stroke="#2C2C2C" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="#2C2C2C" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                        Home </a>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- BOF MAIN-BODY -->
+            <div class="row justify-content-center">
+                <!-- BOF General Form -->
+                <div class="col-lg-12"> <!-- Centered form using col-lg-10 -->
+                    <div class="card mb-3">
+                        <form role="form" id="crewForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" id="action" value="INSERT">
+                            <input type="hidden" name="crew_id" id="crew_id">
+
+                            <div class="card-header uppercase">
+                                <div class="caption">
+                                    <i class="ti-briefcase"></i> Crew Form
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Username -->
+                                    <div class="col-lg-4">
+                                        <div class="form-group">
+                                            <label>Designation</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                <span class="input-group-text bg-carolina">
+                                                    <i class="ti-user text-light"></i>
+                                                </span>
+                                                </div>
+                                                <input type="text" class="form-control" name="crew_designation"
+                                                       id="crewDesignation"
+                                                       placeholder="Crew Designation">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit & Cancel Buttons -->
+                            <div class="card-footer text-right">
+                                <button type="submit" class="btn btn-primary" onclick="saveUser()"><i
+                                        class="ti-check"></i>
+                                    Submit
+                                </button>
+                                <button type="reset" class="btn btn-secondary"><i class="ti-close"></i> Cancel</button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+                <!-- EOF General Form -->
+            </div>
+
+            <!-- 🔽 Tables Below the Form 🔽 -->
+            <div class="row justify-content-center">
+                <div class="col-lg-12">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <div class="caption uppercase">
+                                <i class="ti-file" style="color: #0c0c0c;"></i> Crew Info
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive table-card">
+                                <table class="table table-bordered">
+                                    <thead class="thead-primary">
+                                    <tr>
+                                        <th>Crew Designation</th>
+                                        <th>Created By</th>
+                                        <th>Creation Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="userTableBody">
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div id="pagination-count" style="padding: 10px;">Showing 0 to 0 of 0 entries</div>
+                            <div style="padding-bottom: 10px;margin: 5px;">
+                                <button id="prev-page-btn" class="btn btn-primary me-2">Previous</button>
+                                <button id="next-page-btn" class="btn btn-primary">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- EOF Tables Below Form -->
+        </div>
+
+        <!--**********************************
+            Content body end
+        ***********************************-->
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        {% include 'product_tracking/footer.html' %}
+        <!--**********************************
+            Footer end
+        ***********************************-->
+
+        <!-- End Add Employee Section -->
+
+
+    </div>
+    <!--**********************************
+        Main wrapper end
+    ***********************************-->
+
+
+    </body>
+{% endblock %}
+
