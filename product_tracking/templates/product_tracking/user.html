@@ -266,6 +266,15 @@
                 $('#editCategoryModal').modal('hide'); // or $('#yourFormId').remove();
             });
 
+            $('#cancelUserForm').on('click', function () {
+                var offcanvasElement = document.getElementById('offcanvasExample');
+                var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasElement);
+
+                if (offcanvasInstance) {
+                    offcanvasInstance.hide();
+                }
+            });
+
 
         });
 
@@ -598,7 +607,7 @@
                         <div>
 
                             <button type="button" id="submitUserForm" class="btn btn-primary me-1">Submit</button>
-                            <button type="button" class="btn btn-danger light ms-1">Cancel</button>
+                            <button type="button" id="cancelUserForm" class="btn btn-danger light ms-1">Cancel</button>
                         </div>
                     </form>
                 </div>
