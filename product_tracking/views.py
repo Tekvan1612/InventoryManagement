@@ -6830,5 +6830,30 @@ def get_crew_designations(request):
     designations = [row[0] for row in rows if row[0] is not None]
 
     return JsonResponse({'designations': designations})
+
+
+def get_driver_list(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT name, mobile_no 
+            FROM employee 
+            WHERE designation = 'Driver'
+        """)
+        rows = cursor.fetchall()
+
+    drivers = [{'name': row[0], 'mobile_no': row[1]} for row in rows]
+    return JsonResponse({'drivers': drivers})
+
+
+def get_vehicle_numbers(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id, vehicle_number FROM transport_master ORDER BY vehicle_number")
+            vehicles = cursor.fetchall()
+
+        vehicle_list = [{'id': row[0], 'vehicle_number': row[1]} for row in vehicles]
+        return JsonResponse({'vehicles': vehicle_list})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 	
 	
