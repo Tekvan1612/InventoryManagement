@@ -119,6 +119,42 @@
             let removedAttachments = [];
             let removedProfilePic = false;
 
+            // Crew Designation Listing dropdown
+            $.ajax({
+            url: "/get_crew_designations/",
+            type: "GET",
+            success: function (response) {
+                var dropdown = $("#exampleFormControlInput4");
+                dropdown.empty(); // clear previous options
+                dropdown.append('<option value="">Select Designation</option>');
+
+                $.each(response.designations, function (index, designation) {
+                    dropdown.append('<option value="' + designation + '">' + designation + '</option>');
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error("Failed to fetch designations:", error);
+            }
+        });
+
+            // Crew Designation Listing dropdown for edit
+            $.ajax({
+    url: "/get_crew_designations/",
+    type: "GET",
+    success: function (response) {
+        var dropdown = $("#editEmployeeDesignation");
+        dropdown.empty();
+        dropdown.append('<option value="">Select Designation</option>');
+
+        $.each(response.designations, function (index, designation) {
+            dropdown.append('<option value="' + designation + '">' + designation + '</option>');
+        });
+    },
+    error: function (xhr, status, error) {
+        console.error("Failed to fetch designations:", error);
+    }
+});
+
 
             $('#exampleFormControlInputfour').select2({
                 placeholder: 'Select employee',
@@ -821,8 +857,10 @@
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="editEmployeeDesignation">Designation</label>
-                                    <input type="text" class="form-control" id="editEmployeeDesignation"
-                                           name="designation">
+                                    <select class="form-control" id="editEmployeeDesignation" name="designation">
+                                        <option value="">Select Designation</option>
+                                            <!-- Options will be added dynamically -->
+                                    </select>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label for="editEmployeeGender">Gender</label>
@@ -948,8 +986,10 @@
 
                         <div class="col-xl-6 mb-3">
                             <label class="form-label">Designation</label>
-                            <input type="text" class="form-control" id="exampleFormControlInput4" name="designation"
-                                   placeholder="">
+                            <select class="form-control" id="exampleFormControlInput4" name="designation">
+        <option value="">Select Designation</option>
+        <!-- Options will be added dynamically -->
+    </select>
                         </div>
 
                         <div class="col-xl-6 mb-3">
