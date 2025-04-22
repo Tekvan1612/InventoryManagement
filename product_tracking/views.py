@@ -2447,13 +2447,26 @@ def update_company(request, id):
     if request.method == 'POST':
         name = request.POST.get('companyName')
         CompanyGstNo = request.POST.get('jobMail')
-        companyEmailId = request.POST.get('companyEmailId')  # Ensure this matches the form input name
+        contactNumber = request.POST.get('editCompanyContact')
+        companyEmailId = request.POST.get('companyEmailId')
         company_address = request.POST.get('companyAddress')
+        company_logo_file = request.FILES.get('companyLogo')
+
+        print(f"Check company logo: ", company_logo_file, name)
+
+        company_logo_url = ""
+        if company_logo_file:
+            upload_result = cloudinary.uploader.upload(company_logo_file)
+            company_logo_url = upload_result.get("secure_url")  
+        else:
+            company_logo_url = ""
+
+        print(f"Uploaded company logo URL: {company_logo_url}")
 
         try:
             with connection.cursor() as cursor:
                 cursor.callproc('company_master',
-                                ['UPDATE', id, name, CompanyGstNo, companyEmailId, None, company_address, None])
+                                ['UPDATE', id, name, CompanyGstNo, companyEmailId, contactNumber, company_logo_url, company_address])
                 updated_company_id = cursor.fetchone()
             return JsonResponse(
                 {'message': 'Company details updated successfully', 'updated_company_id': updated_company_id})
