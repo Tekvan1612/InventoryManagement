@@ -72,16 +72,25 @@
             $(document).on('click', '.edit-company-btn', function () {
                 var row = $(this).closest('tr');
                 var editCompanyId = row.find('td:eq(1)').text().trim();
+                var companyLogoSrc = row.find('td:eq(2)').find('img').attr('src');  // Get logo URL
                 var companyName = row.find('td:eq(3)').text().trim();
                 var jobMail = row.find('td:eq(4)').text().trim();
-                var companyEmailId = row.find('td:eq(5)').text().trim();
-                var companyAddress = row.find('td:eq(6)').text().trim();
+                var editCompanyContact = row.find('td:eq(5)').text().trim();
+                var companyEmailId = row.find('td:eq(6)').text().trim();
+                var companyAddress = row.find('td:eq(7)').text().trim();
 
                 $('#editCompanyId').val(editCompanyId);
                 $('#editCompanyCompanyName').val(companyName);
                 $('#editCompanyGstNo').val(jobMail);
+                $('#editCompanyContact').val(editCompanyContact);
                 $('#editCompanyEmail').val(companyEmailId);
                 $('#editCompanyAddress').val(companyAddress);
+
+                // Set the logo preview if you have an image preview area
+                $('#editCompanyLogoPreview').attr('src', companyLogoSrc);
+
+                // Optionally store the filename in a hidden input if needed
+                {#$('#existingCompanyLogo').val(companyLogoSrc);#}
 
                 $('#editCompanyModal').modal('show');
             });
@@ -120,6 +129,7 @@
                 var editCompanyId = $('#editCompanyId').val();
                 var companyName = $('#editCompanyCompanyName').val().trim();
                 var jobMail = $('#editCompanyGstNo').val().trim();
+                var companyContact = $('#editCompanyContact').val().trim();
                 var companyEmailId = $('#editCompanyEmail').val().trim();
                 var companyAddress = $('#editCompanyAddress').val().trim();
 
@@ -128,8 +138,15 @@
                 formData.append('companyId', editCompanyId);
                 formData.append('companyName', companyName);
                 formData.append('jobMail', jobMail);
+                formData.append('editCompanyContact', companyContact);
                 formData.append('companyEmailId', companyEmailId);
                 formData.append('companyAddress', companyAddress);
+
+                // ✅ Correct way to append actual file
+                var fileInput = $('#editCompanyLogo')[0];
+                if (fileInput.files.length > 0) {
+                    formData.append('companyLogo', fileInput.files[0]); 
+                }
 
                 $.ajax({
                     url: '/update_company/' + editCompanyId + '/',
@@ -147,7 +164,7 @@
                     }
                 });
             }
-
+            
             function updatePaginationCountCompany(totalItems) {
                 const totalPages = Math.ceil(totalItems / pageSize);
                 $('#pagination-count-company').text(`Showing ${currentPage * pageSize - pageSize + 1} to ${Math.min(currentPage * pageSize, totalItems)} of ${totalItems} entries`);
@@ -607,6 +624,7 @@
         ***********************************-->
 
 
+        <!-- Edit Company Form -->
         <div class="modal fade" id="editCompanyModal" tabindex="-1" role="dialog"
              aria-labelledby="editCompanyModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
@@ -615,25 +633,41 @@
                         <h5 class="modal-title" id="editCompanyModalLabel">Edit Company</h5>
                     </div>
                     <div class="modal-body">
-                        <form id="editCompanyForm">
+                        <form id="editCompanyForm" enctype="multipart/form-data">
                             <div class="row">
-                                <div class="col-xl-6 mb-3">
+                                <div class="col-xl-4 mb-3">
                                     <label for="editCompanyCompanyName">Company Name</label>
                                     <input type="text" class="form-control" id="editCompanyCompanyName"
                                            name="companyName">
                                 </div>
-                                <div class="col-xl-6 mb-3">
+                                <div class="col-xl-4 mb-3">
                                     <label for="editCompanyGstNo" class="form-label">GST No</label>
                                     <input type="text" class="form-control" id="editCompanyGstNo" name="jobMail">
                                 </div>
-                                <div class="col-xl-6 mb-3">
+                                <div class="col-xl-4 mb-3">
+                                    <label for="editCompanyContact" class="form-label">Phone No</label>
+                                    <input type="text" class="form-control" id="editCompanyContact" name="title"
+                                           pattern="\d{10}" maxlength="10">
+                                </div>
+                                <div class="col-xl-4 mb-3">
                                     <label for="editCompanyEmail" class="form-label">Email</label>
                                     <input type="text" class="form-control" id="editCompanyEmail" name="companyEmailId">
                                 </div>
-                                <div class="col-xl-6 mb-3">
+                                <div class="col-xl-4 mb-3">
                                     <label for="editCompanyAddress" class="form-label">Address</label>
                                     <input type="text" class="form-control" id="editCompanyAddress"
                                            name="companyAddress">
+                                </div>
+                                <div class="col-xl-4 mb-3">
+                                    <label for="editCompanyLogo" class="form-label">Company Logo:</label>
+                                    <input type="file" class="form-control" id="editCompanyLogo" name="companyLogo"
+                                           accept=".jpg, .jpeg, .png" required>
+                                    <!-- Preview of existing logo -->
+                                    <div id="existingLogoContainer" class="mt-2">
+                                        <label class="form-label">Existing Logo:</label><br>
+                                        <img id="editCompanyLogoPreview" src="" alt="Current Logo" width="100"
+                                             style="border: 1px solid #ccc; padding: 5px;">
+                                    </div>
                                 </div>
                                 <input type="hidden" id="editCompanyId" class="pagination-count-company">
                             </div>
@@ -647,6 +681,7 @@
             </div>
         </div>
 
+         <!-- Edit Warehouse Form -->
         <div class="modal fade" id="editJobsModal" tabindex="-1" role="dialog"
              aria-labelledby="editJobsModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
