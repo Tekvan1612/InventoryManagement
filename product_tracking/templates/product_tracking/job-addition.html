@@ -1416,6 +1416,25 @@
             //Add Sub Vendor Section End
 
             // Crew Allocation Section Start
+            function fetchCrewDesignations($dropdown, selectedValue = "") {
+    $.ajax({
+        url: "/get_crew_designations/",
+        type: "GET",
+        success: function (response) {
+            $dropdown.empty();
+            $dropdown.append('<option value="">Select Designation</option>');
+
+            $.each(response.designations, function (index, designation) {
+                const isSelected = designation === selectedValue ? 'selected' : '';
+                $dropdown.append(`<option value="${designation}" ${isSelected}>${designation}</option>`);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Failed to fetch designations:", error);
+        }
+    });
+}
+            
             function activateEditMode(row) {
                 // Hide the Edit button and show Save/Cancel buttons
                 row.find('.edit-btn, .delete-btn').hide();
@@ -1460,10 +1479,8 @@
                 <button class="btn btn-danger delete-crew-btn" style="display:none;"><i class="fa fa-trash"></i></button>
             </td>
             <td data-editable-select="true">
-                <select class="default-select form-control" id="crewType" name="crew_type">
-                    <option value="A1" selected>A1</option>
-                    <option value="A2">A2</option>
-                    <option value="A3">A3</option>
+                <select class="default-select form-control crew-type-dropdown" id="crewType" name="crew_type">
+                    <option value="">Select Designation</option>
                 </select>
             </td>
             <td data-editable="true"><input type="text" class="form-control" name="no_of_days" style="width: 83px;"></td>
@@ -1478,8 +1495,9 @@
 
                 activateEditMode($newRow); // Activate edit mode for the new row
 
-                // Set 'A1' as the default selected value when the row is added
-                $newRow.find('select').val('A1');
+                // Fetch and populate designation dropdown for this row
+                const $dropdown = $newRow.find('.crew-type-dropdown');
+                fetchCrewDesignations($dropdown);
             });
 
             $(document).on('input', 'input[name="no_of_days"], input[name="perday_charges"]', function () {
@@ -1596,11 +1614,9 @@
                 const crewNotes = $row.find('td').eq(5).text();
 
                 // Replace text with input fields
-                $row.find('td').eq(1).html(`
-        <select class="default-select form-control" name="crew_type">
-            <option value="A1" ${crewType === 'A1' ? 'selected' : ''}>A1</option>
-            <option value="A2" ${crewType === 'A2' ? 'selected' : ''}>A2</option>
-            <option value="A3" ${crewType === 'A3' ? 'selected' : ''}>A3</option>
+    $row.find('td').eq(1).html(`
+        <select class="default-select form-control crew-type-dropdown" name="crew_type">
+            <option value="">Loading...</option>
         </select>
     `);
 
@@ -1612,6 +1628,10 @@
                 // Toggle button visibility
                 $row.find('.edit-crew-list-btn, .delete-crew-btn').hide();
                 $row.find('.edit-save-btn, .edit-cancel-btn').show();
+
+                // Populate the dropdown dynamically and set the selected value
+    const $dropdown = $row.find('.crew-type-dropdown');
+    fetchCrewDesignations($dropdown, crewType);
             });
 
             $(document).on('click', '#save-crew-allocation', function (event) {
@@ -1674,10 +1694,8 @@
                             <button class="btn btn-danger delete-crew-delivery-btn" style="display:none;"><i class="fa fa-trash"></i></button>
                         </td>
                         <td data-editable-select="true">
-                            <select class="default-select form-control" id="crewType" name="crew_type">
-                                <option value="A1" selected>A1</option>
-                                <option value="A2">A2</option>
-                                <option value="A3">A3</option>
+                            <select class="default-select form-control crew-type-dropdown" id="crewType" name="crew_type">
+                                 <option value="">Select Designation</option>
                             </select>
                         </td>
                             <td data-editable="true">
@@ -1697,8 +1715,9 @@
 
                 activateDeliveryEditMode($newRow); // Activate edit mode for the new row
 
-                // Set 'A1' as the default selected value when the row is added
-                $newRow.find('select').val('A1');
+                // Fetch and populate designation dropdown for this row
+                const $dropdown = $newRow.find('.crew-type-dropdown');
+                fetchCrewDesignations($dropdown);
             });
 
             function activateDeliveryEditMode(row) {
@@ -1865,10 +1884,8 @@
 
                 // Replace text with input fields
                 $row.find('td').eq(1).html(`
-                    <select class="default-select form-control" name="crew_type">
-                        <option value="A1" ${crewType === 'A1' ? 'selected' : ''}>A1</option>
-                        <option value="A2" ${crewType === 'A2' ? 'selected' : ''}>A2</option>
-                        <option value="A3" ${crewType === 'A3' ? 'selected' : ''}>A3</option>
+                    <select class="default-select form-control crew-type-dropdown" name="crew_type">
+                        <option value="">Loading...</option>
                     </select>
                 `);
                 $row.find('td').eq(2).html(`
@@ -1883,6 +1900,10 @@
                 // Toggle button visibility
                 $row.find('.edit-crew-delivery-btn, .delete-crew-btn').hide();
                 $row.find('.edit-save-delivery-btn, .edit-cancel-btn').show();
+                
+                // Populate the dropdown dynamically and set the selected value
+                const $dropdown = $row.find('.crew-type-dropdown');
+                fetchCrewDesignations($dropdown, crewType);
             });
 
             $(document).on('click', '#save-crew-delivery-allocation', function (event) {
@@ -1956,6 +1977,56 @@
 
             //Transportation Allocation Section
 
+            function fetchVehicleNumbers(dropdownId) {
+    $.ajax({
+        url: '/get_vehicle_numbers/',
+        type: 'GET',
+        success: function (response) {
+            const dropdown = $(`#${dropdownId}`);
+            dropdown.empty();
+            dropdown.append('<option value="">Select Vehicle</option>');
+
+            response.vehicles.forEach(function (vehicle) {
+                dropdown.append(`<option value="${vehicle.vehicle_number}">${vehicle.vehicle_number}</option>`);
+            });
+        },
+        error: function () {
+            console.error('Failed to fetch vehicle numbers.');
+        }
+    });
+}
+
+
+
+let rowCount = 0;  // Counter for unique row IDs
+
+            function fetchDrivers(dropdownId) {
+    $.ajax({
+        url: '/get_driver_list/',
+        type: 'GET',
+        success: function (response) {
+            const dropdown = $(`#${dropdownId}`);
+            dropdown.empty();
+            dropdown.append('<option value="">Select Driver</option>');
+
+            response.drivers.forEach(function (driver) {
+                dropdown.append(`<option value="${driver.name}" data-mobile="${driver.mobile_no}">${driver.name}</option>`);
+            });
+        },
+        error: function () {
+            console.error('Failed to fetch drivers.');
+        }
+    });
+}
+
+// Handle driver selection to autofill mobile number
+$(document).on('change', '.driverDropdown', function () {
+    const selectedOption = $(this).find('option:selected');
+    const mobileNumber = selectedOption.data('mobile');
+    const row = $(this).closest('.transportation-row');
+    row.find('.driverMobile').val(mobileNumber || '');
+});
+
             // Add event listener to 'Add More' button
             $('#addTransportation').click(function (event) {
                 event.preventDefault(); // Prevent the default form submission
@@ -1963,19 +2034,25 @@
                 // Get the selected transportation type
                 var transportationType = $('input[name="transportation_type"]:checked').val();
 
+                rowCount++;  // Increment row counter for unique IDs
+
                 var newRowHtml = `
-        <div class="row transportation-row on-vehicle-row">
+        <div class="row transportation-row on-vehicle-row" data-row="${rowCount}">
             <div class="col-xl-4 mb-3">
                 <label class="form-label">Driver Name</label>
-                <input type="text" class="form-control" placeholder="Enter Driver Name" name="driver_name">
+                <select class="form-control driverDropdown" id="driverDropdown_${rowCount}" name="driver_name">
+                    <option value="">Select Driver</option>
+                </select>
             </div>
             <div class="col-xl-3 mb-3">
                 <label class="form-label">Contact Number</label>
-                <input type="number" class="form-control" placeholder="Enter Contact Number" name="contact_number">
+                <input type="number" class="form-control driverMobile" id="driverMobile_${rowCount}" placeholder="Enter Contact Number" name="contact_number" readonly>
             </div>
             <div class="col-xl-3 mb-3">
                 <label class="form-label">Vehicle Number</label>
-                <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="vehicle_number">
+                <select class="form-control vehicleDropdown" id="vehicleDropdown_${rowCount}" name="vehicle_number">
+                <option value="">Select Vehicle</option>
+            </select>
             </div>
             <div class="col-xl-2 mb-3" style="margin-top: 36px;">
                 <button type="button" class="btn btn-success saveRow" data-type="on_vehicle"><i class="fa fa-save"></i></button>
@@ -2014,6 +2091,9 @@
                 // Append the new row to the appropriate section
                 if (transportationType === 'on_vehicle') {
                     $('#onVehicleFields').append(newRowHtml);
+                    const newDropdownId = `driverDropdown_${rowCount}`;
+                    fetchDrivers(newDropdownId);
+                    fetchVehicleNumbers(`vehicleDropdown_${rowCount}`);
                 } else if (transportationType === 'outside_vehicle') {
                     $('#outsideVehicleFields').append(newOutSideRowHtml);
                 }
@@ -2037,9 +2117,9 @@
 
                 // Collect data based on transportation type
                 if (type === 'on_vehicle') {
-                    data.driver_name = row.find('input[name="driver_name"]').val();
+                    data.driver_name = row.find('select[name="driver_name"]').val();
                     data.contact_number = row.find('input[name="contact_number"]').val();
-                    data.vehicle_number = row.find('input[name="vehicle_number"]').val();
+                    data.vehicle_number = row.find('select[name="vehicle_number"]').val();
                 } else if (type === 'outside_vehicle') {
                     data.outside_driver_name = row.find('input[name="outside_driver_name"]').val();
                     data.outside_contact_number = row.find('input[name="outside_contact_number"]').val();
