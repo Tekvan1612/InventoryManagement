@@ -6819,5 +6819,16 @@ def delete_crew_master(request, crew_id):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+def get_crew_designations(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT crew_designation FROM crew_master")
+        rows = cursor.fetchall()
+
+    # Convert to a list of designations
+    designations = [row[0] for row in rows if row[0] is not None]
+
+    return JsonResponse({'designations': designations})
 	
 	
