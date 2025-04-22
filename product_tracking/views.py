@@ -6275,7 +6275,8 @@ def fetch_transaction_details(request):
     return JsonResponse({'transactions': data})
 
 def transport_master(request):
-    return render(request, 'product_tracking/transport-master.html')
+    username = request.session.get('username')
+    return render(request, 'product_tracking/transport-master.html', {'username': username})
 
 
 def add_transport(request):
@@ -6725,7 +6726,8 @@ ORDER BY
 
 # Crew Master Module
 def crew_master(request):
-    return render(request, 'product_tracking/crew-master.html')
+    username = request.session.get('username')
+    return render(request, 'product_tracking/crew-master.html', {'username': username})
 
 
 def crew_master_action(request):
