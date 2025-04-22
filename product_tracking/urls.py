@@ -264,4 +264,6 @@ path('delete_transport/', views.delete_transport, name='delete_transport'),
                   path('crew_master_action/', views.crew_master_action, name='crew_master_action'),
                   path('delete_crew_master/delete/<int:crew_id>/', views.delete_crew_master, name='delete_crew_master'),
 path('get_crew_designations/', views.get_crew_designations, name='get_crew_designations'),
+path('get_driver_list/', views.get_driver_list, name='get_driver_list'),
+                  path('get_vehicle_numbers/', views.get_vehicle_numbers, name='get_vehicle_numbers'),  
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
