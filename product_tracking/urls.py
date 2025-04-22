@@ -262,5 +262,6 @@ path('delete_transport_attachment/', views.delete_transport_attachment, name='de
 path('delete_transport/', views.delete_transport, name='delete_transport'),
                   path('crew_master/', views.crew_master, name='crew_master'),
                   path('crew_master_action/', views.crew_master_action, name='crew_master_action'),
-                  path('delete_crew_master/delete/<int:crew_id>/', views.delete_crew_master, name='delete_crew_master'),  
+                  path('delete_crew_master/delete/<int:crew_id>/', views.delete_crew_master, name='delete_crew_master'),
+path('get_crew_designations/', views.get_crew_designations, name='get_crew_designations'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
