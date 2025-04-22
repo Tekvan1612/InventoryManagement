@@ -4441,13 +4441,19 @@ def get_equipment_details(request, equipment_id):
             if not equipment:
                 return JsonResponse({'error': 'Equipment not found'}, status=404)
 
-            # Fetch total stock quantity (sum of units)
+            # Fetch total Available stock quantity (sum of units)
             cursor.execute("""
                 SELECT COUNT(s.serial_no) FROM stock_details s WHERE s.equipment_id = %s AND scan_flag = FALSE
             """, [equipment_id])
-            total_units = cursor.fetchone()[0]
+            total_available_units = cursor.fetchone()[0]
 
-            print("Total Units:", total_units)  # Debugging print
+            print("Total Available Units:", total_available_units)  # Debugging print
+
+            # Fetch total stock quantity (sum of units)
+            cursor.execute("""
+                            SELECT COUNT(s.serial_no) FROM stock_details s WHERE s.equipment_id = %s
+                        """, [equipment_id])
+            total_units = cursor.fetchone()[0]
 
             # Correctly reference the image URLs from the fetched data
             equipment_details = {
@@ -4463,6 +4469,7 @@ def get_equipment_details(request, equipment_id):
                 'country_origin': equipment[9],
                 'unit_price': equipment[13],  # Unit price
                 'rental_price': equipment[14],  # Rental price
+                'available_qty': total_available_units if total_available_units else 0,
                 'stock_qty': total_units if total_units else 0,  # Default to 0 if no stock
                 'image_urls': [equipment[10], equipment[11], equipment[12]]  # Corrected image references
             }
@@ -4473,7 +4480,6 @@ def get_equipment_details(request, equipment_id):
     except Exception as e:
         print("Error:", str(e))  # Debugging print
         return JsonResponse({'error': str(e)}, status=500)
-
 
 
 def get_serial_details(request, equipment_id):
