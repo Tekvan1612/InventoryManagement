@@ -194,6 +194,28 @@
                     renderTransactionTable();
                 }
             });
+
+            // Based on Job Number that Title
+            $('#job_number').on('change', function () {
+                var jobRef = $(this).val();
+                if (jobRef !== "Select Job Number") {
+                    $.ajax({
+                        url: '/get_job_title/',  // Django URL (you'll set this in urls.py)
+                        method: 'GET',
+                        data: {
+                            job_reference_no: jobRef
+                        },
+                        success: function (response) {
+                            $('#job_title').val(response.title);
+                        },
+                        error: function () {
+                            alert('Failed to fetch job title.');
+                        }
+                    });
+                } else {
+                    $('#job_title').val('');
+                }
+            });
         });
     </script>
     <body>
@@ -285,13 +307,6 @@
                         <div class="card">
                             <div class="card-body">
                                 <div class="row task">
-                                    {#                                    <div class="col-xl-3 col-sm-4">#}
-                                    {#                                        <div class="task-summary">#}
-                                    {#                                            <div class="d-flex align-items-baseline">#}
-                                    {#                                                <label style="color: #0c0c0c;">Job Number</label>#}
-                                    {#                                            </div>#}
-                                    {#                                        </div>#}
-                                    {#                                    </div>#}
                                     <div class="col-lg-3">
                                         <div class="form-floating">
                                             <select class="form-select select2" id="job_number" name="job_number"
@@ -301,6 +316,10 @@
                                             </select>
                                             <label for="job_number">Job Number</label>
                                         </div>
+                                    </div>
+                                    <div class="col-xl-4 mb-3">
+                                        <input type="text" class="form-control" id="job_title" name="job_title" readonly
+                                               placeholder="Job Title">
                                     </div>
                                 </div>
                             </div>
