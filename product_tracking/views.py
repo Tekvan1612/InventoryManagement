@@ -6878,3 +6878,15 @@ def get_vehicle_numbers(request):
         return JsonResponse({'error': str(e)}, status=500)
 	
 	
+def get_job_title(request):
+    job_ref_no = request.GET.get('job_reference_no')
+    print(f"Check job reference no: {job_ref_no}")
+    if job_ref_no:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT title FROM temp WHERE id = %s", [job_ref_no])
+            row = cursor.fetchone()
+            if row:
+                return JsonResponse({'title': row[0]})
+            print(f"Check Row: {row}")
+    return JsonResponse({'title': ''})
+	
