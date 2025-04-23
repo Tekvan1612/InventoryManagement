@@ -2037,6 +2037,25 @@ $('#discounted_amount').on('input', function () {
             });
 
             // Crew Allocation Section Start
+            function fetchCrewDesignations($dropdown, selectedValue = "") {
+    $.ajax({
+        url: "/get_crew_designations/",
+        type: "GET",
+        success: function (response) {
+            $dropdown.empty();
+            $dropdown.append('<option value="">Select Designation</option>');
+
+            $.each(response.designations, function (index, designation) {
+                const isSelected = designation === selectedValue ? 'selected' : '';
+                $dropdown.append(`<option value="${designation}" ${isSelected}>${designation}</option>`);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Failed to fetch designations:", error);
+        }
+    });
+}
+            
             // Function to fetch and display crew details in the table
             function fetchCrewDetails(jobId) {
                 console.log('Check the crew job ID:', jobId)
@@ -2132,10 +2151,8 @@ $('#discounted_amount').on('input', function () {
                 <button class="btn btn-danger delete-crew-btn" style="display:none;"><i class="fa fa-trash"></i></button>
             </td>
             <td data-editable-select="true">
-                <select class="default-select form-control" id="crewType" name="crew_type">
-                    <option value="A1" selected>A1</option>
-                    <option value="A2">A2</option>
-                    <option value="A3">A3</option>
+                <select class="default-select form-control crew-type-dropdown" id="crewType" name="crew_type">
+                    <option value="">Select Designation</option>
                 </select>
             </td>
             <td data-editable="true"><input type="text" class="form-control" name="no_of_days" style="width: 83px;"></td>
@@ -2150,8 +2167,9 @@ $('#discounted_amount').on('input', function () {
 
                 activateEditMode($newRow); // Activate edit mode for the new row
 
-                // Set 'A1' as the default selected value when the row is added
-                $newRow.find('select').val('A1');
+                // Fetch and populate designation dropdown for this row
+                const $dropdown = $newRow.find('.crew-type-dropdown');
+                fetchCrewDesignations($dropdown);
             });
 
             $(document).on('input', 'input[name="no_of_days"], input[name="perday_charges"]', function () {
@@ -2269,12 +2287,10 @@ $('#discounted_amount').on('input', function () {
 
                 // Replace text with input fields
                 $row.find('td').eq(1).html(`
-        <select class="default-select form-control" name="crew_type">
-            <option value="A1" ${crewType === 'A1' ? 'selected' : ''}>A1</option>
-            <option value="A2" ${crewType === 'A2' ? 'selected' : ''}>A2</option>
-            <option value="A3" ${crewType === 'A3' ? 'selected' : ''}>A3</option>
-        </select>
-    `);
+                    <select class="default-select form-control crew-type-dropdown" name="crew_type">
+                        <option value="">Loading...</option>
+                    </select>
+                `);
 
                 $row.find('td').eq(2).html(`<input type="text" class="form-control" name="no_of_days" value="${noOfDays}" style="width: 83px;">`);
                 $row.find('td').eq(3).html(`<input type="text" class="form-control" name="perday_charges" value="${perDayCharges}">`);
@@ -2284,6 +2300,10 @@ $('#discounted_amount').on('input', function () {
                 // Toggle button visibility
                 $row.find('.edit-crew-list-btn, .delete-crew-btn').hide();
                 $row.find('.edit-save-btn, .edit-cancel-btn').show();
+
+                // Populate the dropdown dynamically and set the selected value
+                const $dropdown = $row.find('.crew-type-dropdown');
+                fetchCrewDesignations($dropdown, crewType);
             });
 
             $(document).on('click', '#save-crew-allocation', function (event) {
@@ -2457,10 +2477,8 @@ $('#discounted_amount').on('input', function () {
                             <button class="btn btn-danger delete-crew-delivery-btn" style="display:none;"><i class="fa fa-trash"></i></button>
                         </td>
                         <td data-editable-select="true">
-                            <select class="default-select form-control" id="crewType" name="crew_type">
-                                <option value="A1" selected>A1</option>
-                                <option value="A2">A2</option>
-                                <option value="A3">A3</option>
+                            <select class="default-select form-control crew-type-dropdown" id="crewType" name="crew_type">
+                                 <option value="">Select Designation</option>
                             </select>
                         </td>
                             <td data-editable="true">
@@ -2480,8 +2498,9 @@ $('#discounted_amount').on('input', function () {
 
                 activateDeliveryEditMode($newRow); // Activate edit mode for the new row
 
-                // Set 'A1' as the default selected value when the row is added
-                $newRow.find('select').val('A1');
+                // Fetch and populate designation dropdown for this row
+                const $dropdown = $newRow.find('.crew-type-dropdown');
+                fetchCrewDesignations($dropdown);
             });
 
             $(document).on('click', '.edit-crew-delivery-btn', function (event) {
@@ -2508,10 +2527,8 @@ $('#discounted_amount').on('input', function () {
 
                 // Replace text with input fields
                 $row.find('td').eq(1).html(`
-                    <select class="default-select form-control" name="crew_type">
-                        <option value="A1" ${crewType === 'A1' ? 'selected' : ''}>A1</option>
-                        <option value="A2" ${crewType === 'A2' ? 'selected' : ''}>A2</option>
-                        <option value="A3" ${crewType === 'A3' ? 'selected' : ''}>A3</option>
+                    <select class="default-select form-control crew-type-dropdown" name="crew_type">
+                        <option value="">Loading...</option>
                     </select>
                 `);
                 $row.find('td').eq(2).html(`
@@ -2527,6 +2544,10 @@ $('#discounted_amount').on('input', function () {
                 // Toggle button visibility
                 $row.find('.edit-crew-delivery-btn, .delete-crew-btn').hide();
                 $row.find('.edit-save-delivery-btn, .edit-cancel-btn').show();
+
+                // Populate the dropdown dynamically and set the selected value
+                const $dropdown = $row.find('.crew-type-dropdown');
+                fetchCrewDesignations($dropdown, crewType);
             });
 
             $(document).on('click', '#save-crew-delivery-allocation', function (event) {
@@ -2669,7 +2690,55 @@ $('#discounted_amount').on('input', function () {
             // Crew Allocation Section End
 
             // Transporation Allocation Section
-            // Attach event handler to the Cancel button
+            // Vehicle Number Dropdown
+            function fetchVehicleNumbers(dropdownId) {
+    $.ajax({
+        url: '/get_vehicle_numbers/',
+        type: 'GET',
+        success: function (response) {
+            const dropdown = $(`#${dropdownId}`);
+            dropdown.empty();
+            dropdown.append('<option value="">Select Vehicle</option>');
+
+            response.vehicles.forEach(function (vehicle) {
+                dropdown.append(`<option value="${vehicle.vehicle_number}">${vehicle.vehicle_number}</option>`);
+            });
+        },
+        error: function () {
+            console.error('Failed to fetch vehicle numbers.');
+        }
+    });
+}
+
+            let rowCount = 0;  // Counter for unique row IDs
+
+            // Driver Name and mobile Number Functionality
+            function fetchDrivers(dropdownId) {
+    $.ajax({
+        url: '/get_driver_list/',
+        type: 'GET',
+        success: function (response) {
+            const dropdown = $(`#${dropdownId}`);
+            dropdown.empty();
+            dropdown.append('<option value="">Select Driver</option>');
+
+            response.drivers.forEach(function (driver) {
+                dropdown.append(`<option value="${driver.name}" data-mobile="${driver.mobile_no}">${driver.name}</option>`);
+            });
+        },
+        error: function () {
+            console.error('Failed to fetch drivers.');
+        }
+    });
+}
+
+            // Handle driver selection to autofill mobile number
+            $(document).on('change', '.driverDropdown', function () {
+                const selectedOption = $(this).find('option:selected');
+                const mobileNumber = selectedOption.data('mobile');
+                const row = $(this).closest('.transportation-row');
+                row.find('.driverMobile').val(mobileNumber || '');
+            });
 
             fetchTransportationDetails(jobId);
 
@@ -2683,8 +2752,8 @@ $('#discounted_amount').on('input', function () {
             }
 
             function populateFields(data) {
-                var onVehicleFields = document.getElementById('onVehicleFields');
-                var outsideVehicleFields = document.getElementById('outsideVehicleFields');
+                const onVehicleFields = document.getElementById('onVehicleFields');
+                const outsideVehicleFields = document.getElementById('outsideVehicleFields');
 
                 onVehicleFields.innerHTML = '';
                 outsideVehicleFields.innerHTML = '';
@@ -2692,22 +2761,29 @@ $('#discounted_amount').on('input', function () {
                 let onVehicleChecked = false;
                 let outsideVehicleChecked = false;
 
-                data.forEach(item => {
+                data.forEach((item, index) => {
+                    const rowId = `row-${index}`;
+
                     if (item.driver_name || item.vehicle_number) {
                         onVehicleChecked = true;
-                        var newRowHtml = `
-                            <div class="row transportation-row on-vehicle-row" data-id="${item.id}">
+
+                        const newRowHtml = `
+                            <div class="row transportation-row on-vehicle-row" data-id="${item.id}" data-driver="${item.driver_name || ''}" data-vehicle="${item.vehicle_number || ''}">
                                 <div class="col-xl-4 mb-3">
                                     <label class="form-label">Driver Name</label>
-                                    <input type="text" class="form-control" placeholder="Enter Driver Name" name="driver_name" value="${item.driver_name || ''}">
+                                    <select class="form-select driverDropdown" name="driver_name">
+                                        <option value="">Select Driver</option>
+                                    </select>
                                 </div>
                                 <div class="col-xl-3 mb-3">
                                     <label class="form-label">Contact Number</label>
-                                    <input type="number" class="form-control" placeholder="Enter Contact Number" name="contact_number" value="${item.contact_number || ''}">
+                                    <input type="number" class="form-control driverMobile" name="contact_number" placeholder="Enter Contact Number" value="${item.contact_number || ''}" style="margin-top: 0;" readonly>
                                 </div>
                                 <div class="col-xl-3 mb-3">
                                     <label class="form-label">Vehicle Number</label>
-                                    <input type="text" class="form-control" id="vehicle-number-field" placeholder="Enter Vehicle Number" name="vehicle_number" value="${item.vehicle_number || ''}">
+                                    <select class="form-select vehicleDropdown" name="vehicle_number">
+                                        <option value="">Select Vehicle</option>
+                                    </select>
                                 </div>
                                 <div class="col-xl-2 mb-3" style="margin-top: 36px;">
                                     <button type="button" class="btn btn-success updateRow"><i class="fa fa-save"></i></button>
@@ -2716,23 +2792,56 @@ $('#discounted_amount').on('input', function () {
                             </div>
                         `;
                         onVehicleFields.insertAdjacentHTML('beforeend', newRowHtml);
+
+                        const currentRow = onVehicleFields.querySelector(`.on-vehicle-row[data-id="${item.id}"]`);
+                        const driverDropdown = currentRow.querySelector('.driverDropdown');
+                        const vehicleDropdown = currentRow.querySelector('.vehicleDropdown');
+
+                        // Populate Driver Dropdown
+                        $.ajax({
+                            url: '/get_driver_list/',
+                            type: 'GET',
+                            success: function (response) {
+                                driverDropdown.innerHTML = '<option value="">Select Driver</option>';
+                                response.drivers.forEach(driver => {
+                                    const selected = driver.name === item.driver_name ? 'selected' : '';
+                                    driverDropdown.insertAdjacentHTML('beforeend',
+                                        `<option value="${driver.name}" data-mobile="${driver.mobile_no}" ${selected}>${driver.name}</option>`);
+                                });
+                                $(driverDropdown).trigger('change');  // Auto-fill contact number
+                            }
+                        });
+
+                        // Populate Vehicle Dropdown
+                        $.ajax({
+                            url: '/get_vehicle_numbers/',
+                            type: 'GET',
+                            success: function (response) {
+                                vehicleDropdown.innerHTML = '<option value="">Select Vehicle</option>';
+                                response.vehicles.forEach(vehicle => {
+                                    const selected = vehicle.vehicle_number === item.vehicle_number ? 'selected' : '';
+                                    vehicleDropdown.insertAdjacentHTML('beforeend',
+                                        `<option value="${vehicle.vehicle_number}" ${selected}>${vehicle.vehicle_number}</option>`);
+                                });
+                            }
+                        });
                     }
 
                     if (item.outside_driver_name || item.outside_vehicle_number) {
                         outsideVehicleChecked = true;
-                        var newOutSideRowHtml = `
+                        const newOutSideRowHtml = `
                             <div class="row transportation-row outside-vehicle-row" data-id="${item.id}">
                                 <div class="col-xl-4 mb-3">
                                     <label class="form-label">Outside Driver Name</label>
-                                    <input type="text" class="form-control" placeholder="Enter Driver Name" name="outside_driver_name" value="${item.outside_driver_name || ''}">
+                                    <input type="text" class="form-control" name="outside_driver_name" placeholder="Enter Driver Name" value="${item.outside_driver_name || ''}">
                                 </div>
                                 <div class="col-xl-3 mb-3">
                                     <label class="form-label">Outside Contact Number</label>
-                                    <input type="number" class="form-control" placeholder="Enter Contact Number" name="outside_contact_number" value="${item.outside_contact_number || ''}">
+                                    <input type="number" class="form-control" name="outside_contact_number" placeholder="Enter Contact Number" value="${item.outside_contact_number || ''}">
                                 </div>
                                 <div class="col-xl-3 mb-3">
                                     <label class="form-label vehicle-number-field">Outside Vehicle Number</label>
-                                    <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="outside_vehicle_number" value="${item.outside_vehicle_number || ''}">
+                                    <input type="text" class="form-control" name="outside_vehicle_number" placeholder="Enter Vehicle Number" value="${item.outside_vehicle_number || ''}">
                                 </div>
                                 <div class="col-xl-2 mb-3" style="margin-top: 36px;">
                                     <button type="button" class="btn btn-success updateRow"><i class="fa fa-save"></i></button>
@@ -2744,6 +2853,7 @@ $('#discounted_amount').on('input', function () {
                     }
                 });
 
+                // Show sections based on checked data
                 if (onVehicleChecked) {
                     document.getElementById('onVehicle').checked = true;
                     document.getElementById('onVehicleFields').style.display = 'block';
@@ -2753,45 +2863,45 @@ $('#discounted_amount').on('input', function () {
                     document.getElementById('outsideVehicleFields').style.display = 'block';
                 }
 
+                // Handle radio toggle between vehicle types
                 document.querySelectorAll('input[name="transportation_type"]').forEach(radio => {
                     radio.addEventListener('change', function () {
-                        if (this.value === 'on_vehicle') {
-                            document.getElementById('onVehicleFields').style.display = 'block';
-                            document.getElementById('outsideVehicleFields').style.display = 'none';
-                        } else if (this.value === 'outside_vehicle') {
-                            document.getElementById('onVehicleFields').style.display = 'none';
-                            document.getElementById('outsideVehicleFields').style.display = 'block';
-                        }
+                        document.getElementById('onVehicleFields').style.display = this.value === 'on_vehicle' ? 'block' : 'none';
+                        document.getElementById('outsideVehicleFields').style.display = this.value === 'outside_vehicle' ? 'block' : 'none';
                     });
                 });
-
                 document.querySelector('input[name="transportation_type"]:checked')?.dispatchEvent(new Event('change'));
 
+                // Auto-fill contact number when driver is selected
+                $(document).on('change', '.driverDropdown', function () {
+                    const mobile = $(this).find(':selected').data('mobile');
+                    $(this).closest('.transportation-row').find('.driverMobile').val(mobile || '');
+                });
+
+                // Update Row
                 document.querySelectorAll('.updateRow').forEach(button => {
                     button.addEventListener('click', function () {
-                        var row = this.closest('.transportation-row');
-                        var rowId = row.getAttribute('data-id');
-                        var data = {
-                            id: rowId,
-                            driver_name: row.querySelector('input[name="driver_name"]') ? row.querySelector('input[name="driver_name"]').value : null,
-                            contact_number: row.querySelector('input[name="contact_number"]') ? row.querySelector('input[name="contact_number"]').value : null,
-                            vehicle_number: row.querySelector('input[name="vehicle_number"]') ? row.querySelector('input[name="vehicle_number"]').value : null,
-                            outside_driver_name: row.querySelector('input[name="outside_driver_name"]') ? row.querySelector('input[name="outside_driver_name"]').value : null,
-                            outside_contact_number: row.querySelector('input[name="outside_contact_number"]') ? row.querySelector('input[name="outside_contact_number"]').value : null,
-                            outside_vehicle_number: row.querySelector('input[name="outside_vehicle_number"]') ? row.querySelector('input[name="outside_vehicle_number"]').value : null
+                        const row = this.closest('.transportation-row');
+                        const data = {
+                            id: row.getAttribute('data-id'),
+                            driver_name: row.querySelector('select[name="driver_name"]')?.value || null,
+                            contact_number: row.querySelector('input[name="contact_number"]')?.value || null,
+                            vehicle_number: row.querySelector('select[name="vehicle_number"]')?.value || null,
+                            outside_driver_name: row.querySelector('input[name="outside_driver_name"]')?.value || null,
+                            outside_contact_number: row.querySelector('input[name="outside_contact_number"]')?.value || null,
+                            outside_vehicle_number: row.querySelector('input[name="outside_vehicle_number"]')?.value || null
                         };
                         updateRow(data);
                     });
                 });
 
+                // Cancel Row
                 document.querySelectorAll('.cancelRow').forEach(button => {
                     button.addEventListener('click', function () {
-                        var row = this.closest('.transportation-row');
-                        var rowId = row.getAttribute('data-id');
+                        const row = this.closest('.transportation-row');
                         if (confirm('Are you sure you want to delete this row?')) {
                             row.remove();
-                            // Optionally send a request to the server to delete the row
-                            deleteRow(rowId);
+                            deleteRow(row.getAttribute('data-id'));
                         }
                     });
                 });
@@ -2855,37 +2965,71 @@ $('#discounted_amount').on('input', function () {
 
                 // Get the selected transportation type
                 var transportationType = $('input[name="transportation_type"]:checked').val();
+                
+                rowCount++;  // Increment row counter for unique IDs
 
-                // Define the HTML for a new row
                 var newRowHtml = `
-                    <div class="row transportation-row ${transportationType === 'on_vehicle' ? 'on-vehicle-row' : 'outside-vehicle-row'}">
-                        <div class="col-xl-4 mb-3">
-                            <label class="form-label">${transportationType === 'on_vehicle' ? 'Driver Name' : 'Outside Driver Name'}</label>
-                            <input type="text" class="form-control" placeholder="Enter Driver Name" name="${transportationType === 'on_vehicle' ? 'driver_name' : 'outside_driver_name'}">
-                        </div>
-                        <div class="col-xl-3 mb-3">
-                            <label class="form-label">${transportationType === 'on_vehicle' ? 'Contact Number' : 'Outside Contact Number'}</label>
-                            <input type="number" class="form-control" placeholder="Enter Contact Number" name="${transportationType === 'on_vehicle' ? 'contact_number' : 'outside_contact_number'}">
-                        </div>
-                        <div class="col-xl-3 mb-3">
-                            <label class="form-label">${transportationType === 'on_vehicle' ? 'Vehicle Number' : 'Outside Vehicle Number'}</label>
-                            <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="${transportationType === 'on_vehicle' ? 'vehicle_number' : 'outside_vehicle_number'}">
-                        </div>
-                        <div class="col-xl-2 mb-3" style="margin-top: 36px;">
-                            <button type="button" class="btn btn-success saveRow" data-type="${transportationType}"><i class="fa fa-save"></i></button>
-                            <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
-                        </div>
-                    </div>
-                `;
+        <div class="row transportation-row on-vehicle-row" data-row="${rowCount}">
+            <div class="col-xl-4 mb-3">
+                <label class="form-label">Driver Name</label>
+<select class="form-select driverDropdown" id="driverDropdown_${rowCount}" name="driver_name">
+                    <option value="">Select Driver</option>
+                </select>
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Contact Number</label>
+                <input type="number" class="form-control driverMobile" id="driverMobile_${rowCount}" placeholder="Enter Contact Number" name="contact_number" style="margin-top: 0;" readonly>
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Vehicle Number</label>
+                <select class="form-select vehicleDropdown" id="vehicleDropdown_${rowCount}" name="vehicle_number">
+                <option value="">Select Vehicle</option>
+            </select>
+            </div>
+            <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                <button type="button" class="btn btn-success saveRow" data-type="on_vehicle"><i class="fa fa-save"></i></button>
+                <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+    `;
+
+                var newOutSideRowHtml = `
+        <div class="row transportation-row outside-vehicle-row">
+            <div class="col-xl-4 mb-3">
+                <label class="form-label">Outside Driver Name</label>
+                <input type="text" class="form-control" placeholder="Enter Driver Name" name="outside_driver_name">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Outside Contact Number</label>
+                <input type="number" class="form-control" placeholder="Enter Contact Number" name="outside_contact_number">
+            </div>
+            <div class="col-xl-3 mb-3">
+                <label class="form-label">Outside Vehicle Number</label>
+                <input type="text" class="form-control" placeholder="Enter Vehicle Number" name="outside_vehicle_number">
+            </div>
+            <div class="col-xl-2 mb-3" style="margin-top: 36px;">
+                <button type="button" class="btn btn-success saveRow" data-type="outside_vehicle"><i class="fa fa-save"></i></button>
+                <button type="button" class="btn btn-danger light cancelRow"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+    `;
+
+                // Check if a transportation type is selected
+                if (!transportationType) {
+                    alert('Please select a transportation type.');
+                    return; // Exit the function if no transportation type is selected
+                }
 
                 // Append the new row to the appropriate section
                 if (transportationType === 'on_vehicle') {
                     $('#onVehicleFields').append(newRowHtml);
+                    const newDropdownId = `driverDropdown_${rowCount}`;
+                    fetchDrivers(newDropdownId);
+                    fetchVehicleNumbers(`vehicleDropdown_${rowCount}`);
                 } else if (transportationType === 'outside_vehicle') {
-                    $('#outsideVehicleFields').append(newRowHtml);
+                    $('#outsideVehicleFields').append(newOutSideRowHtml);
                 }
             });
-
             // Event listener to remove a row when the cancelRow button is clicked
             $(document).on('click', '.cancelRow', function () {
                 $(this).closest('.transportation-row').remove();
@@ -2909,9 +3053,9 @@ $('#discounted_amount').on('input', function () {
 
                 // Collect data based on transportation type
                 if (type === 'on_vehicle') {
-                    data.driver_name = row.find('input[name="driver_name"]').val();
+                    data.driver_name = row.find('select[name="driver_name"]').val();
                     data.contact_number = row.find('input[name="contact_number"]').val();
-                    data.vehicle_number = row.find('input[name="vehicle_number"]').val();
+                    data.vehicle_number = row.find('select[name="vehicle_number"]').val();
                 } else if (type === 'outside_vehicle') {
                     data.outside_driver_name = row.find('input[name="outside_driver_name"]').val();
                     data.outside_contact_number = row.find('input[name="outside_contact_number"]').val();
