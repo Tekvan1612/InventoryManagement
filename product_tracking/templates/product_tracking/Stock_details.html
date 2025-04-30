@@ -188,6 +188,7 @@
                                                  aria-labelledby="usages-tab">
                                                 <h5>Usages</h5>
                                                 <div id="equipment-usages">
+
                                                     <!-- Equipment usages will be dynamically inserted here -->
                                                 </div>
                                             </div>
@@ -227,6 +228,55 @@
         </div>
         <!-- Content body end -->
 
+        <!-- Pop Up Show after click on usage button -->
+        <div class="modal fade" id="categoryEditModal" tabindex="-1" aria-labelledby="categoryEditModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog custom-modal-width">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="categoryEditModalLabel" style="color: #FFFFFF;">Usage Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs custom-tab" id="equipmentEditTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" id="stock-tab" data-bs-toggle="tab"
+                                   href="#stock" role="tab" aria-controls="stock"
+                                   aria-selected="false">Stock Details</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <!-- Stock Details1 Section -->
+                            <div class="tab-pane fade show active" id="stock" role="tabpanel" aria-labelledby="stock">
+                                <div class="table-responsive mt-4">
+                                    <table class="table table-striped table-hover table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th>Job Number</th>
+                                            <th>Barcode Number</th>
+                                            <th>Serial Number</th>
+                                            <th>Scan Out</th>
+                                            <th>Scan In</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="stock-details-table-body">
+                                        <!-- Rows will be appended here by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <button id="prevPage" class="btn btn-primary">Previous</button>
+                                    <span>Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+                                    <button id="nextPage" class="btn btn-primary">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer start -->
         {% include 'product_tracking/footer.html' %}
         <!-- Footer end -->
@@ -235,7 +285,7 @@
 
     <!-- Scripts -->
     <!-- Required vendors -->
-<!--     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
+    <!--     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
     <script>
         $(document).ready(function () {
 
@@ -338,7 +388,6 @@
                 });
             }
 
-
             // Fetch the initial equipment list
             fetchEquipmentListByCategory();
 
@@ -399,7 +448,6 @@
                 });
             });
 
-
             $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
                 const target = $(e.target).attr("href"); // Get the target tab pane
 
@@ -415,13 +463,13 @@
             $('#equipment-list').on('click', 'a.list-group-item', function (e) {
                 e.preventDefault();
 
-                // Remove active class from all items
                 $('#equipment-list .list-group-item').removeClass('active');
-
-                // Add active class to the clicked item
                 $(this).addClass('active');
 
                 const equipmentId = $(this).data('id');
+                console.log('check the equipmentId:', equipmentId)
+
+                let stockDetailsGlobal = []; // Define globally inside click function
 
                 // Fetch the selected equipment details via AJAX
                 $.ajax({
@@ -430,61 +478,65 @@
                     dataType: "json",
                     success: function (data) {
                         if (data.message) {
-                            // Display the message when no stock details are available
                             $('#equipment-stock-summary').html(`<p>${data.message}</p>`);
-                            $('#stock-details-info').html(''); // Clear stock details
+                            $('#stock-details-info').html('');
                         } else {
+                            stockDetailsGlobal = data.stock_details;
+
                             let stockSummaryHtml = `
-                            <table class="table header-border table-hover verticle-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Vendor Name</th>
-                                        <th>Purchase Date</th>
-                                        <th>Reference No</th>
-                                        <th>Units</th>
-                                        <th>Additional Info</th>
-                                    </tr>
-                                </thead>
-                                <tbody>`;
+                <table class="table header-border table-hover verticle-middle">
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Purchase Date</th>
+                            <th>Reference No</th>
+                            <th>Units</th>
+                            <th>Additional Info</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
                             $.each(data.stock_summary, function (index, summary) {
                                 stockSummaryHtml += `
-                                    <tr>
-                                        <td>${summary.vendor_name}</td>
-                                        <td>${summary.purchase_date}</td>
-                                        <td>${summary.reference_no}</td>
-                                        <td>${summary.unique_barcode_count}</td>
-                                        <td><button class="btn btn-primary view-details-btn" style="padding: 0.3rem 0.3rem; border-radius: 0.375rem; font-weight: 200; font-size: 12px; line-height: 15px" data-reference-no="${summary.reference_no}">View Details</button></td>
-                                    </tr>`;
+                        <tr>
+                            <td>${summary.vendor_name}</td>
+                            <td>${summary.purchase_date}</td>
+                            <td>${summary.reference_no}</td>
+                            <td>${summary.unique_barcode_count}</td>
+                            <td><button class="btn btn-primary view-details-btn" style="padding: 0.3rem 0.3rem; border-radius: 0.375rem; font-weight: 200; font-size: 12px; line-height: 15px" data-reference-no="${summary.reference_no}">View Details</button></td>
+                        </tr>`;
                             });
 
                             stockSummaryHtml += '</tbody></table>';
                             $('#equipment-stock-summary').html(stockSummaryHtml);
 
-                            // Add event listener to display detailed info when a summary item is clicked
-                            $('#equipment-stock-summary').on('click', '.view-details-btn', function () {
+                            // ⬇️ Move the event listener here ⬇️
+                            $('#equipment-stock-summary').off('click', '.view-details-btn').on('click', '.view-details-btn', function () {
                                 const referenceNo = $(this).data('reference-no');
+                                console.log("Clicked Reference No:", referenceNo);
+                                console.log("Stock Details Global:", stockDetailsGlobal);
                                 let stockDetailsHtml = `
-                                    <div class="stock-details">
-                                        <h5 class="section-title">Stock Details for Reference No: ${referenceNo}</h5>
-                                        <table class="table header-border table-hover verticle-middle">
-                                            <thead>
-                                                <tr>
-                                                    <th>Barcode No</th>
-                                                    <th>Serial No</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>`;
+                        <div class="stock-details">
+                            <h5 class="section-title">Stock Details for Reference No: ${referenceNo}</h5>
+                            <table class="table header-border table-hover verticle-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Barcode No</th>
+                                        <th>Serial No</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
 
-                                $.each(data.stock_details, function (index, detail) {
-                                    if (detail.reference_no === referenceNo) {
+                                $.each(stockDetailsGlobal, function (index, detail) {
+                                    if (detail.reference_no == referenceNo) { // <- use only double equals ==
                                         stockDetailsHtml += `
-                                                <tr>
-                                                    <td>${detail.barcode_no}</td>
-                                                    <td>${detail.serial_no}</td>
-                                                </tr>`;
+            <tr>
+                <td>${detail.barcode_no}</td>
+                <td>${detail.serial_no}</td>
+            </tr>`;
                                     }
                                 });
+
 
                                 stockDetailsHtml += '</tbody></table></div>';
                                 $('#stock-details-info').html(stockDetailsHtml);
@@ -496,6 +548,8 @@
                     }
                 });
             });
+
+
             $.ajax({
                 url: "{% url 'get_categories' %}",
                 method: "GET",
@@ -519,6 +573,7 @@
                     $('#master-category').append('<option disabled>Error loading categories</option>');
                 }
             });
+
             $('#master-category').on('change', function () {
                 const selectedCategoryId = $(this).val();
                 if (selectedCategoryId) {
@@ -526,10 +581,131 @@
                 }
             });
 
+            // Usages Tab
+            $(document).on('click', 'a.list-group-item', function (e) {
+                e.preventDefault();
+
+                const equipmentId = $(this).data('id'); // Get the equipmentId dynamically
+                console.log('Equipment ID:', equipmentId);
+
+                // Update the active state for the list
+                $('#equipment-list .list-group-item').removeClass('active');
+                $(this).addClass('active');
+
+                $.ajax({
+                    type: 'GET',
+                    url: '/fetch_equipment_usages/', // URL to Django view
+                    data: {
+                        'equipment_id': equipmentId
+                    },
+                    success: function (response) {
+                        console.log('Response:', response);
+                        let usagesHtml = '';
+
+                        if (response.data.length > 0) {
+                            // Create a Bootstrap card for each usage
+                            response.data.forEach(function (item) {
+                                usagesHtml += `
+                        <div class="card mb-3" style="max-width: 130px; border: 1px solid #ddd; background-color: #007bff; border-radius: 10px;">
+                            <div class="col-md-12">
+                                <div class="card-body">
+                                    <a class="card-title usage-card" data-temp-id="${item.temp_id}" style="color: #ffffff; text-align: center; margin-top: 5px; display: block; cursor: pointer;">
+                                        ${item.job_reference_no}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                            });
+                        } else {
+                            usagesHtml = '<p>No usages found for this equipment.</p>';
+                        }
+
+                        $('#equipment-usages').html(usagesHtml);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        $('#equipment-usages').html('<p style="color:red;">Error loading usages.</p>');
+                    }
+                });
+            });
+
+// Optional: handle click on each usage card to use temp_id later
+            $(document).on('click', '.usage-card', function () {
+                const tempId = $(this).data('temp-id');
+                const equipmentId = $('a.list-group-item.active').data('id');
+
+                console.log('Temp ID clicked:', tempId);
+                console.log('Current Equipment ID:', equipmentId);
+
+                // Show modal immediately (optional: can be moved to success block)
+                $('#categoryEditModal').modal('show');
+
+                $.ajax({
+                    type: 'GET',
+                    url: '/fetch_transaction_details_usage/',
+                    data: {
+                        'temp_id': tempId,
+                        'equipment_id': equipmentId
+                    },
+                    success: function (response) {
+                        console.log('Transaction Details:', response);
+
+                        let rowsHtml = '';
+                        if (response.data.length > 0) {
+                            response.data.forEach(function (item) {
+                                rowsHtml += `
+                        <tr>
+                            <td>${item.job_ref_no}</td>
+                            <td>${item.barcode_no}</td>
+                            <td>${item.serial_no}</td>
+                            <td>${item.scan_out_date_time || ''}</td>
+                            <td>${item.scan_in_date_time || ''}</td>
+                        </tr>
+                    `;
+                            });
+                        } else {
+                            rowsHtml = `<tr><td colspan="4" class="text-center">No transaction details found.</td></tr>`;
+                        }
+
+                        $('#stock-details-table-body').html(rowsHtml);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching transaction details:', error);
+                        $('#stock-details-table-body').html(`<tr><td colspan="4" style="color:red;">Error loading transaction details.</td></tr>`);
+                    }
+                });
+            });
+
+
         });
     </script>
 
     <style>
+        /* Default modal size for desktop and larger */
+        .custom-modal-width {
+            max-width: 80%; /* Or any preferred width */
+            width: 80%;
+        }
+
+        /* Medium screens (tablets) */
+        @media (max-width: 991.98px) {
+            .custom-modal-width {
+                max-width: 95%;
+                width: 95%;
+            }
+        }
+
+        /* Small screens (mobile phones) */
+        @media (max-width: 575.98px) {
+            .custom-modal-width {
+                max-width: 100%;
+                width: 100%;
+                margin: 0; /* remove default margins */
+            }
+        }
+
+
         /* Custom styles for page title and category dropdown */
         .page-title {
             font-size: 1.5rem;
