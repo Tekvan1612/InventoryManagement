@@ -6889,4 +6889,102 @@ def get_job_title(request):
                 return JsonResponse({'title': row[0]})
             print(f"Check Row: {row}")
     return JsonResponse({'title': ''})
+
+
+def fetch_equipment_usages(request):
+    equipment_id = request.GET.get('equipment_id')
+    response_data = {'data': []}
+
+    if equipment_id:
+        with connection.cursor() as cursor:
+            # Step 1: Get equipment name from equipment_list
+            cursor.execute("SELECT equipment_name FROM equipment_list WHERE id = %s", [equipment_id])
+            equipment_row = cursor.fetchone()
+
+            if equipment_row:
+                equipment_name = equipment_row[0]
+
+                # Step 2: Get temp_id(s) from temp_equipment_details where equipment_name matches
+                cursor.execute("""
+                    SELECT temp_id
+                    FROM temp_equipment_details
+                    WHERE equipment_name = %s
+                """, [equipment_name])
+
+                temp_ids = cursor.fetchall()
+
+                # Step 3: For each temp_id, get job_reference_no from temp table
+                for temp_id_row in temp_ids:
+                    temp_id = temp_id_row[0]
+
+                    cursor.execute("""
+                        SELECT job_reference_no
+                        FROM temp
+                        WHERE id = %s AND status = 'Delivery Challan'
+                    """, [temp_id])
+
+                    job_row = cursor.fetchone()
+                    if job_row:
+                        response_data['data'].append({
+                            'temp_id': temp_id,
+                            'job_reference_no': job_row[0]
+                        })
+            else:
+                response_data['error'] = 'Equipment not found.'
+    else:
+        response_data['error'] = 'No Equipment ID provided.'
+
+    return JsonResponse(response_data)
+
+
+def fetch_transaction_details_usage(request):
+    temp_id = request.GET.get('temp_id')
+    equipment_id = request.GET.get('equipment_id')
+    response_data = {'data': []}
+
+    if not temp_id or not equipment_id:
+        return JsonResponse({'error': 'Missing temp_id or equipment_id'}, status=400)
+
+    try:
+        temp_id = int(temp_id)
+        equipment_id = int(equipment_id)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid temp_id or equipment_id'}, status=400)
+
+    with connection.cursor() as cursor:
+
+        # Step 1: Get equipment_name from equipment_list
+        cursor.execute("SELECT equipment_name FROM equipment_list WHERE id = %s", [equipment_id])
+        equipment_row = cursor.fetchone()
+
+        if not equipment_row:
+            return JsonResponse({'error': 'Invalid equipment_id'}, status=404)
+
+        equipment_name = equipment_row[0]
+
+        # Step 2: Get transaction details
+        cursor.execute("""
+                    SELECT td.job_ref_no, td.barcode, td.scan_out_date_time, td.scan_in_date_time, sd.serial_no
+                    FROM transaction_details td
+                    LEFT JOIN stock_details sd ON td.barcode = sd.barcode_no
+                    WHERE td.job_id = %s AND td.equipment_name = %s AND sd.equipment_id = %s
+                """, [temp_id, equipment_name, equipment_id])
+
+        transaction_rows = cursor.fetchall()
+        # print(f"check the transaction rows: {transaction_rows}")
+
+        for row in transaction_rows:
+            # Format the datetime to include both date and time in 12-hour format
+            scan_out_time = row[2].strftime('%Y-%m-%d %I:%M %p') if row[2] else None  # Example: '2024-07-15 02:30 PM'
+            scan_in_time = row[3].strftime('%Y-%m-%d %I:%M %p') if row[3] else None  # Example: '2024-07-15 02:30 PM'
+
+            response_data['data'].append({
+                'job_ref_no': row[0],
+                'barcode_no': row[1],
+                'scan_out_date_time': scan_out_time,
+                'scan_in_date_time': scan_in_time,
+                'serial_no': row[4],
+            })
+
+    return JsonResponse(response_data)
 	
